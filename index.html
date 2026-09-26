@@ -241,6 +241,7 @@ svg {
 
 .drag-zone {
   position: relative;
+  z-index: 1; /* 展开两翼压在 drag-pad 之上：悬停判定面 = 整个展开胶囊（契约见下） */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -252,6 +253,8 @@ svg {
   flex-shrink: 0;
   transition: width 220ms var(--ease), margin 220ms var(--ease), background 140ms ease;
 }
+/* 悬停契约：触发 = 悬停收起态拖动钮；维持 = 悬停整个展开胶囊（含两翼）；
+   占位 = 胶囊以缩小尺寸占据顶栏（净 22px），邻居由 drag-pad 推开 */
 .drag-zone:hover {
   width: var(--drag-open);
   margin-left: calc((var(--btn) - var(--drag-open)) / 2);
@@ -298,6 +301,7 @@ svg {
 .drag-pad {
   width: 0;
   flex-shrink: 0;
+  pointer-events: none; /* 纯占位：永不拦截命中，两翼悬停归属拖动区 */
   transition: width 220ms var(--ease);
 }
 .top-capsule:has(.drag-zone:hover) > .drag-pad {
