@@ -1,18 +1,17 @@
-import { $, $$, on } from "./dom";
-import type { WinApi } from "./types";
-
 /**
- * Status bar = a nav-bar (system). Capsule ghost until hover; content panel
- * (no top-bar) holds all device status + quick actions. Content is hidden
- * until opened.
- *
- * App bar: every control is an app (including launcher). Click toggles
- * open/minimize that app's window. No search button — search lives in the
- * launcher window top-bar.
+ * 系统层：状态栏（左上）+ App 栏（左下）。与窗口无关，z-index 最高档。
+ * App 栏状态订阅 store（开/焦点/最大化），不用 MutationObserver。
  */
-export function initStatusBar(): void {
-  const root = $<HTMLElement>(".sys-status");
-  if (!root) return;
+import { $, $$, on } from "./dom";
+import { Store, anyMaximized } from "./state";
+import { statusBarHTML, appBarHTML, type AppBarItem } from "./render";
+import { APPS, winIdOf } from "./apps";
+import type { WinApi } from "./windows";
+
+export function initStatusBar(store: Store): void {
+  const viewport = $<HTMLElement>("#viewport")!;
+  viewport.insertAdjacentHTML("beforeend", statusBarHTML());
+  const root = $<HTMLElement>(".sys-status")!;
   const capsule = $<HTMLElement>(".status-capsule", root);
   const content = $<HTMLElement>(".status-content", root);
   const openBtn = $<HTMLElement>("[data-status-toggle]", root);
@@ -20,10 +19,14 @@ export function initStatusBar(): void {
   const arc = $<SVGCircleElement>("[data-battery] .bat-arc", root);
   const pct = $<HTMLElement>("[data-battery] .bat-pct", root);
 
+  // 时钟 / 电量：设备运行时数据，本地维护
   const tick = () => {
     if (!time) return;
     const d = new Date();
     time.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    $$("[data-time-full]", root).forEach(
+      (el) => (el.textContent = `今日 ${d.getMonth() + 1}月${d.getDate()}日`),
+    );
   };
   tick();
   window.setInterval(tick, 30_000);
@@ -51,78 +54,105 @@ export function initStatusBar(): void {
     setOpen(!root.classList.contains("is-open"));
   });
 
-  // outside-click close is handled by initTempWindows ([data-temp] + temp:close)
-  content?.addEventListener("temp:close", () => setOpen(false));
-
-  // quick actions inside status content
+  // 快捷操作：网络/主题走设置状态（网络类型在设置里也可切换）
   $$("[data-quick]", root).forEach((btn) => {
     on(btn, "click", () => {
       const k = btn.getAttribute("data-quick");
       if (k === "wifi" || k === "cell") {
-        $(".sys-status")?.setAttribute("data-net", k === "cell" ? "cell" : "wifi");
-        $$("[data-net-mode]").forEach((x) =>
-          x.setAttribute(
-            "aria-pressed",
-            x.getAttribute("data-net-mode") === (k === "cell" ? "cell" : "wifi") ? "true" : "false",
-          ),
-        );
+        store.update((s) => (s.settings.net = k));
       }
       if (k === "theme-light" || k === "theme-dark") {
-        const m = k === "theme-dark" ? "dark" : "light";
-        document.documentElement.setAttribute("data-theme", m);
-        $$("button[data-theme]").forEach((x) =>
-          x.setAttribute("aria-pressed", x.getAttribute("data-theme") === m ? "true" : "false"),
-        );
+        store.update((s) => (s.settings.theme = k === "theme-dark" ? "dark" : "light"));
       }
       btn.classList.toggle("on");
     });
   });
+
+  on(document, "pointerdown", (e) => {
+    if ((e.target as Element).closest(".sys-status")) return;
+    setOpen(false);
+  });
 }
 
-export function initAppBar(api: WinApi): void {
-  const bar = $<HTMLElement>(".sys-appbar");
-  if (!bar) return;
+export function initAppBar(store: Store, api: WinApi): void {
+  const viewport = $<HTMLElement>("#viewport")!;
+  // 自上而下：已打开 → 快速启动 → 启动台（永远最下）
+  const items: AppBarItem[] = APPS.map((a) => ({
+    appId: a.id,
+    icon: a.icon,
+    label: a.title,
+  })).sort((a, b) => (a.appId === "launcher" ? 1 : b.appId === "launcher" ? -1 : 0));
+  viewport.insertAdjacentHTML("beforeend", appBarHTML(items));
+  const bar = $<HTMLElement>(".sys-appbar")!;
 
+  // 订阅 store：开/焦点/最大化 → 按钮状态
   const sync = () => {
-    const anyMax = api.wins.some((w) => w.getAttribute("data-mode") === "maximized");
-    bar.classList.toggle("only-launch", anyMax);
-    $$(".app-item", bar).forEach((btn) => {
-      const id = btn.getAttribute("data-app-id");
-      const win = api.wins.find((w) => w.dataset.app === id);
-      const showing = !!win && win.style.display !== "none" && !win.hidden && win.dataset.open !== "0";
-      btn.classList.toggle("open", showing);
-      btn.classList.toggle("active", showing && win.classList.contains("is-focused"));
-    });
+    const s = store.get();
+    bar.classList.toggle("only-launch", anyMaximized(s));
+    for (const btn of $$(".app-item", bar)) {
+      const appId = btn.getAttribute("data-app-id") || "";
+      const ws = s.wins[winIdOf(appId)];
+      btn.classList.toggle("open", !!ws?.open);
+      btn.classList.toggle("active", !!ws?.open && ws.focused);
+    }
   };
+  store.subscribe(sync);
 
-  // every app-item (including launcher) toggles its app window
-  $$(".app-item", bar).forEach((btn) => {
+  // 每个钮都是 app（含启动台）：toggle 打开/收起
+  for (const btn of $$(".app-item", bar)) {
     on(btn, "click", (e) => {
       e.stopPropagation();
-      const id = btn.getAttribute("data-app-id");
-      if (!id) return;
-      if (id === "launcher") {
-        const s = $<HTMLElement>("#winSearch");
-        if (!s) return;
-        const showing = s.style.display !== "none" && !s.hidden && s.dataset.open !== "0";
-        if (showing) api.minimize(s);
-        else api.open(s);
-        sync();
-        return;
-      }
-      const win = api.wins.find((w) => w.dataset.app === id);
-      if (!win) return;
-      const showing = win.style.display !== "none" && !win.hidden && win.dataset.open !== "0";
-      if (showing) api.minimize(win);
-      else api.open(win);
-      sync();
+      const appId = btn.getAttribute("data-app-id") || "";
+      const id = winIdOf(appId);
+      const ws = store.get().wins[id];
+      if (!ws) return;
+      if (ws.open) api.minimize(id);
+      else api.open(id);
     });
-  });
-
-  api.wins.forEach((w) => {
-    const mo = new MutationObserver(sync);
-    mo.observe(w, { attributes: true, attributeFilter: ["data-mode", "style", "class", "data-open", "hidden"] });
-  });
-  document.addEventListener("anios:win-close", sync);
+  }
   sync();
+}
+
+/** 设置状态 → CSS 变量 / 属性（渲染层的「设置补丁」） */
+export function bindSettingsPatch(store: Store): void {
+  const apply = () => {
+    const st = store.get().settings;
+    const root = document.documentElement;
+    root.setAttribute("data-theme", st.theme);
+    root.style.setProperty("--accent", st.accent);
+    root.style.setProperty("--anim-window", `${st.animWindow}ms`);
+    root.style.setProperty("--anim-pane", `${st.animPane}ms`);
+    root.style.setProperty("--anim-menu", `${st.animMenu}ms`);
+    $$(".scroll-indicator").forEach((el) => (el.dataset.mode = st.scrollMode));
+    $(".sys-status")?.setAttribute("data-net", st.net);
+    // 互斥按钮组 aria-pressed 同步
+    const syncGroup = (sel: string, attr: string, val: string) => {
+      for (const b of $$(sel)) {
+        b.setAttribute("aria-pressed", b.getAttribute(attr) === val ? "true" : "false");
+      }
+    };
+    syncGroup("button[data-theme]", "data-theme", st.theme);
+    syncGroup("[data-net-mode]", "data-net-mode", st.net);
+    syncGroup("[data-scroll-mode]", "data-scroll-mode", st.scrollMode);
+    // 滑杆与标签回显
+    const syncSlider = (id: string, v: number) => {
+      const el = $<HTMLInputElement>(`#${id}`);
+      if (el && Number(el.value) !== v) el.value = String(v);
+      const l = $(`#${id}Val`);
+      if (l) l.textContent = `${v}ms`;
+    };
+    syncSlider("animGlobal", st.animGlobal);
+    syncSlider("animWindow", st.animWindow);
+    syncSlider("animPane", st.animPane);
+    syncSlider("animMenu", st.animMenu);
+    // 强调色圆点高亮
+    for (const d of $$(".cd")) {
+      d.classList.toggle(
+        "active",
+        getComputedStyle(d).getPropertyValue("--c").trim() === st.accent,
+      );
+    }
+  };
+  store.subscribe(apply);
+  apply();
 }

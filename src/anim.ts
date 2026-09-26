@@ -1,0 +1,267 @@
+/**
+ * 动画层：对状态迁移做视觉插值，只读 —— 永不写语义状态，结束只清瞬态。
+ * 两种原语：
+ *   - 壳（固定尺寸胶囊）：位移 FLIP（translate-only）；
+ *   - 内容（随盒子重排）：真实矩形补间 —— 禁止 scale 压内容。
+ */
+import gsap from "gsap";
+import { $, durMs } from "./dom";
+
+const EASE = "power3.inOut";
+
+export function prefersReducedMotion(): boolean {
+  return typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/** 动画时长（秒）；reduced-motion 时趋近 0 */
+export function durSec(token = "--anim-window"): number {
+  if (prefersReducedMotion()) return 0.00001;
+  return Math.max(0.12, durMs(token) / 1000);
+}
+
+/** 布局中心（offsetParent 坐标，不含 transform —— 动画中禁止 getBoundingClientRect 写变量） */
+export function layoutCenter(el: HTMLElement): { cx: number; cy: number } {
+  return {
+    cx: el.offsetLeft + el.offsetWidth / 2,
+    cy: el.offsetTop + el.offsetHeight / 2,
+  };
+}
+
+/** 对齐：控制栏中心 = 内容中心 X，导航中心 = 内容中心 Y（写入 CSS 变量） */
+export function align(win: HTMLElement): void {
+  const content = $<HTMLElement>(".content", win);
+  const topbar = $<HTMLElement>("[data-topbar]", win);
+  const navbar = $<HTMLElement>("[data-nav]", win);
+  if (!content || !topbar) return;
+  const { cx, cy } = layoutCenter(content);
+  topbar.style.setProperty("--content-cx", `${cx}px`);
+  navbar?.style.setProperty("--content-cy", `${cy}px`);
+}
+
+export type ShellFirst = {
+  content: DOMRect;
+  nav?: DOMRect;
+  topbar?: DOMRect;
+  radius: string;
+  pad: Record<string, string>;
+};
+
+function padOf(el: HTMLElement): Record<string, string> {
+  const s = getComputedStyle(el);
+  return {
+    paddingLeft: s.paddingLeft,
+    paddingTop: s.paddingTop,
+    paddingRight: s.paddingRight,
+  };
+}
+
+/** 状态切换前捕获 first 矩形（壳 + 内容 + 圆角 + 内边距） */
+export function captureShell(win: HTMLElement): ShellFirst {
+  const content = $<HTMLElement>(".content", win)!;
+  const scroller = $<HTMLElement>(".content-scroll", content);
+  return {
+    content: content.getBoundingClientRect(),
+    nav: $<HTMLElement>("[data-nav]", win)?.getBoundingClientRect(),
+    topbar: $<HTMLElement>("[data-topbar]", win)?.getBoundingClientRect(),
+    radius: getComputedStyle(content).borderRadius,
+    pad: scroller ? padOf(scroller) : {},
+  };
+}
+
+/**
+ * 状态已切换（几何/模式已落到 DOM）后播放过渡：
+ * 内容 = 真实矩形补间（含圆角与滚动内边距），壳 = 位移 FLIP。
+ */
+export function playShell(win: HTMLElement, first: ShellFirst): void {
+  const content = $<HTMLElement>(".content", win);
+  if (!content) return;
+  const navbar = $<HTMLElement>("[data-nav]", win);
+  const topbar = $<HTMLElement>("[data-topbar]", win);
+  const scroller = $<HTMLElement>(".content-scroll", content);
+  const d = durSec("--anim-window");
+
+  const lC = content.getBoundingClientRect();
+  const lN = navbar?.getBoundingClientRect();
+  const lT = topbar?.getBoundingClientRect();
+  const wr = win.getBoundingClientRect();
+
+  gsap.fromTo(
+    content,
+    {
+      left: first.content.left - wr.left,
+      top: first.content.top - wr.top,
+      width: first.content.width,
+      height: first.content.height,
+      right: "auto",
+      bottom: "auto",
+      borderRadius: first.radius,
+    },
+    {
+      left: lC.left - wr.left,
+      top: lC.top - wr.top,
+      width: lC.width,
+      height: lC.height,
+      right: "auto",
+      bottom: "auto",
+      borderRadius: getComputedStyle(content).borderRadius,
+      duration: d,
+      ease: EASE,
+      overwrite: true,
+      onComplete: () => {
+        gsap.set(content, {
+          clearProps: "left,top,width,height,right,bottom,borderRadius",
+        });
+        win.dataset.flipping = "0";
+        align(win);
+      },
+      onInterrupt: () => {
+        win.dataset.flipping = "0";
+      },
+    },
+  );
+
+  if (scroller && Object.keys(first.pad).length) {
+    gsap.fromTo(scroller, first.pad, {
+      ...padOf(scroller),
+      duration: d,
+      ease: EASE,
+      overwrite: true,
+      clearProps: "paddingLeft,paddingTop,paddingRight",
+    });
+  }
+
+  flipShell(navbar, first.nav, lN, 0, -50, d, win);
+  flipShell(topbar, first.topbar, lT, -50, 0, d, win);
+}
+
+/** 壳位移 FLIP：反演须在绘制前的同一任务内应用；xp/yp 保持 CSS 居中基变换 */
+function flipShell(
+  el: HTMLElement | null,
+  f: DOMRect | undefined,
+  l: DOMRect | undefined,
+  xp: number,
+  yp: number,
+  d: number,
+  win: HTMLElement,
+): void {
+  if (!el || !f || !l) return;
+  gsap.set(el, {
+    x: f.left - l.left,
+    y: f.top - l.top,
+    xPercent: xp,
+    yPercent: yp,
+    force3D: true,
+  });
+  gsap.to(el, {
+    x: 0,
+    y: 0,
+    xPercent: xp,
+    yPercent: yp,
+    duration: d,
+    ease: EASE,
+    overwrite: true,
+    onComplete: () => {
+      gsap.set(el, { clearProps: "transform,x,y,xPercent,yPercent" });
+      if (xp) el.style.transform = `translateX(${xp}%)`;
+      else if (yp) el.style.transform = `translateY(${yp}%)`;
+      align(win);
+    },
+  });
+}
+
+/* ── 生命周期补间：先过渡、结束由交互层 commit（手势类例外） ── */
+
+/** 收起：缩向 App 栏图标 */
+export function minimizeTo(
+  win: HTMLElement,
+  icon: HTMLElement | null,
+  onDone: () => void,
+): void {
+  const d = durSec("--anim-window");
+  const wr = win.getBoundingClientRect();
+  const cx0 = wr.left + wr.width / 2;
+  const cy0 = wr.top + wr.height / 2;
+  let tx = cx0;
+  let ty = cy0 + 80;
+  if (icon) {
+    const ir = icon.getBoundingClientRect();
+    tx = ir.left + ir.width / 2;
+    ty = ir.top + ir.height / 2;
+  }
+  gsap.to(win, {
+    scale: 0.12,
+    opacity: 0,
+    x: tx - cx0,
+    y: ty - cy0,
+    transformOrigin: "50% 50%",
+    duration: d,
+    ease: "power3.in",
+    overwrite: true,
+    onComplete: () => {
+      win.hidden = true;
+      gsap.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+      onDone();
+    },
+  });
+}
+
+/** 打开：从 App 栏图标处飞入 */
+export function openFrom(
+  win: HTMLElement,
+  icon: HTMLElement | null,
+  onDone: () => void,
+): void {
+  const d = durSec("--anim-window");
+  const wr = win.getBoundingClientRect();
+  const cx0 = wr.left + wr.width / 2;
+  const cy0 = wr.top + wr.height / 2;
+  let tx = cx0;
+  let ty = cy0 + 80;
+  if (icon) {
+    const ir = icon.getBoundingClientRect();
+    tx = ir.left + ir.width / 2;
+    ty = ir.top + ir.height / 2;
+  }
+  gsap.fromTo(
+    win,
+    {
+      scale: 0.12,
+      opacity: 0,
+      x: tx - cx0,
+      y: ty - cy0,
+      transformOrigin: "50% 50%",
+    },
+    {
+      scale: 1,
+      opacity: 1,
+      x: 0,
+      y: 0,
+      duration: d,
+      ease: "power3.out",
+      overwrite: true,
+      onComplete: () => {
+        gsap.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+        onDone();
+      },
+    },
+  );
+}
+
+/** 关闭：原地缩小 */
+export function closeIn(win: HTMLElement, onDone: () => void): void {
+  const d = durSec("--anim-window");
+  gsap.to(win, {
+    scale: 0.55,
+    opacity: 0,
+    transformOrigin: "50% 50%",
+    duration: d,
+    ease: "power3.in",
+    overwrite: true,
+    onComplete: () => {
+      win.hidden = true;
+      gsap.set(win, { clearProps: "transform,opacity,scale,transformOrigin" });
+      onDone();
+    },
+  });
+}

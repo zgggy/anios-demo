@@ -1,19 +1,22 @@
+/**
+ * `+` 菜单与搜索面板（挂在控制栏下，属该窗口）。
+ * 二级项原地展开——禁止新开一层浮窗。菜单展开是视图瞬态，DOM 本地管理。
+ */
 import { $, $$, on } from "./dom";
-import type { WinApi } from "./types";
+import type { WinApi } from "./windows";
+import { APPS, winIdOf } from "./apps";
 
 type MenuHost = HTMLElement & { _closeMenus?: () => void };
 
-/**
- * + menu and search-panel under the top-bar capsule.
- * Secondary items expand in place — never a second floating layer.
- */
 export function initMenus(api: WinApi): void {
-  api.wins.forEach((win) => {
+  for (const a of APPS) {
+    const win = api.el(winIdOf(a.id));
+    if (!win) continue;
     const more = $<HTMLElement>("[data-more]", win);
     const panel = $<HTMLElement>("[data-more-panel]", win);
     const search = $<HTMLElement>("[data-search]", win);
     const searchPanel = $<HTMLElement>("[data-search-panel]", win);
-    if (!panel) return;
+    if (!panel) continue;
 
     const close = () => {
       panel.hidden = true;
@@ -26,7 +29,7 @@ export function initMenus(api: WinApi): void {
 
     on(more, "click", (e) => {
       e.stopPropagation();
-      api.focus(win);
+      api.focus(win.id);
       const open = panel.hidden;
       close();
       if (open) {
@@ -37,7 +40,7 @@ export function initMenus(api: WinApi): void {
 
     on(search, "click", (e) => {
       e.stopPropagation();
-      api.focus(win);
+      api.focus(win.id);
       const open = searchPanel ? searchPanel.hidden : false;
       close();
       if (searchPanel && open) {
@@ -67,19 +70,26 @@ export function initMenus(api: WinApi): void {
         if (act === "about") {
           alert(`${win.dataset.title || "应用"} · anios 1.0`);
         } else if (act === "quit") {
-          api.close(win);
+          api.close(win.id);
         } else if (act === "min") {
-          api.minimize(win);
+          api.minimize(win.id);
         } else if (act === "max") {
-          api.toggleMaximize(win);
+          api.toggleMaximize(win.id);
         }
       });
     });
-  });
+  }
 
+  // 点外部关闭
   on(document, "pointerdown", (e) => {
     const t = e.target as Element;
     if (t.closest("[data-more-panel], [data-more], [data-search-panel], [data-search]")) return;
-    api.wins.forEach((w) => (w as MenuHost)._closeMenus?.());
+    for (const w of $$(".window")) (w as MenuHost)._closeMenus?.();
+  });
+
+  // Esc 关闭菜单/搜索面板
+  on(document, "keydown", (e) => {
+    if ((e as KeyboardEvent).key !== "Escape") return;
+    for (const w of $$(".window")) (w as MenuHost)._closeMenus?.();
   });
 }

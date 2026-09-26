@@ -1,0 +1,435 @@
+/**
+ * 窗口交互层：只 dispatch 状态，不直接改 DOM 样式。
+ * 手势快速路径例外：拖动/缩放中直写 DOM，结束 commit 成状态（百分比几何）。
+ */
+import { $, $$, on, durMs } from "./dom";
+import { Store, State, patchWin, focusedWin, type Geom } from "./state";
+import { patchWinEl, windowShellHTML } from "./render";
+import {
+  align,
+  captureShell,
+  playShell,
+  minimizeTo,
+  openFrom,
+  closeIn,
+} from "./anim";
+import { APPS, winIdOf, type AppDef } from "./apps";
+import { bindScrollIndicator } from "./host";
+
+export type WinApi = {
+  el: (id: string) => HTMLElement | null;
+  focusedId: () => string | null;
+  focus: (id: string) => void;
+  blurAll: () => void;
+  isDragging: () => boolean;
+  toggleMaximize: (id: string) => void;
+  minimize: (id: string) => void;
+  close: (id: string) => void;
+  open: (id: string) => void;
+  alignAll: () => void;
+};
+
+export function initialState(apps: AppDef[]): State {
+  const wins: State["wins"] = {};
+  for (const a of apps) {
+    wins[winIdOf(a.id)] = {
+      id: winIdOf(a.id),
+      app: a.id,
+      title: a.title,
+      open: a.open,
+      focused: !!a.focused && a.open,
+      mode: "floating",
+      geom: a.geom,
+      z: a.z,
+    };
+  }
+  return {
+    wins,
+    settings: {
+      theme: "light",
+      accent: "#3b82f6",
+      animGlobal: 360,
+      animWindow: 360,
+      animPane: 200,
+      animMenu: 200,
+      scrollMode: "percent",
+      net: "wifi",
+    },
+  };
+}
+
+export function initWindows(store: Store): WinApi {
+  const viewport = $<HTMLElement>("#viewport")!;
+  let dragWin: HTMLElement | null = null;
+  let dragMode: "move" | "resize" = "move";
+  let moved = false;
+  let sx = 0;
+  let sy = 0;
+  let ox = 0;
+  let oy = 0;
+  let ow = 0;
+  let oh = 0;
+
+  const el = (id: string) => $<HTMLElement>(`#${id}`);
+  const focusedId = () => focusedWin(store.get())?.id ?? null;
+
+  /* ── 结构渲染：注册表 → 窗口 DOM（低频，一次性） ── */
+  viewport.insertAdjacentHTML(
+    "beforeend",
+    APPS.map((a) =>
+      windowShellHTML({
+        id: winIdOf(a.id),
+        app: a.id,
+        title: a.title,
+        geom: a.geom,
+        z: a.z,
+        open: a.open,
+        focused: !!a.focused,
+        nav: a.nav,
+        content: a.content,
+        searchPlaceholder: a.searchPlaceholder,
+        searchOpen: a.searchOpen,
+        editItems: a.editItems,
+      }),
+    ).join(""),
+  );
+
+  /* ── 属性补丁：状态 → DOM ── */
+  store.subscribe((s) => {
+    if (dragWin) return; // 手势快速路径期间不覆盖几何
+    for (const ws of Object.values(s.wins)) {
+      const w = el(ws.id);
+      if (w) patchWinEl(w, ws);
+    }
+  });
+
+  const appIcon = (win: HTMLElement): HTMLElement | null =>
+    $<HTMLElement>(`.app-item[data-app-id="${win.dataset.app}"]`);
+
+  function focus(id: string): void {
+    store.update((s) => {
+      let maxZ = 20;
+      for (const w of Object.values(s.wins)) maxZ = Math.max(maxZ, w.z);
+      for (const w of Object.values(s.wins)) {
+        patchWin(s, w.id, { focused: w.id === id, z: w.id === id ? maxZ + 1 : w.z });
+      }
+    });
+    // 视图瞬态：他窗缩放钮收起
+    for (const w of $$(".window")) {
+      if (w.id === id) continue;
+      $$("[data-resize].is-on", w).forEach((b) => b.classList.remove("is-on"));
+    }
+    const win = el(id);
+    if (win) align(win);
+  }
+
+  function blurAll(): void {
+    store.update((s) => {
+      for (const w of Object.values(s.wins)) patchWin(s, w.id, { focused: false });
+    });
+    $$("[data-resize].is-on").forEach((b) => b.classList.remove("is-on"));
+  }
+
+  /** 打开：动画先跑，结束 commit（生命周期 = 手势类） */
+  function open(id: string): void {
+    const win = el(id);
+    if (!win || win.dataset.anim === "1") return;
+    const ws = store.get().wins[id];
+    if (ws?.open && !win.hidden) {
+      focus(id);
+      return;
+    }
+    win.dataset.anim = "1";
+    win.hidden = false;
+    focus(id);
+    openFrom(win, appIcon(win), () => {
+      win.dataset.anim = "0";
+      store.update((s) => patchWin(s, id, { open: true }));
+      align(win);
+    });
+  }
+
+  function minimize(id: string): void {
+    const win = el(id);
+    if (!win || win.dataset.anim === "1") return;
+    win.dataset.anim = "1";
+    minimizeTo(win, appIcon(win), () => {
+      win.dataset.anim = "0";
+      store.update((s) => {
+        patchWin(s, id, { open: false, focused: false });
+        for (const w of Object.values(s.wins)) {
+          if (w.id !== id) patchWin(s, w.id, { focused: false });
+        }
+      });
+    });
+  }
+
+  function close(id: string): void {
+    const win = el(id);
+    if (!win || win.dataset.anim === "1") return;
+    win.dataset.anim = "1";
+    closeIn(win, () => {
+      win.dataset.anim = "0";
+      store.update((s) => {
+        patchWin(s, id, { open: false, focused: false });
+        for (const w of Object.values(s.wins)) {
+          if (w.id !== id) patchWin(s, w.id, { focused: false });
+        }
+      });
+    });
+  }
+
+  /** 最大化/还原：capture → dispatch（patch 落几何/模式）→ 补间（动画只读） */
+  function toggleMaximize(id: string): void {
+    const win = el(id);
+    if (!win || win.dataset.flipping === "1") return;
+    focus(id);
+    const first = captureShell(win);
+    win.dataset.flipping = "1";
+    store.update((s) => {
+      const w = s.wins[id];
+      patchWin(s, id, { mode: w.mode === "maximized" ? "floating" : "maximized" });
+    });
+    playShell(win, first);
+  }
+
+  /* ── 事件绑定 ── */
+
+  for (const a of APPS) {
+    const win = el(winIdOf(a.id));
+    if (!win) continue;
+
+    // 点内容区/真实胶囊 → 焦点
+    on(win, "pointerdown", (e) => {
+      const t = e.target as Element;
+      if (t.closest(".content, .top-bar, .nav-bar, .recover")) focus(win.id);
+    }, true);
+
+    // 拖动钮：>3px 算拖，否则算点；双击最大化
+    const zone = $<HTMLElement>(".top-bar [data-drag-zone]", win);
+    if (zone) {
+      on(zone, "pointerdown", (e) => {
+        const t = e.target as Element;
+        if (t.closest("[data-win-min], [data-win-cls]")) return;
+        startMove(win, e as PointerEvent);
+      });
+      on(zone, "dblclick", (e) => {
+        const t = e.target as Element;
+        if (t.closest("[data-win-min], [data-win-cls]")) return;
+        toggleMaximize(win.id);
+      });
+    }
+
+    $$("[data-topbar] [data-win-min]", win).forEach((b) =>
+      on(b, "click", (e) => {
+        e.stopPropagation();
+        if (!moved) minimize(win.id);
+      }),
+    );
+    $$("[data-topbar] [data-win-cls]", win).forEach((b) =>
+      on(b, "click", (e) => {
+        e.stopPropagation();
+        if (!moved) close(win.id);
+      }),
+    );
+
+    // 内容右下 hover → 缩放钮；拖动缩放窗口
+    const cre = $<HTMLElement>("[data-resize]", win);
+    const content = $<HTMLElement>(".content", win);
+    if (cre && content) {
+      let creOn = false;
+      on(content, "pointermove", (e) => {
+        const ev = e as PointerEvent;
+        const r = content.getBoundingClientRect();
+        const ok =
+          win.classList.contains("is-focused") &&
+          ev.clientX > r.right - 120 &&
+          ev.clientY > r.bottom - 120;
+        if (ok === creOn) return;
+        creOn = ok;
+        cre.classList.toggle("is-on", ok);
+      });
+      on(content, "pointerleave", () => {
+        creOn = false;
+        cre.classList.remove("is-on");
+      });
+      on(cre, "pointerdown", (e) => {
+        if (!win.classList.contains("is-focused")) return;
+        if (win.getAttribute("data-mode") === "maximized") return;
+        dragWin = win;
+        dragMode = "resize";
+        moved = false;
+        const wr = win.getBoundingClientRect();
+        const vr = viewport.getBoundingClientRect();
+        ox = wr.left - vr.left;
+        oy = wr.top - vr.top;
+        ow = wr.width;
+        oh = wr.height;
+        sx = (e as PointerEvent).clientX;
+        sy = (e as PointerEvent).clientY;
+        win.style.transition = "none";
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    }
+
+    // 导航切页：先出后入的上下滚动，不重叠
+    bindNavPanes(win);
+    bindScrollIndicator(win);
+    a.bind?.(win, store);
+    align(win);
+  }
+
+  function startMove(win: HTMLElement, e: PointerEvent): void {
+    // focus 先于 dragWin 赋值：补丁订阅在手势期间会跳过
+    focus(win.id);
+    // 最大化窗口几何由 CSS 决定：拖动手势不得改写/提交几何
+    if (win.getAttribute("data-mode") === "maximized") {
+      e.preventDefault();
+      return;
+    }
+    dragWin = win;
+    dragMode = "move";
+    moved = false;
+    const wr = win.getBoundingClientRect();
+    const vr = viewport.getBoundingClientRect();
+    ox = wr.left - vr.left;
+    oy = wr.top - vr.top;
+    ow = wr.width;
+    oh = wr.height;
+    sx = e.clientX;
+    sy = e.clientY;
+    win.style.transition = "none";
+    win.style.left = `${ox}px`;
+    win.style.top = `${oy}px`;
+    win.style.width = `${ow}px`;
+    win.style.height = `${oh}px`;
+    e.preventDefault();
+  }
+
+  on(window, "pointermove", (e) => {
+    if (!dragWin) return;
+    const ev = e as PointerEvent;
+    if (Math.abs(ev.clientX - sx) > 3 || Math.abs(ev.clientY - sy) > 3) moved = true;
+    if (dragMode === "resize") {
+      dragWin.style.width = `${Math.max(240, ow + (ev.clientX - sx))}px`;
+      dragWin.style.height = `${Math.max(180, oh + (ev.clientY - sy))}px`;
+    } else {
+      dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
+      dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
+    }
+    align(dragWin);
+  });
+
+  // 手势结束 → commit 成状态（百分比几何）
+  on(window, "pointerup", () => {
+    if (!dragWin) return;
+    const win = dragWin;
+    dragWin = null;
+    win.style.transition = "";
+    const ws = store.get().wins[win.id];
+    if (ws && ws.mode === "floating") {
+      const vr = viewport.getBoundingClientRect();
+      const wr = win.getBoundingClientRect();
+      const geom: Geom = {
+        left: ((wr.left - vr.left) / vr.width) * 100,
+        top: ((wr.top - vr.top) / vr.height) * 100,
+        width: (wr.width / vr.width) * 100,
+        height: (wr.height / vr.height) * 100,
+      };
+      store.update((s) => patchWin(s, win.id, { geom }));
+    }
+    align(win);
+  });
+
+  // 点视口空白 → 全部失焦（系统栏/视口钮不夺焦）
+  on(viewport, "pointerdown", (e) => {
+    const t = e.target as Element;
+    if (
+      t.closest(".window") ||
+      t.closest(".sys-status") ||
+      t.closest(".sys-appbar") ||
+      t.closest(".vp-resize")
+    ) {
+      return;
+    }
+    blurAll();
+  }, true);
+
+  // Esc：退出最大化（菜单开着时交给 menus.ts）
+  on(document, "keydown", (e) => {
+    if ((e as KeyboardEvent).key !== "Escape") return;
+    if ($("[data-more-panel]:not([hidden]), [data-search-panel]:not([hidden])")) return;
+    const id = focusedId();
+    const ws = id ? store.get().wins[id] : null;
+    if (ws?.mode === "maximized") toggleMaximize(id!);
+  });
+
+  /** 尺寸变化必须重对齐：--content-cx/cy 是像素值，而窗口几何是百分比 */
+  const reAlign = () => {
+    if (dragWin || $$(".window[data-flipping='1']").length) return;
+    for (const w of $$(".window")) align(w);
+  };
+  new ResizeObserver(reAlign).observe(viewport);
+  window.addEventListener("resize", reAlign);
+  window.addEventListener("load", reAlign);
+
+  const firstId = focusedWin(store.get())?.id;
+  if (firstId) focus(firstId);
+
+  return {
+    el,
+    focusedId,
+    focus,
+    blurAll,
+    isDragging: () => !!dragWin,
+    toggleMaximize,
+    minimize,
+    close,
+    open,
+    alignAll: reAlign,
+  };
+}
+
+/** 导航切页：先出后入的上下滚动动画，不重叠 */
+function bindNavPanes(win: HTMLElement): void {
+  const btns = $$(".nav-btn", win);
+  const panes = $$(".set-pane", win);
+  if (!btns.length || !panes.length) return;
+  let cur = btns.find((b) => b.classList.contains("active"))?.dataset.section || "";
+  let busy = false;
+
+  btns.forEach((btn) => {
+    on(btn, "click", () => {
+      if (busy) return;
+      const name = btn.dataset.section;
+      if (!name || name === cur) return;
+      const oldP = panes.find((p) => p.dataset.pane === cur);
+      const newP = panes.find((p) => p.dataset.pane === name);
+      if (!newP) return;
+      const order = btns.map((b) => b.dataset.section);
+      const fwd = order.indexOf(name) > order.indexOf(cur);
+      const d = durMs("--anim-pane");
+      busy = true;
+      btns.forEach((b) => b.classList.toggle("active", b === btn));
+      if (oldP) {
+        oldP.classList.add(fwd ? "leave-up" : "leave-down");
+        window.setTimeout(() => {
+          oldP.hidden = true;
+          oldP.classList.remove("leave-up", "leave-down");
+          newP.hidden = false;
+          newP.classList.add(fwd ? "enter-up" : "enter-down");
+          window.setTimeout(() => {
+            newP.classList.remove("enter-up", "enter-down");
+            cur = name;
+            busy = false;
+          }, d);
+        }, d);
+      } else {
+        newP.hidden = false;
+        cur = name;
+        busy = false;
+      }
+    });
+  });
+}

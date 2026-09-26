@@ -1001,6 +1001,7 @@ svg {
 </style>
 </head>
 <body>
+  <!-- 宿主工具（演示脚手架，不属于系统 UI） -->
   <div class="host-tools">
     <div class="seg" role="group" aria-label="视口">
       <button type="button" data-size="compact">紧凑</button>
@@ -1017,458 +1018,10 @@ svg {
     </div>
   </div>
 
+  <!-- 屏幕（视口）：系统层 / 窗口组由 src/render.ts 构造器装配 -->
   <div class="viewport-wrap">
     <div class="viewport" id="viewport" data-size="large" data-screen="pointer">
       <div class="wallpaper"></div>
-
-      <!-- ── 状态栏 = 一种导航栏：胶囊 + 右侧内容区（无顶栏） ── -->
-      <div class="sys-status" data-net="wifi">
-        <div class="capsule nav-capsule status-capsule">
-          <button type="button" class="nav-btn" data-battery aria-label="电量">
-            <span class="bat">
-              <svg viewBox="0 0 36 36" aria-hidden="true">
-                <circle class="bat-track" cx="18" cy="18" r="14" />
-                <circle class="bat-arc" cx="18" cy="18" r="14" />
-              </svg>
-              <span class="bat-pct">72</span>
-            </span>
-            <span class="nav-text">电量</span>
-          </button>
-          <button type="button" class="nav-btn" data-time-btn aria-label="时间">
-            <span class="st-time" data-time>12:00</span>
-            <span class="nav-text">时间</span>
-          </button>
-          <button type="button" class="nav-btn" data-network aria-label="网络">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10c4-4 12-4 16 0"/><path d="M7 13c2.5-2.5 7.5-2.5 10 0"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/></svg>
-            <span class="net-5g">5G<i></i><i></i><i></i><i></i></span>
-            <span class="nav-text">网络</span>
-          </button>
-          <button type="button" class="nav-btn" data-status-toggle aria-label="状态与快捷操作" aria-expanded="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>
-            <span class="nav-text">更多</span>
-          </button>
-        </div>
-        <!-- 临时窗口：无顶栏；点外关闭；可滚可缩 -->
-        <div class="content status-content" data-temp data-temp-anchor=".status-capsule, [data-status-toggle]" hidden>
-          <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-          <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
-          <div class="content-scroll">
-            <header class="set-head"><h1>设备状态</h1><p>状态与快捷操作</p></header>
-            <div class="set-group">
-              <div class="set-row">
-                <div><div class="row-t">电量</div><div class="row-s">72% · 预计 5 小时</div></div>
-                <div class="st-big">72%</div>
-              </div>
-              <div class="set-row">
-                <div><div class="row-t">时间</div><div class="row-s" data-time-full>今日</div></div>
-                <div class="st-big" data-time>12:00</div>
-              </div>
-              <div class="set-row">
-                <div><div class="row-t">网络</div><div class="row-s">当前连接</div></div>
-                <div class="seg small">
-                  <button type="button" data-net-mode="wifi" data-quick="wifi" aria-pressed="true">Wi-Fi</button>
-                  <button type="button" data-net-mode="cell" data-quick="cell">5G</button>
-                </div>
-              </div>
-            </div>
-            <div class="set-group">
-              <div class="set-group-title">快捷操作</div>
-              <div class="set-row">
-                <div class="row-t">主题</div>
-                <div class="seg small">
-                  <button type="button" data-theme="light" data-quick="theme-light" aria-pressed="true">浅</button>
-                  <button type="button" data-theme="dark" data-quick="theme-dark">深</button>
-                </div>
-              </div>
-              <div class="set-row">
-                <div><div class="row-t">勿扰</div><div class="row-s">静音通知</div></div>
-                <button type="button" class="quick-toggle" data-quick="dnd"></button>
-              </div>
-              <div class="set-row">
-                <div><div class="row-t">蓝牙</div><div class="row-s">附近设备</div></div>
-                <button type="button" class="quick-toggle" data-quick="bt"></button>
-              </div>
-              <div class="set-row col">
-                <div class="row-t">音量</div>
-                <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="62" /><span class="slider-val">62%</span></div>
-              </div>
-              <div class="set-row col">
-                <div class="row-t">亮度</div>
-                <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="78" /><span class="slider-val">78%</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════ 设置 ══════════ -->
-      <div class="window is-focused" id="winSettings" data-app="settings" data-title="设置" data-mode="floating" style="left:14%;top:10%;width:58%;height:72%;z-index:12">
-        <div class="top-bar" data-topbar>
-          <div class="capsule top-capsule">
-            <button type="button" class="icon-btn" aria-label="后退"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg></button>
-            <button type="button" class="icon-btn" aria-label="前进"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6"/></svg></button>
-            <span class="drag-pad" aria-hidden="true"></span>
-            <div class="drag-zone" data-drag-zone title="拖动 · 双击最大化">
-              <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="收起"><i class="led led-min"></i></button>
-              <button type="button" class="icon-btn grip-btn" data-grip aria-label="拖动"><span class="grip"><i></i><i></i></span></button>
-              <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="关闭"><i class="led led-close"></i></button>
-            </div>
-            <span class="drag-pad" aria-hidden="true"></span>
-            <button type="button" class="icon-btn" data-search aria-label="搜索" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M16 16l3.5 3.5"/></svg></button>
-            <button type="button" class="icon-btn" data-more aria-label="更多" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
-          </div>
-          <div class="search-panel" data-search-panel hidden>
-            <input class="search-input" placeholder="在设置中搜索…" />
-          </div>
-          <div class="more-panel menu-panel" data-more-panel hidden>
-            <button type="button" class="mp-info" data-act="about"><strong>设置</strong><span>anios 1.0</span></button>
-            <button type="button" class="mp-expand-btn" data-expand="edit">编辑 <span>˅</span></button>
-            <div class="mp-expand" data-expand-pane="edit">
-              <button type="button">撤销</button><button type="button">重做</button>
-              <button type="button">剪切</button><button type="button">拷贝</button>
-            </div>
-            <button type="button" class="mp-expand-btn" data-expand="win">窗口 <span>˅</span></button>
-            <div class="mp-expand" data-expand-pane="win">
-              <button type="button" data-act="min">最小化</button>
-              <button type="button" data-act="max">缩放</button>
-            </div>
-            <hr />
-            <button type="button" class="danger" data-act="quit">退出</button>
-          </div>
-        </div>
-
-        <div class="nav-bar" data-nav>
-          <div class="capsule nav-capsule">
-            <button type="button" class="nav-btn active" data-section="home">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8z"/></svg>
-              <span class="nav-text">主页</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="network">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.8 2.5 13.2 0 16"/></svg>
-              <span class="nav-text">网络</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="sound">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V7l10-2v11"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="16" r="2"/></svg>
-              <span class="nav-text">声音</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="display">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/></svg>
-              <span class="nav-text">显示</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="content">
-          <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-          <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
-          <div class="content-scroll">
-            <section class="set-pane" data-pane="home">
-              <header class="set-head"><h1>主页</h1><p>系统与个性化</p></header>
-              <div class="set-group">
-                <div class="set-row">
-                  <div><div class="row-t">主题</div><div class="row-s">浅色 / 深色</div></div>
-                  <div class="seg small">
-                    <button type="button" data-theme="light" aria-pressed="true">浅</button>
-                    <button type="button" data-theme="dark">深</button>
-                  </div>
-                </div>
-                <div class="set-row">
-                  <div><div class="row-t">强调色</div><div class="row-s">控件与高亮</div></div>
-                  <div class="dots">
-                    <button type="button" class="cd active" style="--c:#3b82f6"></button>
-                    <button type="button" class="cd" style="--c:#7c5cff"></button>
-                    <button type="button" class="cd" style="--c:#10b981"></button>
-                    <button type="button" class="cd" style="--c:#f59e0b"></button>
-                  </div>
-                </div>
-              </div>
-              <div class="set-group">
-                <div class="set-group-title">动画</div>
-                <div class="set-row col">
-                  <div class="row-t">全局 / 窗口 / 切换 / 菜单</div>
-                  <div class="slider-row"><input class="slider" id="animGlobal" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animGlobalVal">360ms</span></div>
-                  <div class="slider-row"><input class="slider" id="animWindow" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animWindowVal">360ms</span></div>
-                  <div class="slider-row"><input class="slider" id="animPane" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animPaneVal">200ms</span></div>
-                  <div class="slider-row"><input class="slider" id="animMenu" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animMenuVal">200ms</span></div>
-                </div>
-                <div class="set-row">
-                  <div class="row-t">滚动指示</div>
-                  <div class="seg small">
-                    <button type="button" data-scroll-mode="percent" aria-pressed="true">百分比</button>
-                    <button type="button" data-scroll-mode="position">位置</button>
-                  </div>
-                </div>
-                <div class="set-row">
-                  <div class="row-t">网络类型</div>
-                  <div class="seg small">
-                    <button type="button" data-net-mode="wifi" aria-pressed="true">Wi-Fi</button>
-                    <button type="button" data-net-mode="cell">5G</button>
-                  </div>
-                </div>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="network" hidden>
-              <header class="set-head"><h1>网络</h1></header>
-              <div class="set-group">
-                <div class="set-row"><div><div class="row-t">Studio-5G</div><div class="row-s">已连接</div></div></div>
-                <div class="set-row"><div class="row-t">网络类型</div>
-                  <div class="seg small">
-                    <button type="button" data-net-mode="wifi" aria-pressed="true">Wi-Fi</button>
-                    <button type="button" data-net-mode="cell">5G</button>
-                  </div>
-                </div>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="sound" hidden>
-              <header class="set-head"><h1>声音</h1></header>
-              <div class="set-group">
-                <div class="set-row col"><div class="row-t">输出音量</div>
-                  <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="62" /><span class="slider-val">62%</span></div>
-                </div>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="display" hidden>
-              <header class="set-head"><h1>显示</h1></header>
-              <div class="set-group">
-                <div class="set-row col"><div class="row-t">亮度</div>
-                  <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="78" /><span class="slider-val">78%</span></div>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <div class="recover" data-recover hidden data-orient="h">
-          <div class="drag-zone" data-drag-zone data-recover-zone>
-            <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="收起"><i class="led led-min"></i></button>
-            <button type="button" class="icon-btn grip-btn" data-grip aria-label="拖动"><span class="grip"><i></i><i></i></span></button>
-            <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="关闭"><i class="led led-close"></i></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════ 电话 ══════════ -->
-      <div class="window" id="winPhone" data-app="phone" data-title="电话" data-mode="floating" style="left:48%;top:18%;width:40%;height:58%;z-index:11">
-        <div class="top-bar" data-topbar>
-          <div class="capsule top-capsule">
-            <button type="button" class="icon-btn" aria-label="后退"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg></button>
-            <button type="button" class="icon-btn" aria-label="前进"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6"/></svg></button>
-            <span class="drag-pad" aria-hidden="true"></span>
-            <div class="drag-zone" data-drag-zone title="拖动 · 双击最大化">
-              <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="收起"><i class="led led-min"></i></button>
-              <button type="button" class="icon-btn grip-btn" data-grip aria-label="拖动"><span class="grip"><i></i><i></i></span></button>
-              <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="关闭"><i class="led led-close"></i></button>
-            </div>
-            <span class="drag-pad" aria-hidden="true"></span>
-            <button type="button" class="icon-btn" data-search aria-label="搜索" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M16 16l3.5 3.5"/></svg></button>
-            <button type="button" class="icon-btn" data-more aria-label="更多" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
-          </div>
-          <div class="search-panel" data-search-panel hidden>
-            <input class="search-input" placeholder="搜索通话记录…" />
-          </div>
-          <div class="more-panel menu-panel" data-more-panel hidden>
-            <button type="button" class="mp-info" data-act="about"><strong>电话</strong><span>anios 1.0</span></button>
-            <button type="button" class="mp-expand-btn" data-expand="edit">编辑 <span>˅</span></button>
-            <div class="mp-expand" data-expand-pane="edit">
-              <button type="button">全选</button><button type="button">清除最近</button>
-            </div>
-            <button type="button" class="mp-expand-btn" data-expand="win">窗口 <span>˅</span></button>
-            <div class="mp-expand" data-expand-pane="win">
-              <button type="button" data-act="min">最小化</button>
-              <button type="button" data-act="max">缩放</button>
-            </div>
-            <hr />
-            <button type="button" class="danger" data-act="quit">退出</button>
-          </div>
-        </div>
-
-        <div class="nav-bar" data-nav>
-          <div class="capsule nav-capsule">
-            <button type="button" class="nav-btn active" data-section="dial">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
-              <span class="nav-text">拨号</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="recent">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
-              <span class="nav-text">最近</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="contacts">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="9.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M9 14c1 1.2 2 1.8 3 1.8s2-.6 3-1.8"/></svg>
-              <span class="nav-text">联系人</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="fav">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l2.2 4.5 5 .7-3.6 3.5.9 5L12 15.4 7.5 17.7l.9-5L4.8 9.2l5-.7z"/></svg>
-              <span class="nav-text">收藏</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="content">
-          <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-          <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
-          <div class="content-scroll">
-            <section class="set-pane" data-pane="dial">
-              <header class="set-head"><h1>拨号</h1></header>
-              <div class="dial-display" id="dialDisplay">输入号码</div>
-              <div class="dial-pad" id="dialPad">
-                <button type="button" class="dial-key"><b>1</b></button>
-                <button type="button" class="dial-key"><b>2</b></button>
-                <button type="button" class="dial-key"><b>3</b></button>
-                <button type="button" class="dial-key"><b>4</b></button>
-                <button type="button" class="dial-key"><b>5</b></button>
-                <button type="button" class="dial-key"><b>6</b></button>
-                <button type="button" class="dial-key"><b>7</b></button>
-                <button type="button" class="dial-key"><b>8</b></button>
-                <button type="button" class="dial-key"><b>9</b></button>
-                <button type="button" class="dial-key"><b>*</b></button>
-                <button type="button" class="dial-key"><b>0</b></button>
-                <button type="button" class="dial-key"><b>#</b></button>
-              </div>
-              <div class="dial-actions">
-                <button type="button" class="btn-quiet">+</button>
-                <button type="button" class="btn-call">呼叫</button>
-                <button type="button" class="btn-quiet" id="dialBack" aria-label="退格">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/></svg>
-                </button>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="recent" hidden>
-              <header class="set-head"><h1>最近</h1></header>
-              <div class="set-group">
-                <div class="set-row"><div><div class="row-t">王小明</div><div class="row-s">呼出 · 12 分钟前</div></div></div>
-                <div class="set-row"><div><div class="row-t">李工</div><div class="row-s">未接 · 1 小时前</div></div></div>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="contacts" hidden>
-              <header class="set-head"><h1>联系人</h1></header>
-              <div class="set-group">
-                <div class="set-row"><div><div class="row-t">王小明</div><div class="row-s">138 0013 8000</div></div></div>
-                <div class="set-row"><div><div class="row-t">妈妈</div><div class="row-s">家庭</div></div></div>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="fav" hidden>
-              <header class="set-head"><h1>收藏</h1></header>
-              <div class="set-group">
-                <div class="set-row"><div><div class="row-t">妈妈</div><div class="row-s">家庭</div></div></div>
-              </div>
-            </section>
-          </div>
-        </div>
-
-        <div class="recover" data-recover hidden data-orient="h">
-          <div class="drag-zone" data-drag-zone data-recover-zone>
-            <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="收起"><i class="led led-min"></i></button>
-            <button type="button" class="icon-btn grip-btn" data-grip aria-label="拖动"><span class="grip"><i></i><i></i></span></button>
-            <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="关闭"><i class="led led-close"></i></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════ 启动台（全局搜索）══════════ -->
-      <div class="window" id="winSearch" data-app="launcher" data-title="启动台" data-mode="floating" hidden style="left:22%;top:16%;width:56%;height:58%;z-index:22">
-        <div class="top-bar" data-topbar>
-          <div class="capsule top-capsule">
-            <button type="button" class="icon-btn" aria-label="后退"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 6l-6 6 6 6"/></svg></button>
-            <button type="button" class="icon-btn" aria-label="前进"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6l6 6-6 6"/></svg></button>
-            <span class="drag-pad" aria-hidden="true"></span>
-            <div class="drag-zone" data-drag-zone title="拖动 · 双击最大化">
-              <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="收起"><i class="led led-min"></i></button>
-              <button type="button" class="icon-btn grip-btn" data-grip aria-label="拖动"><span class="grip"><i></i><i></i></span></button>
-              <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="关闭"><i class="led led-close"></i></button>
-            </div>
-            <span class="drag-pad" aria-hidden="true"></span>
-            <button type="button" class="icon-btn" data-search aria-label="搜索" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M16 16l3.5 3.5"/></svg></button>
-            <button type="button" class="icon-btn" data-more aria-label="更多" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
-          </div>
-          <div class="search-panel" data-search-panel>
-            <input class="search-input" placeholder="搜索应用、文件、链接、操作…" />
-          </div>
-          <div class="more-panel menu-panel" data-more-panel hidden>
-            <button type="button" class="mp-info" data-act="about"><strong>启动台</strong><span>anios 1.0</span></button>
-            <button type="button" class="mp-expand-btn" data-expand="win">窗口 <span>˅</span></button>
-            <div class="mp-expand" data-expand-pane="win">
-              <button type="button" data-act="min">最小化</button>
-              <button type="button" data-act="max">缩放</button>
-            </div>
-            <hr />
-            <button type="button" class="danger" data-act="quit">退出</button>
-          </div>
-        </div>
-        <div class="nav-bar" data-nav>
-          <div class="capsule nav-capsule">
-            <button type="button" class="nav-btn active" data-section="apps">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 9-9 9-9-9z"/></svg>
-              <span class="nav-text">应用</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="files">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/></svg>
-              <span class="nav-text">文件</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="links">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8a3 3 0 1 0 0 6c2 0 2.5-1.5 4-3s2-3 4-3a3 3 0 1 1 0 6c-2 0-2.5-1.5-4-3s-2-3-4-3z"/></svg>
-              <span class="nav-text">链接</span>
-            </button>
-            <button type="button" class="nav-btn" data-section="acts">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L6 14h5l-1 7 8-12h-5l0-6z"/></svg>
-              <span class="nav-text">操作</span>
-            </button>
-          </div>
-        </div>
-        <div class="content">
-          <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-          <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
-          <div class="content-scroll">
-            <section class="set-pane" data-pane="apps">
-              <header class="set-head"><h1>启动台</h1><p>应用 · 文件 · 链接 · 操作</p></header>
-              <div class="set-group">
-                <div class="set-row"><div><div class="row-t">设置</div><div class="row-s">系统与个性化</div></div></div>
-                <div class="set-row"><div><div class="row-t">电话</div><div class="row-s">拨号与联系人</div></div></div>
-              </div>
-            </section>
-            <section class="set-pane" data-pane="files" hidden>
-              <header class="set-head"><h1>文件</h1></header>
-              <div class="set-group"><div class="set-row"><div class="row-t">最近文件</div></div></div>
-            </section>
-            <section class="set-pane" data-pane="links" hidden>
-              <header class="set-head"><h1>链接</h1></header>
-              <div class="set-group"><div class="set-row"><div class="row-t">最近链接</div></div></div>
-            </section>
-            <section class="set-pane" data-pane="acts" hidden>
-              <header class="set-head"><h1>操作</h1></header>
-              <div class="set-group"><div class="set-row"><div class="row-t">快捷操作</div></div></div>
-            </section>
-          </div>
-        </div>
-        <div class="recover" data-recover hidden data-orient="h">
-          <div class="drag-zone" data-drag-zone data-recover-zone>
-            <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="收起"><i class="led led-min"></i></button>
-            <button type="button" class="icon-btn grip-btn" data-grip aria-label="拖动"><span class="grip"><i></i><i></i></span></button>
-            <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="关闭"><i class="led led-close"></i></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── App 栏：每个钮都是 app（含 launcher）；无搜索 ── -->
-      <div class="sys-appbar">
-        <div class="capsule nav-capsule app-capsule">
-          <!-- 自上而下：已打开 → 快速启动 → 启动台（最下） -->
-          <div class="app-stack">
-            <button type="button" class="nav-btn app-item open active" data-app-id="settings" aria-label="设置">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M6 6l1.5 1.5M16.5 16.5L18 18M18 6l-1.5 1.5M7.5 16.5L6 18"/></svg>
-              <span class="nav-text">设置</span>
-            </button>
-            <button type="button" class="nav-btn app-item open" data-app-id="phone" aria-label="电话">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h4l1 5-2.5 1.5a12 12 0 0 0 5 5L16 13l5 1v4a2 2 0 0 1-2 2A15 15 0 0 1 5 6a2 2 0 0 1 2-2z"/></svg>
-              <span class="nav-text">电话</span>
-            </button>
-            <button type="button" class="nav-btn app-item" data-app-id="launcher" aria-label="启动台">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/></svg>
-              <span class="nav-text">启动台</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <button type="button" class="vp-resize" id="vpResize" aria-label="调整视口"></button>
     </div>
   </div>
@@ -1476,6 +1029,247 @@ svg {
   <script>
 "use strict";
 (() => {
+  // src/dom.ts
+  var $ = (s, r = document) => r.querySelector(s);
+  var $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  function on(el, type, fn, opts) {
+    el?.addEventListener(type, fn, opts);
+  }
+  var clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  function durMs(name) {
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    return Number.isFinite(v) && v > 0 ? v : 360;
+  }
+
+  // src/state.ts
+  function createStore(init4) {
+    let state = init4;
+    const subs = /* @__PURE__ */ new Set();
+    return {
+      get: () => state,
+      update(fn) {
+        state = {
+          ...state,
+          wins: { ...state.wins },
+          settings: { ...state.settings }
+        };
+        fn(state);
+        subs.forEach((f) => f(state));
+      },
+      subscribe(fn) {
+        subs.add(fn);
+        return () => {
+          subs.delete(fn);
+        };
+      }
+    };
+  }
+  function patchWin(s, id, patch) {
+    s.wins[id] = { ...s.wins[id], ...patch };
+  }
+  function focusedWin(s) {
+    for (const w of Object.values(s.wins)) if (w.focused) return w;
+    return null;
+  }
+  function anyMaximized(s) {
+    return Object.values(s.wins).some((w) => w.mode === "maximized");
+  }
+
+  // src/render.ts
+  var ICON = {
+    back: '<path d="M14 6l-6 6 6 6"/>',
+    fwd: '<path d="M10 6l6 6-6 6"/>',
+    search: '<circle cx="11" cy="11" r="6"/><path d="M16 16l3.5 3.5"/>',
+    plus: '<path d="M12 6v12M6 12h12"/>',
+    home: '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8z"/>',
+    net: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.8 2.5 13.2 0 16"/>',
+    sound: '<path d="M9 18V7l10-2v11"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="16" r="2"/>',
+    display: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/>',
+    dial: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+    clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    user: '<circle cx="12" cy="12" r="8"/><circle cx="9.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M9 14c1 1.2 2 1.8 3 1.8s2-.6 3-1.8"/>',
+    star: '<path d="M12 4l2.2 4.5 5 .7-3.6 3.5.9 5L12 15.4 7.5 17.7l.9-5L4.8 9.2l5-.7z"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M6 6l1.5 1.5M16.5 16.5L18 18M18 6l-1.5 1.5M7.5 16.5L6 18"/>',
+    phone: '<path d="M7 4h4l1 5-2.5 1.5a12 12 0 0 0 5 5L16 13l5 1v4a2 2 0 0 1-2 2A15 15 0 0 1 5 6a2 2 0 0 1 2-2z"/>',
+    grid: '<circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>',
+    wifi: '<path d="M4 10c4-4 12-4 16 0"/><path d="M7 13c2.5-2.5 7.5-2.5 10 0"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>',
+    dots: '<circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
+    file: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/>',
+    link: '<path d="M8 8a3 3 0 1 0 0 6c2 0 2.5-1.5 4-3s2-3 4-3a3 3 0 1 1 0 6c-2 0-2.5-1.5-4-3s-2-3-4-3z"/>',
+    bolt: '<path d="M13 3L6 14h5l-1 7 8-12h-5l0-6z"/>',
+    apps: '<path d="M12 3l9 9-9 9-9-9z"/>',
+    backspace: '<path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/>'
+  };
+  function icon(name) {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
+  }
+  function dragZoneHTML(attrs = "") {
+    return `<div class="drag-zone" data-drag-zone ${attrs} title="\u62D6\u52A8 \xB7 \u53CC\u51FB\u6700\u5927\u5316">
+    <button type="button" class="icon-btn win-ctl win-min" data-win-min aria-label="\u6536\u8D77"><i class="led led-min"></i></button>
+    <button type="button" class="icon-btn grip-btn" data-grip aria-label="\u62D6\u52A8"><span class="grip"><i></i><i></i></span></button>
+    <button type="button" class="icon-btn win-ctl win-cls" data-win-cls aria-label="\u5173\u95ED"><i class="led led-close"></i></button>
+  </div>`;
+  }
+  function navBtnsHTML(items) {
+    return items.map(
+      (it, i) => `<button type="button" class="nav-btn${i === 0 ? " active" : ""}" data-section="${it.section}">${icon(it.icon)}<span class="nav-text">${it.label}</span></button>`
+    ).join("");
+  }
+  function topCapsuleHTML() {
+    return `<div class="capsule top-capsule">
+    <button type="button" class="icon-btn" aria-label="\u540E\u9000">${icon("back")}</button>
+    <button type="button" class="icon-btn" aria-label="\u524D\u8FDB">${icon("fwd")}</button>
+    <span class="drag-pad" aria-hidden="true"></span>
+    ${dragZoneHTML()}
+    <span class="drag-pad" aria-hidden="true"></span>
+    <button type="button" class="icon-btn" data-search aria-label="\u641C\u7D22" aria-expanded="false">${icon("search")}</button>
+    <button type="button" class="icon-btn" data-more aria-label="\u66F4\u591A" aria-expanded="false">${icon("plus")}</button>
+  </div>`;
+  }
+  function menuPanelHTML(opts) {
+    const edit = opts.editItems?.length ? `<button type="button" class="mp-expand-btn" data-expand="edit">\u7F16\u8F91 <span>\u02C5</span></button>
+       <div class="mp-expand" data-expand-pane="edit">
+         ${opts.editItems.map((t) => `<button type="button">${t}</button>`).join("")}
+       </div>` : "";
+    return `<div class="more-panel menu-panel" data-more-panel hidden>
+    <button type="button" class="mp-info" data-act="about"><strong>${opts.title}</strong><span>anios 1.0</span></button>
+    ${edit}
+    <button type="button" class="mp-expand-btn" data-expand="win">\u7A97\u53E3 <span>\u02C5</span></button>
+    <div class="mp-expand" data-expand-pane="win">
+      <button type="button" data-act="min">\u6700\u5C0F\u5316</button>
+      <button type="button" data-act="max">\u7F29\u653E</button>
+    </div>
+    <hr />
+    <button type="button" class="danger" data-act="quit">\u9000\u51FA</button>
+  </div>`;
+  }
+  function windowShellHTML(o) {
+    const g = o.geom;
+    return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
+    <div class="top-bar" data-topbar>
+      ${topCapsuleHTML()}
+      <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
+        <input class="search-input" placeholder="${o.searchPlaceholder}" />
+      </div>
+      ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
+    </div>
+    <div class="nav-bar" data-nav>
+      <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
+    </div>
+    <div class="content">
+      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
+      <button type="button" class="resize-knob" data-resize aria-label="\u7F29\u653E"></button>
+      <div class="content-scroll">${o.content}</div>
+    </div>
+    <div class="recover" data-recover hidden data-orient="h">
+      ${dragZoneHTML("data-recover-zone")}
+    </div>
+  </div>`;
+  }
+  function statusBarHTML() {
+    return `<div class="sys-status" data-net="wifi">
+    <div class="capsule nav-capsule status-capsule">
+      <button type="button" class="nav-btn" data-battery aria-label="\u7535\u91CF">
+        <span class="bat">
+          <svg viewBox="0 0 36 36" aria-hidden="true">
+            <circle class="bat-track" cx="18" cy="18" r="14" />
+            <circle class="bat-arc" cx="18" cy="18" r="14" />
+          </svg>
+          <span class="bat-pct">72</span>
+        </span>
+        <span class="nav-text">\u7535\u91CF</span>
+      </button>
+      <button type="button" class="nav-btn" data-time-btn aria-label="\u65F6\u95F4">
+        <span class="st-time" data-time>12:00</span>
+        <span class="nav-text">\u65F6\u95F4</span>
+      </button>
+      <button type="button" class="nav-btn" data-network aria-label="\u7F51\u7EDC">
+        ${icon("wifi")}
+        <span class="net-5g">5G<i></i><i></i><i></i><i></i></span>
+        <span class="nav-text">\u7F51\u7EDC</span>
+      </button>
+      <button type="button" class="nav-btn" data-status-toggle aria-label="\u72B6\u6001\u4E0E\u5FEB\u6377\u64CD\u4F5C" aria-expanded="false">
+        ${icon("dots")}
+        <span class="nav-text">\u66F4\u591A</span>
+      </button>
+    </div>
+    <div class="content status-content" data-temp data-temp-anchor=".status-capsule, [data-status-toggle]" hidden>
+      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
+      <button type="button" class="resize-knob" data-resize aria-label="\u7F29\u653E"></button>
+      <div class="content-scroll">
+        <header class="set-head"><h1>\u8BBE\u5907\u72B6\u6001</h1><p>\u72B6\u6001\u4E0E\u5FEB\u6377\u64CD\u4F5C</p></header>
+        <div class="set-group">
+          <div class="set-row">
+            <div><div class="row-t">\u7535\u91CF</div><div class="row-s">72% \xB7 \u9884\u8BA1 5 \u5C0F\u65F6</div></div>
+            <div class="st-big">72%</div>
+          </div>
+          <div class="set-row">
+            <div><div class="row-t">\u65F6\u95F4</div><div class="row-s" data-time-full>\u4ECA\u65E5</div></div>
+            <div class="st-big" data-time>12:00</div>
+          </div>
+          <div class="set-row">
+            <div><div class="row-t">\u7F51\u7EDC</div><div class="row-s">\u5F53\u524D\u8FDE\u63A5</div></div>
+            <div class="seg small">
+              <button type="button" data-net-mode="wifi" data-quick="wifi" aria-pressed="true">Wi-Fi</button>
+              <button type="button" data-net-mode="cell" data-quick="cell">5G</button>
+            </div>
+          </div>
+        </div>
+        <div class="set-group">
+          <div class="set-group-title">\u5FEB\u6377\u64CD\u4F5C</div>
+          <div class="set-row">
+            <div class="row-t">\u4E3B\u9898</div>
+            <div class="seg small">
+              <button type="button" data-theme="light" data-quick="theme-light" aria-pressed="true">\u6D45</button>
+              <button type="button" data-theme="dark" data-quick="theme-dark">\u6DF1</button>
+            </div>
+          </div>
+          <div class="set-row">
+            <div><div class="row-t">\u52FF\u6270</div><div class="row-s">\u9759\u97F3\u901A\u77E5</div></div>
+            <button type="button" class="quick-toggle" data-quick="dnd"></button>
+          </div>
+          <div class="set-row">
+            <div><div class="row-t">\u84DD\u7259</div><div class="row-s">\u9644\u8FD1\u8BBE\u5907</div></div>
+            <button type="button" class="quick-toggle" data-quick="bt"></button>
+          </div>
+          <div class="set-row col">
+            <div class="row-t">\u97F3\u91CF</div>
+            <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="62" /><span class="slider-val">62%</span></div>
+          </div>
+          <div class="set-row col">
+            <div class="row-t">\u4EAE\u5EA6</div>
+            <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="78" /><span class="slider-val">78%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  }
+  function appBarHTML(items) {
+    return `<div class="sys-appbar">
+    <div class="capsule nav-capsule app-capsule">
+      <div class="app-stack">
+        ${items.map(
+      (it) => `<button type="button" class="nav-btn app-item" data-app-id="${it.appId}" aria-label="${it.label}">${icon(it.icon)}<span class="nav-text">${it.label}</span></button>`
+    ).join("")}
+      </div>
+    </div>
+  </div>`;
+  }
+  function patchWinEl(el, ws) {
+    el.classList.toggle("is-focused", ws.focused);
+    el.setAttribute("data-mode", ws.mode);
+    el.style.zIndex = String(ws.z);
+    const t = el.style.transition;
+    el.style.transition = "none";
+    el.style.left = `${ws.geom.left}%`;
+    el.style.top = `${ws.geom.top}%`;
+    el.style.width = `${ws.geom.width}%`;
+    el.style.height = `${ws.geom.height}%`;
+    void el.offsetHeight;
+    el.style.transition = t;
+  }
+
   // node_modules/gsap/gsap-core.js
   function _assertThisInitialized(self) {
     if (self === void 0) {
@@ -1982,7 +1776,7 @@ svg {
   var getUnit = function getUnit2(value, v) {
     return !_isString(value) || !(v = _unitExp.exec(value)) ? "" : v[1];
   };
-  var clamp = function clamp2(min, max, value) {
+  var clamp2 = function clamp3(min, max, value) {
     return _conditionalReturn(value, function(v) {
       return _clamp(min, max, v);
     });
@@ -4483,7 +4277,7 @@ svg {
       snap,
       normalize,
       getUnit,
-      clamp,
+      clamp: clamp2,
       splitColor,
       toArray,
       selector,
@@ -5752,16 +5546,14 @@ svg {
   var gsapWithCSS = gsap.registerPlugin(CSSPlugin) || gsap;
   var TweenMaxWithCSS = gsapWithCSS.core.Tween;
 
-  // src/dom.ts
-  var $ = (s, r = document) => r.querySelector(s);
-  var $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  function on(el, type, fn, opts) {
-    el?.addEventListener(type, fn, opts);
+  // src/anim.ts
+  var EASE = "power3.inOut";
+  function prefersReducedMotion() {
+    return typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
-  var clamp3 = (v, a, b) => Math.max(a, Math.min(b, v));
-  function durMs(name) {
-    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
-    return Number.isFinite(v) && v > 0 ? v : 360;
+  function durSec(token = "--anim-window") {
+    if (prefersReducedMotion()) return 1e-5;
+    return Math.max(0.12, durMs(token) / 1e3);
   }
   function layoutCenter(el) {
     return {
@@ -5769,754 +5561,464 @@ svg {
       cy: el.offsetTop + el.offsetHeight / 2
     };
   }
-
-  // src/window.ts
-  function initWindows() {
-    const viewport = $("#viewport");
-    const wins = $$(".window");
-    let dragWin = null;
-    let dragMode = "move";
-    let moved = false;
-    let sx = 0;
-    let sy = 0;
-    let ox = 0;
-    let oy = 0;
-    let ow = 0;
-    let oh = 0;
-    const focused = () => $(".window.is-focused");
-    function appIconOf(win) {
-      const id = win.dataset.app;
-      if (!id) return null;
-      return $(`.app-item[data-app-id="${id}"]`);
-    }
-    function align(win) {
-      const content = $(".content", win);
-      const topbar = $("[data-topbar]", win);
-      const navbar = $("[data-nav]", win);
-      if (!content || !topbar) return;
-      const { cx, cy } = layoutCenter(content);
-      topbar.style.setProperty("--content-cx", `${cx}px`);
-      navbar?.style.setProperty("--content-cy", `${cy}px`);
-    }
-    function raise(win) {
-      let maxZ = 20;
-      for (const w of wins) {
-        const z = parseInt(w.style.zIndex || "0", 10);
-        if (Number.isFinite(z) && z > maxZ) maxZ = z;
-      }
-      win.style.zIndex = String(maxZ + 1);
-    }
-    function focus(win) {
-      wins.forEach((w) => {
-        w.classList.toggle("is-focused", w === win);
-        if (w !== win) {
-          $$("[data-resize].is-on", w).forEach((el) => el.classList.remove("is-on"));
-          const rec = $("[data-recover]", w);
-          if (rec) {
-            rec.hidden = true;
-            rec.classList.remove("is-on");
-          }
-        }
-      });
-      raise(win);
-      win.dataset.open = "1";
-      align(win);
-    }
-    function blurAll() {
-      wins.forEach((w) => {
-        w.classList.remove("is-focused");
-        $$("[data-resize].is-on", w).forEach((el) => el.classList.remove("is-on"));
-        const rec = $("[data-recover]", w);
-        if (rec) {
-          rec.hidden = true;
-          rec.classList.remove("is-on");
-        }
-      });
-    }
-    function flipNow(el, f, l, xp, yp, d, win) {
-      if (!el || !f || !l) return;
-      const dx = f.left - l.left;
-      const dy = f.top - l.top;
-      gsapWithCSS.set(el, { x: dx, y: dy, xPercent: xp, yPercent: yp, force3D: true });
-      gsapWithCSS.to(el, {
-        x: 0,
-        y: 0,
-        xPercent: xp,
-        yPercent: yp,
+  function align(win) {
+    const content4 = $(".content", win);
+    const topbar = $("[data-topbar]", win);
+    const navbar = $("[data-nav]", win);
+    if (!content4 || !topbar) return;
+    const { cx, cy } = layoutCenter(content4);
+    topbar.style.setProperty("--content-cx", `${cx}px`);
+    navbar?.style.setProperty("--content-cy", `${cy}px`);
+  }
+  function padOf(el) {
+    const s = getComputedStyle(el);
+    return {
+      paddingLeft: s.paddingLeft,
+      paddingTop: s.paddingTop,
+      paddingRight: s.paddingRight
+    };
+  }
+  function captureShell(win) {
+    const content4 = $(".content", win);
+    const scroller = $(".content-scroll", content4);
+    return {
+      content: content4.getBoundingClientRect(),
+      nav: $("[data-nav]", win)?.getBoundingClientRect(),
+      topbar: $("[data-topbar]", win)?.getBoundingClientRect(),
+      radius: getComputedStyle(content4).borderRadius,
+      pad: scroller ? padOf(scroller) : {}
+    };
+  }
+  function playShell(win, first) {
+    const content4 = $(".content", win);
+    if (!content4) return;
+    const navbar = $("[data-nav]", win);
+    const topbar = $("[data-topbar]", win);
+    const scroller = $(".content-scroll", content4);
+    const d = durSec("--anim-window");
+    const lC = content4.getBoundingClientRect();
+    const lN = navbar?.getBoundingClientRect();
+    const lT = topbar?.getBoundingClientRect();
+    const wr = win.getBoundingClientRect();
+    gsapWithCSS.fromTo(
+      content4,
+      {
+        left: first.content.left - wr.left,
+        top: first.content.top - wr.top,
+        width: first.content.width,
+        height: first.content.height,
+        right: "auto",
+        bottom: "auto",
+        borderRadius: first.radius
+      },
+      {
+        left: lC.left - wr.left,
+        top: lC.top - wr.top,
+        width: lC.width,
+        height: lC.height,
+        right: "auto",
+        bottom: "auto",
+        borderRadius: getComputedStyle(content4).borderRadius,
         duration: d,
-        ease: "power3.inOut",
+        ease: EASE,
         overwrite: true,
         onComplete: () => {
-          gsapWithCSS.set(el, { clearProps: "transform,x,y,xPercent,yPercent" });
-          if (xp) el.style.transform = `translateX(${xp}%)`;
-          else if (yp) el.style.transform = `translateY(${yp}%)`;
+          gsapWithCSS.set(content4, {
+            clearProps: "left,top,width,height,right,bottom,borderRadius"
+          });
+          win.dataset.flipping = "0";
           align(win);
+        },
+        onInterrupt: () => {
+          win.dataset.flipping = "0";
         }
+      }
+    );
+    if (scroller && Object.keys(first.pad).length) {
+      gsapWithCSS.fromTo(scroller, first.pad, {
+        ...padOf(scroller),
+        duration: d,
+        ease: EASE,
+        overwrite: true,
+        clearProps: "paddingLeft,paddingTop,paddingRight"
       });
     }
-    function padOf(el) {
-      const s = getComputedStyle(el);
-      return {
-        paddingLeft: s.paddingLeft,
-        paddingTop: s.paddingTop,
-        paddingRight: s.paddingRight
-      };
+    flipShell(navbar, first.nav, lN, 0, -50, d, win);
+    flipShell(topbar, first.topbar, lT, -50, 0, d, win);
+  }
+  function flipShell(el, f, l, xp, yp, d, win) {
+    if (!el || !f || !l) return;
+    gsapWithCSS.set(el, {
+      x: f.left - l.left,
+      y: f.top - l.top,
+      xPercent: xp,
+      yPercent: yp,
+      force3D: true
+    });
+    gsapWithCSS.to(el, {
+      x: 0,
+      y: 0,
+      xPercent: xp,
+      yPercent: yp,
+      duration: d,
+      ease: EASE,
+      overwrite: true,
+      onComplete: () => {
+        gsapWithCSS.set(el, { clearProps: "transform,x,y,xPercent,yPercent" });
+        if (xp) el.style.transform = `translateX(${xp}%)`;
+        else if (yp) el.style.transform = `translateY(${yp}%)`;
+        align(win);
+      }
+    });
+  }
+  function minimizeTo(win, icon2, onDone) {
+    const d = durSec("--anim-window");
+    const wr = win.getBoundingClientRect();
+    const cx0 = wr.left + wr.width / 2;
+    const cy0 = wr.top + wr.height / 2;
+    let tx = cx0;
+    let ty = cy0 + 80;
+    if (icon2) {
+      const ir = icon2.getBoundingClientRect();
+      tx = ir.left + ir.width / 2;
+      ty = ir.top + ir.height / 2;
     }
-    function toggleMaximize(win) {
-      if (win.dataset.flipping === "1") return;
-      focus(win);
-      const content = $(".content", win);
-      const navbar = $("[data-nav]", win);
-      const topbar = $("[data-topbar]", win);
-      if (!content) return;
-      const mode = win.getAttribute("data-mode");
-      const d = Math.max(0.12, durMs("--anim-window") / 1e3);
-      const scroller = $(".content-scroll", content);
-      const fC = content.getBoundingClientRect();
-      const fN = navbar?.getBoundingClientRect();
-      const fT = topbar?.getBoundingClientRect();
-      const fPad = scroller ? padOf(scroller) : null;
-      win.dataset.flipping = "1";
-      win.style.transition = "none";
-      if (mode === "maximized") {
-        const raw = win.dataset.savedGeom;
-        const g = raw ? JSON.parse(raw) : null;
-        if (!g) {
-          win.setAttribute("data-mode", "floating");
-          win.dataset.flipping = "0";
-          win.style.transition = "";
-          return;
-        }
-        win.setAttribute("data-mode", "floating");
-        win.style.left = `${g.left}px`;
-        win.style.top = `${g.top}px`;
-        win.style.width = `${g.width}px`;
-        win.style.height = `${g.height}px`;
-      } else {
-        const wr = win.getBoundingClientRect();
-        const vr = viewport.getBoundingClientRect();
-        win.dataset.savedGeom = JSON.stringify({
-          left: wr.left - vr.left,
-          top: wr.top - vr.top,
-          width: wr.width,
-          height: wr.height
-        });
-        win.setAttribute("data-mode", "maximized");
-        win.style.left = "0px";
-        win.style.top = "0px";
-        win.style.width = "100%";
-        win.style.height = "100%";
+    gsapWithCSS.to(win, {
+      scale: 0.12,
+      opacity: 0,
+      x: tx - cx0,
+      y: ty - cy0,
+      transformOrigin: "50% 50%",
+      duration: d,
+      ease: "power3.in",
+      overwrite: true,
+      onComplete: () => {
+        win.hidden = true;
+        gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+        onDone();
       }
-      void win.offsetHeight;
-      win.style.transition = "";
-      align(win);
-      const lC = content.getBoundingClientRect();
-      const lN = navbar?.getBoundingClientRect();
-      const lT = topbar?.getBoundingClientRect();
-      const lPad = scroller ? padOf(scroller) : null;
-      const wr2 = win.getBoundingClientRect();
-      gsapWithCSS.fromTo(
-        content,
-        {
-          left: fC.left - wr2.left,
-          top: fC.top - wr2.top,
-          width: fC.width,
-          height: fC.height,
-          right: "auto",
-          bottom: "auto",
-          borderRadius: mode === "maximized" ? 0 : 16
-        },
-        {
-          left: lC.left - wr2.left,
-          top: lC.top - wr2.top,
-          width: lC.width,
-          height: lC.height,
-          right: "auto",
-          bottom: "auto",
-          borderRadius: mode === "maximized" ? 16 : 0,
-          duration: d,
-          ease: "power3.inOut",
-          overwrite: true,
-          onComplete: () => {
-            gsapWithCSS.set(content, {
-              clearProps: "left,top,width,height,right,bottom,borderRadius"
-            });
-            win.dataset.flipping = "0";
-            align(win);
-          }
-        }
-      );
-      if (scroller && fPad && lPad) {
-        gsapWithCSS.fromTo(scroller, fPad, {
-          ...lPad,
-          duration: d,
-          ease: "power3.inOut",
-          overwrite: true,
-          clearProps: "paddingLeft,paddingTop,paddingRight"
-        });
-      }
-      flipNow(navbar, fN, lN, 0, -50, d, win);
-      flipNow(topbar, fT, lT, -50, 0, d, win);
+    });
+  }
+  function openFrom(win, icon2, onDone) {
+    const d = durSec("--anim-window");
+    const wr = win.getBoundingClientRect();
+    const cx0 = wr.left + wr.width / 2;
+    const cy0 = wr.top + wr.height / 2;
+    let tx = cx0;
+    let ty = cy0 + 80;
+    if (icon2) {
+      const ir = icon2.getBoundingClientRect();
+      tx = ir.left + ir.width / 2;
+      ty = ir.top + ir.height / 2;
     }
-    function minimize(win) {
-      if (win.dataset.anim === "1") return;
-      win.dataset.anim = "1";
-      const d = Math.max(0.12, durMs("--anim-window") / 1e3);
-      const icon = appIconOf(win);
-      const wr = win.getBoundingClientRect();
-      const cx0 = wr.left + wr.width / 2;
-      const cy0 = wr.top + wr.height / 2;
-      let tx = cx0;
-      let ty = cy0 + 80;
-      if (icon) {
-        const ir = icon.getBoundingClientRect();
-        tx = ir.left + ir.width / 2;
-        ty = ir.top + ir.height / 2;
-      }
-      gsapWithCSS.to(win, {
+    gsapWithCSS.fromTo(
+      win,
+      {
         scale: 0.12,
         opacity: 0,
         x: tx - cx0,
         y: ty - cy0,
-        transformOrigin: "50% 50%",
+        transformOrigin: "50% 50%"
+      },
+      {
+        scale: 1,
+        opacity: 1,
+        x: 0,
+        y: 0,
         duration: d,
-        ease: "power3.in",
+        ease: "power3.out",
         overwrite: true,
         onComplete: () => {
-          win.style.display = "none";
-          win.dataset.open = "0";
           gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
-          win.dataset.anim = "0";
-          blurAll();
-          document.dispatchEvent(new CustomEvent("anios:win-close"));
+          onDone();
         }
-      });
-    }
-    function close(win) {
-      if (win.dataset.anim === "1") return;
-      win.dataset.anim = "1";
-      const d = Math.max(0.12, durMs("--anim-window") / 1e3);
-      gsapWithCSS.to(win, {
-        scale: 0.55,
-        opacity: 0,
-        transformOrigin: "50% 50%",
-        duration: d,
-        ease: "power3.in",
-        overwrite: true,
-        onComplete: () => {
-          win.style.display = "none";
-          win.dataset.open = "0";
-          gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,transformOrigin" });
-          win.dataset.anim = "0";
-          blurAll();
-          document.dispatchEvent(new CustomEvent("anios:win-close"));
-        }
-      });
-    }
-    function open(win) {
-      if (win.dataset.anim === "1") return;
-      const visible = win.style.display !== "none" && !win.hidden && win.dataset.open !== "0";
-      if (visible) {
-        focus(win);
-        return;
       }
-      win.dataset.anim = "1";
-      win.hidden = false;
-      win.style.display = "";
-      win.dataset.open = "1";
-      focus(win);
-      const d = Math.max(0.12, durMs("--anim-window") / 1e3);
-      const icon = appIconOf(win);
-      const wr = win.getBoundingClientRect();
-      const cx0 = wr.left + wr.width / 2;
-      const cy0 = wr.top + wr.height / 2;
-      let tx = cx0;
-      let ty = cy0 + 80;
-      if (icon) {
-        const ir = icon.getBoundingClientRect();
-        tx = ir.left + ir.width / 2;
-        ty = ir.top + ir.height / 2;
+    );
+  }
+  function closeIn(win, onDone) {
+    const d = durSec("--anim-window");
+    gsapWithCSS.to(win, {
+      scale: 0.55,
+      opacity: 0,
+      transformOrigin: "50% 50%",
+      duration: d,
+      ease: "power3.in",
+      overwrite: true,
+      onComplete: () => {
+        win.hidden = true;
+        gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,transformOrigin" });
+        onDone();
       }
-      gsapWithCSS.fromTo(
-        win,
-        {
-          scale: 0.12,
-          opacity: 0,
-          x: tx - cx0,
-          y: ty - cy0,
-          transformOrigin: "50% 50%"
-        },
-        {
-          scale: 1,
-          opacity: 1,
-          x: 0,
-          y: 0,
-          duration: d,
-          ease: "power3.out",
-          overwrite: true,
-          onComplete: () => {
-            gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
-            win.dataset.anim = "0";
-            align(win);
-          }
-        }
-      );
-    }
-    function startMove(win, e) {
-      dragWin = win;
-      dragMode = "move";
-      moved = false;
-      focus(win);
-      const wr = win.getBoundingClientRect();
-      const vr = viewport.getBoundingClientRect();
-      ox = wr.left - vr.left;
-      oy = wr.top - vr.top;
-      ow = wr.width;
-      oh = wr.height;
-      sx = e.clientX;
-      sy = e.clientY;
-      win.style.transition = "none";
-      win.style.left = `${ox}px`;
-      win.style.top = `${oy}px`;
-      win.style.width = `${ow}px`;
-      win.style.height = `${oh}px`;
-      e.preventDefault();
-    }
-    wins.forEach((win) => {
-      win.dataset.open = win.hidden || win.style.display === "none" ? "0" : "1";
-      if (!win.style.zIndex) win.style.zIndex = "20";
-      on(win, "pointerdown", (e) => {
-        const t = e.target;
-        if (t.closest(".content, .top-bar, .nav-bar, .recover")) focus(win);
-      }, true);
-      const zone = $(".top-bar [data-drag-zone]", win);
-      if (zone) {
-        on(zone, "pointerdown", (e) => {
-          const t = e.target;
-          if (t.closest("[data-win-min], [data-win-cls]")) return;
-          startMove(win, e);
-        });
-        on(zone, "dblclick", (e) => {
-          const t = e.target;
-          if (t.closest("[data-win-min], [data-win-cls]")) return;
-          toggleMaximize(win);
-        });
-      }
-      $$("[data-topbar] [data-win-min]", win).forEach((el) => {
-        on(el, "click", (e) => {
-          e.stopPropagation();
-          if (moved) return;
-          minimize(win);
-        });
-      });
-      $$("[data-topbar] [data-win-cls]", win).forEach((el) => {
-        on(el, "click", (e) => {
-          e.stopPropagation();
-          if (moved) return;
-          close(win);
-        });
-      });
-      const cre = $("[data-resize]", win);
-      const content = $(".content", win);
-      if (cre && content) {
-        let creOn = false;
-        const sync = (e) => {
-          const ok = win.classList.contains("is-focused") && e.clientX > content.getBoundingClientRect().right - 120 && e.clientY > content.getBoundingClientRect().bottom - 120;
-          if (ok === creOn) return;
-          creOn = ok;
-          cre.classList.toggle("is-on", ok);
-        };
-        on(content, "pointermove", (e) => sync(e));
-        on(content, "pointerleave", () => {
-          creOn = false;
-          cre.classList.remove("is-on");
-        });
-        on(cre, "pointerdown", (e) => {
-          if (!win.classList.contains("is-focused")) return;
-          dragWin = win;
-          dragMode = "resize";
-          moved = false;
-          const wr = win.getBoundingClientRect();
-          const vr = viewport.getBoundingClientRect();
-          ox = wr.left - vr.left;
-          oy = wr.top - vr.top;
-          ow = wr.width;
-          oh = wr.height;
-          sx = e.clientX;
-          sy = e.clientY;
-          win.style.transition = "none";
-          e.preventDefault();
-          e.stopPropagation();
-        });
-      }
-      align(win);
     });
-    on(window, "pointermove", (e) => {
-      if (!dragWin) return;
-      const ev = e;
-      if (Math.abs(ev.clientX - sx) > 3 || Math.abs(ev.clientY - sy) > 3) moved = true;
-      if (dragMode === "resize") {
-        dragWin.style.width = `${Math.max(240, ow + (ev.clientX - sx))}px`;
-        dragWin.style.height = `${Math.max(180, oh + (ev.clientY - sy))}px`;
-      } else {
-        dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
-        dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
-      }
-      align(dragWin);
-    });
-    on(window, "pointerup", () => {
-      if (!dragWin) return;
-      const win = dragWin;
-      dragWin = null;
-      const vr = viewport.getBoundingClientRect();
-      if (vr.width && win.getAttribute("data-mode") === "floating") {
-        const wr = win.getBoundingClientRect();
-        win.style.left = `${(wr.left - vr.left) / vr.width * 100}%`;
-        win.style.top = `${(wr.top - vr.top) / vr.height * 100}%`;
-        win.style.width = `${wr.width / vr.width * 100}%`;
-        win.style.height = `${wr.height / vr.height * 100}%`;
-      }
-      win.style.transition = "";
-      align(win);
-    });
-    on(viewport, "pointerdown", (e) => {
-      const t = e.target;
-      if (t.closest(".window") || t.closest(".sys-status") || t.closest(".sys-appbar") || t.closest(".vp-resize")) {
-        return;
-      }
-      blurAll();
-    }, true);
-    const reAlign = () => {
-      if (dragWin || wins.some((w) => w.dataset.flipping === "1")) return;
-      wins.forEach((w) => align(w));
-    };
-    new ResizeObserver(reAlign).observe(viewport);
-    window.addEventListener("resize", reAlign);
-    window.addEventListener("load", reAlign);
-    if (wins[0]) focus(wins[0]);
-    return {
-      wins,
-      focused,
-      focus,
-      blurAll,
-      isDragging: () => !!dragWin,
-      toggleMaximize,
-      align,
-      minimize,
-      close,
-      open
-    };
   }
 
-  // src/recover.ts
-  var GAP = 5;
-  var NEAR = 28 + 2 * GAP;
-  function initRecover(api) {
-    const viewport = $("#viewport");
-    const hideAll = () => {
-      api.wins.forEach((w) => {
-        const r = $("[data-recover]", w);
-        if (!r) return;
-        r.hidden = true;
-        r.classList.remove("is-on");
+  // src/apps/settings.ts
+  var content = `
+<section class="set-pane" data-pane="home">
+  <header class="set-head"><h1>\u4E3B\u9875</h1><p>\u7CFB\u7EDF\u4E0E\u4E2A\u6027\u5316</p></header>
+  <div class="set-group">
+    <div class="set-row">
+      <div><div class="row-t">\u4E3B\u9898</div><div class="row-s">\u6D45\u8272 / \u6DF1\u8272</div></div>
+      <div class="seg small">
+        <button type="button" data-theme="light" aria-pressed="true">\u6D45</button>
+        <button type="button" data-theme="dark">\u6DF1</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <div><div class="row-t">\u5F3A\u8C03\u8272</div><div class="row-s">\u63A7\u4EF6\u4E0E\u9AD8\u4EAE</div></div>
+      <div class="dots">
+        <button type="button" class="cd active" style="--c:#3b82f6"></button>
+        <button type="button" class="cd" style="--c:#7c5cff"></button>
+        <button type="button" class="cd" style="--c:#10b981"></button>
+        <button type="button" class="cd" style="--c:#f59e0b"></button>
+      </div>
+    </div>
+  </div>
+  <div class="set-group">
+    <div class="set-group-title">\u52A8\u753B</div>
+    <div class="set-row col">
+      <div class="row-t">\u5168\u5C40 / \u7A97\u53E3 / \u5207\u6362 / \u83DC\u5355</div>
+      <div class="slider-row"><input class="slider" id="animGlobal" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animGlobalVal">360ms</span></div>
+      <div class="slider-row"><input class="slider" id="animWindow" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animWindowVal">360ms</span></div>
+      <div class="slider-row"><input class="slider" id="animPane" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animPaneVal">200ms</span></div>
+      <div class="slider-row"><input class="slider" id="animMenu" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animMenuVal">200ms</span></div>
+    </div>
+    <div class="set-row">
+      <div class="row-t">\u6EDA\u52A8\u6307\u793A</div>
+      <div class="seg small">
+        <button type="button" data-scroll-mode="percent" aria-pressed="true">\u767E\u5206\u6BD4</button>
+        <button type="button" data-scroll-mode="position">\u4F4D\u7F6E</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <div class="row-t">\u7F51\u7EDC\u7C7B\u578B</div>
+      <div class="seg small">
+        <button type="button" data-net-mode="wifi" aria-pressed="true">Wi-Fi</button>
+        <button type="button" data-net-mode="cell">5G</button>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="set-pane" data-pane="network" hidden>
+  <header class="set-head"><h1>\u7F51\u7EDC</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">Studio-5G</div><div class="row-s">\u5DF2\u8FDE\u63A5</div></div></div>
+    <div class="set-row"><div class="row-t">\u7F51\u7EDC\u7C7B\u578B</div>
+      <div class="seg small">
+        <button type="button" data-net-mode="wifi" aria-pressed="true">Wi-Fi</button>
+        <button type="button" data-net-mode="cell">5G</button>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="set-pane" data-pane="sound" hidden>
+  <header class="set-head"><h1>\u58F0\u97F3</h1></header>
+  <div class="set-group">
+    <div class="set-row col"><div class="row-t">\u8F93\u51FA\u97F3\u91CF</div>
+      <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="62" /><span class="slider-val">62%</span></div>
+    </div>
+  </div>
+</section>
+<section class="set-pane" data-pane="display" hidden>
+  <header class="set-head"><h1>\u663E\u793A</h1></header>
+  <div class="set-group">
+    <div class="set-row col"><div class="row-t">\u4EAE\u5EA6</div>
+      <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="78" /><span class="slider-val">78%</span></div>
+    </div>
+  </div>
+</section>`;
+  var settingsApp = {
+    id: "settings",
+    title: "\u8BBE\u7F6E",
+    icon: "gear",
+    geom: { left: 14, top: 10, width: 58, height: 72 },
+    z: 22,
+    open: true,
+    focused: true,
+    nav: [
+      { section: "home", icon: "home", label: "\u4E3B\u9875" },
+      { section: "network", icon: "net", label: "\u7F51\u7EDC" },
+      { section: "sound", icon: "sound", label: "\u58F0\u97F3" },
+      { section: "display", icon: "display", label: "\u663E\u793A" }
+    ],
+    content,
+    searchPlaceholder: "\u5728\u8BBE\u7F6E\u4E2D\u641C\u7D22\u2026",
+    editItems: ["\u64A4\u9500", "\u91CD\u505A", "\u526A\u5207", "\u62F7\u8D1D"],
+    bind(root, store) {
+      $$("button[data-theme]", root).forEach((b) => {
+        on(b, "click", () => {
+          const m = b.getAttribute("data-theme");
+          store.update((s) => s.settings.theme = m);
+        });
       });
-    };
-    function place(e) {
-      const win = api.focused();
-      if (!win || api.isDragging() || win.getAttribute("data-mode") !== "floating") {
-        hideAll();
-        return;
-      }
-      const content = $(".content", win);
-      const zone = $(".top-bar [data-drag-zone]", win);
-      const rec = $("[data-recover]", win);
-      if (!content || !rec) return;
-      const vr = viewport.getBoundingClientRect();
-      const zr = zone?.getBoundingClientRect();
-      const chromeVisible = !!zr && zr.left >= vr.left - 1 && zr.top >= vr.top - 1 && zr.right <= vr.right + 1 && zr.bottom <= vr.bottom + 1;
-      if (chromeVisible) {
-        hideAll();
-        return;
-      }
-      const wr = content.getBoundingClientRect();
-      const mx = e.clientX;
-      const my = e.clientY;
-      const dist = {
-        left: Math.abs(mx - wr.left),
-        right: Math.abs(mx - wr.right),
-        top: Math.abs(my - wr.top),
-        bottom: Math.abs(my - wr.bottom)
+      $$(".cd", root).forEach((d) => {
+        on(d, "click", () => {
+          $$(".cd", root).forEach((x) => x.classList.remove("active"));
+          d.classList.add("active");
+          const c = getComputedStyle(d).getPropertyValue("--c").trim();
+          if (c) store.update((s) => s.settings.accent = c);
+        });
+      });
+      const bindDur = (id, key) => {
+        const el = $(`#${id}`, root);
+        if (!el) return;
+        on(el, "input", () => {
+          const v = Number(el.value);
+          store.update((s) => {
+            s.settings[key] = v;
+            if (key === "animGlobal") {
+              s.settings.animWindow = v;
+              s.settings.animPane = v;
+              s.settings.animMenu = v;
+            }
+          });
+        });
       };
-      let edge = "top";
-      let best = dist.top;
-      const others = ["bottom", "left", "right"];
-      for (const k of others) {
-        if (dist[k] < best) {
-          edge = k;
-          best = dist[k];
-        }
-      }
-      if (best > NEAR) {
-        hideAll();
-        return;
-      }
-      const x0 = Math.max(wr.left, vr.left);
-      const x1 = Math.min(wr.right, vr.right);
-      const y0 = Math.max(wr.top, vr.top);
-      const y1 = Math.min(wr.bottom, vr.bottom);
-      api.wins.forEach((w) => {
-        const r = $("[data-recover]", w);
-        if (!r) return;
-        if (w === win) {
-          r.hidden = false;
-          r.classList.add("is-on");
-        } else {
-          r.hidden = true;
-          r.classList.remove("is-on");
-        }
+      bindDur("animGlobal", "animGlobal");
+      bindDur("animWindow", "animWindow");
+      bindDur("animPane", "animPane");
+      bindDur("animMenu", "animMenu");
+      $$("[data-scroll-mode]", root).forEach((b) => {
+        on(b, "click", () => {
+          const m = b.getAttribute("data-scroll-mode");
+          store.update((s) => s.settings.scrollMode = m);
+        });
       });
-      rec.dataset.orient = edge === "left" || edge === "right" ? "v" : "h";
-      const hw = rec.offsetWidth / 2 || 14;
-      const hh = rec.offsetHeight / 2 || 14;
-      let cx;
-      let cy;
-      if (edge === "top") {
-        cx = (x0 + x1) / 2;
-        cy = wr.top - GAP - hh;
-      } else if (edge === "bottom") {
-        cx = (x0 + x1) / 2;
-        cy = wr.bottom + GAP + hh;
-      } else if (edge === "left") {
-        cx = wr.left - GAP - hw;
-        cy = (y0 + y1) / 2;
-      } else {
-        cx = wr.right + GAP + hw;
-        cy = (y0 + y1) / 2;
-      }
-      cx = clamp3(cx, hw, vr.left + vr.width - hw);
-      cy = clamp3(cy, hh, vr.top + vr.height - hh);
-      const box = win.getBoundingClientRect();
-      rec.style.left = `${cx - box.left}px`;
-      rec.style.top = `${cy - box.top}px`;
+      $$("[data-net-mode]", root).forEach((b) => {
+        on(b, "click", () => {
+          const m = b.getAttribute("data-net-mode");
+          store.update((s) => s.settings.net = m);
+        });
+      });
     }
-    let raf = 0;
-    let ev = null;
-    on(viewport, "pointermove", (e) => {
-      ev = e;
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        if (ev) place(ev);
-      });
-    });
-    on(viewport, "pointerleave", hideAll);
-    api.wins.forEach((win) => {
-      const zone = $("[data-recover] [data-drag-zone]", win);
-      if (!zone) return;
-      on(zone, "pointerdown", (e) => {
-        const t = e.target;
-        if (t.closest("[data-win-min], [data-win-cls]")) return;
-        $("[data-topbar] [data-drag-zone]", win)?.dispatchEvent(
-          new PointerEvent("pointerdown", {
-            bubbles: true,
-            clientX: e.clientX,
-            clientY: e.clientY
-          })
-        );
-      });
-      on(zone, "dblclick", () => {
-        api.toggleMaximize(win);
-        hideAll();
-      });
-      on($("[data-recover] [data-win-min]", win), "click", () => {
-        $("[data-topbar] [data-win-min]", win)?.click();
-        hideAll();
-      });
-      on($("[data-recover] [data-win-cls]", win), "click", () => {
-        $("[data-topbar] [data-win-cls]", win)?.click();
-        hideAll();
-      });
-    });
-  }
+  };
 
-  // src/menu.ts
-  function initMenus(api) {
-    api.wins.forEach((win) => {
-      const more = $("[data-more]", win);
-      const panel = $("[data-more-panel]", win);
-      const search = $("[data-search]", win);
-      const searchPanel = $("[data-search-panel]", win);
-      if (!panel) return;
-      const close = () => {
-        panel.hidden = true;
-        more?.setAttribute("aria-expanded", "false");
-        if (searchPanel) searchPanel.hidden = true;
-        search?.setAttribute("aria-expanded", "false");
-        $$(".mp-expand", panel).forEach((p) => p.classList.remove("open"));
-      };
-      win._closeMenus = close;
-      on(more, "click", (e) => {
-        e.stopPropagation();
-        api.focus(win);
-        const open = panel.hidden;
-        close();
-        if (open) {
-          panel.hidden = false;
-          more?.setAttribute("aria-expanded", "true");
+  // src/apps/phone.ts
+  var content2 = `
+<section class="set-pane" data-pane="dial">
+  <header class="set-head"><h1>\u62E8\u53F7</h1></header>
+  <div class="dial-display" id="dialDisplay">\u8F93\u5165\u53F7\u7801</div>
+  <div class="dial-pad" id="dialPad">
+    <button type="button" class="dial-key"><b>1</b></button>
+    <button type="button" class="dial-key"><b>2</b></button>
+    <button type="button" class="dial-key"><b>3</b></button>
+    <button type="button" class="dial-key"><b>4</b></button>
+    <button type="button" class="dial-key"><b>5</b></button>
+    <button type="button" class="dial-key"><b>6</b></button>
+    <button type="button" class="dial-key"><b>7</b></button>
+    <button type="button" class="dial-key"><b>8</b></button>
+    <button type="button" class="dial-key"><b>9</b></button>
+    <button type="button" class="dial-key"><b>*</b></button>
+    <button type="button" class="dial-key"><b>0</b></button>
+    <button type="button" class="dial-key"><b>#</b></button>
+  </div>
+  <div class="dial-actions">
+    <button type="button" class="btn-quiet">+</button>
+    <button type="button" class="btn-call">\u547C\u53EB</button>
+    <button type="button" class="btn-quiet" id="dialBack" aria-label="\u9000\u683C">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/></svg>
+    </button>
+  </div>
+</section>
+<section class="set-pane" data-pane="recent" hidden>
+  <header class="set-head"><h1>\u6700\u8FD1</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u738B\u5C0F\u660E</div><div class="row-s">\u547C\u51FA \xB7 12 \u5206\u949F\u524D</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u674E\u5DE5</div><div class="row-s">\u672A\u63A5 \xB7 1 \u5C0F\u65F6\u524D</div></div></div>
+  </div>
+</section>
+<section class="set-pane" data-pane="contacts" hidden>
+  <header class="set-head"><h1>\u8054\u7CFB\u4EBA</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u738B\u5C0F\u660E</div><div class="row-s">138 0013 8000</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u5988\u5988</div><div class="row-s">\u5BB6\u5EAD</div></div></div>
+  </div>
+</section>
+<section class="set-pane" data-pane="fav" hidden>
+  <header class="set-head"><h1>\u6536\u85CF</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u5988\u5988</div><div class="row-s">\u5BB6\u5EAD</div></div></div>
+  </div>
+</section>`;
+  var phoneApp = {
+    id: "phone",
+    title: "\u7535\u8BDD",
+    icon: "phone",
+    geom: { left: 48, top: 18, width: 40, height: 58 },
+    z: 21,
+    open: true,
+    nav: [
+      { section: "dial", icon: "dial", label: "\u62E8\u53F7" },
+      { section: "recent", icon: "clock", label: "\u6700\u8FD1" },
+      { section: "contacts", icon: "user", label: "\u8054\u7CFB\u4EBA" },
+      { section: "fav", icon: "star", label: "\u6536\u85CF" }
+    ],
+    content: content2,
+    searchPlaceholder: "\u641C\u7D22\u901A\u8BDD\u8BB0\u5F55\u2026",
+    editItems: ["\u5168\u9009", "\u6E05\u9664\u6700\u8FD1"],
+    bind(root) {
+      const disp = $("#dialDisplay", root);
+      let num = "";
+      on($("#dialPad", root), "click", (e) => {
+        const k = e.target.closest(".dial-key")?.querySelector("b")?.textContent?.trim();
+        if (k && num.length < 16) {
+          num += k;
+          if (disp) disp.textContent = num;
         }
       });
-      on(search, "click", (e) => {
-        e.stopPropagation();
-        api.focus(win);
-        const open = searchPanel ? searchPanel.hidden : false;
-        close();
-        if (searchPanel && open) {
-          searchPanel.hidden = false;
-          search?.setAttribute("aria-expanded", "true");
-          $("input", searchPanel)?.focus();
-        }
+      on($("#dialBack", root), "click", () => {
+        num = num.slice(0, -1);
+        if (disp) disp.textContent = num || "\u8F93\u5165\u53F7\u7801";
       });
-      $$("[data-expand]", panel).forEach((btn) => {
-        on(btn, "click", (e) => {
-          e.stopPropagation();
-          const key = btn.getAttribute("data-expand");
-          const pane = key ? $(`[data-expand-pane="${key}"]`, panel) : null;
-          if (!pane) return;
-          const was = pane.classList.contains("open");
-          $$(".mp-expand", panel).forEach((p) => p.classList.remove("open"));
-          if (!was) pane.classList.add("open");
-        });
-      });
-      $$("[data-act]", panel).forEach((el) => {
-        on(el, "click", (e) => {
-          e.stopPropagation();
-          const act = el.getAttribute("data-act");
-          close();
-          if (act === "about") {
-            alert(`${win.dataset.title || "\u5E94\u7528"} \xB7 anios 1.0`);
-          } else if (act === "quit") {
-            api.close(win);
-          } else if (act === "min") {
-            api.minimize(win);
-          } else if (act === "max") {
-            api.toggleMaximize(win);
-          }
-        });
-      });
-    });
-    on(document, "pointerdown", (e) => {
-      const t = e.target;
-      if (t.closest("[data-more-panel], [data-more], [data-search-panel], [data-search]")) return;
-      api.wins.forEach((w) => w._closeMenus?.());
-    });
-  }
+    }
+  };
 
-  // src/systembar.ts
-  function initStatusBar() {
-    const root = $(".sys-status");
-    if (!root) return;
-    const capsule = $(".status-capsule", root);
-    const content = $(".status-content", root);
-    const openBtn = $("[data-status-toggle]", root);
-    const time = $("[data-time]", root);
-    const arc = $("[data-battery] .bat-arc", root);
-    const pct = $("[data-battery] .bat-pct", root);
-    const tick = () => {
-      if (!time) return;
-      const d = /* @__PURE__ */ new Date();
-      time.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    };
-    tick();
-    window.setInterval(tick, 3e4);
-    const bat = (p) => {
-      if (!arc || !pct) return;
-      const r = 14;
-      const c = 2 * Math.PI * r;
-      const sweep = 270 / 360 * c;
-      arc.style.strokeDasharray = `${sweep} ${c}`;
-      arc.style.strokeDashoffset = String(sweep * (1 - p / 100));
-      pct.textContent = String(Math.round(p));
-    };
-    bat(72);
-    const setOpen = (open) => {
-      root.classList.toggle("is-open", open);
-      if (content) content.hidden = !open;
-      openBtn?.setAttribute("aria-expanded", open ? "true" : "false");
-      capsule?.classList.toggle("is-open", open);
-    };
-    on(openBtn, "click", (e) => {
-      e.stopPropagation();
-      setOpen(!root.classList.contains("is-open"));
-    });
-    content?.addEventListener("temp:close", () => setOpen(false));
-    $$("[data-quick]", root).forEach((btn) => {
-      on(btn, "click", () => {
-        const k = btn.getAttribute("data-quick");
-        if (k === "wifi" || k === "cell") {
-          $(".sys-status")?.setAttribute("data-net", k === "cell" ? "cell" : "wifi");
-          $$("[data-net-mode]").forEach(
-            (x) => x.setAttribute(
-              "aria-pressed",
-              x.getAttribute("data-net-mode") === (k === "cell" ? "cell" : "wifi") ? "true" : "false"
-            )
-          );
-        }
-        if (k === "theme-light" || k === "theme-dark") {
-          const m = k === "theme-dark" ? "dark" : "light";
-          document.documentElement.setAttribute("data-theme", m);
-          $$("button[data-theme]").forEach(
-            (x) => x.setAttribute("aria-pressed", x.getAttribute("data-theme") === m ? "true" : "false")
-          );
-        }
-        btn.classList.toggle("on");
-      });
-    });
-  }
-  function initAppBar(api) {
-    const bar = $(".sys-appbar");
-    if (!bar) return;
-    const sync = () => {
-      const anyMax = api.wins.some((w) => w.getAttribute("data-mode") === "maximized");
-      bar.classList.toggle("only-launch", anyMax);
-      $$(".app-item", bar).forEach((btn) => {
-        const id = btn.getAttribute("data-app-id");
-        const win = api.wins.find((w) => w.dataset.app === id);
-        const showing = !!win && win.style.display !== "none" && !win.hidden && win.dataset.open !== "0";
-        btn.classList.toggle("open", showing);
-        btn.classList.toggle("active", showing && win.classList.contains("is-focused"));
-      });
-    };
-    $$(".app-item", bar).forEach((btn) => {
-      on(btn, "click", (e) => {
-        e.stopPropagation();
-        const id = btn.getAttribute("data-app-id");
-        if (!id) return;
-        if (id === "launcher") {
-          const s = $("#winSearch");
-          if (!s) return;
-          const showing2 = s.style.display !== "none" && !s.hidden && s.dataset.open !== "0";
-          if (showing2) api.minimize(s);
-          else api.open(s);
-          sync();
-          return;
-        }
-        const win = api.wins.find((w) => w.dataset.app === id);
-        if (!win) return;
-        const showing = win.style.display !== "none" && !win.hidden && win.dataset.open !== "0";
-        if (showing) api.minimize(win);
-        else api.open(win);
-        sync();
-      });
-    });
-    api.wins.forEach((w) => {
-      const mo = new MutationObserver(sync);
-      mo.observe(w, { attributes: true, attributeFilter: ["data-mode", "style", "class", "data-open", "hidden"] });
-    });
-    document.addEventListener("anios:win-close", sync);
-    sync();
-  }
+  // src/apps/launcher.ts
+  var content3 = `
+<section class="set-pane" data-pane="apps">
+  <header class="set-head"><h1>\u542F\u52A8\u53F0</h1><p>\u5E94\u7528 \xB7 \u6587\u4EF6 \xB7 \u94FE\u63A5 \xB7 \u64CD\u4F5C</p></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u8BBE\u7F6E</div><div class="row-s">\u7CFB\u7EDF\u4E0E\u4E2A\u6027\u5316</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u7535\u8BDD</div><div class="row-s">\u62E8\u53F7\u4E0E\u8054\u7CFB\u4EBA</div></div></div>
+  </div>
+</section>
+<section class="set-pane" data-pane="files" hidden>
+  <header class="set-head"><h1>\u6587\u4EF6</h1></header>
+  <div class="set-group"><div class="set-row"><div class="row-t">\u6700\u8FD1\u6587\u4EF6</div></div></div>
+</section>
+<section class="set-pane" data-pane="links" hidden>
+  <header class="set-head"><h1>\u94FE\u63A5</h1></header>
+  <div class="set-group"><div class="set-row"><div class="row-t">\u6700\u8FD1\u94FE\u63A5</div></div></div>
+</section>
+<section class="set-pane" data-pane="acts" hidden>
+  <header class="set-head"><h1>\u64CD\u4F5C</h1></header>
+  <div class="set-group"><div class="set-row"><div class="row-t">\u5FEB\u6377\u64CD\u4F5C</div></div></div>
+</section>`;
+  var launcherApp = {
+    id: "launcher",
+    title: "\u542F\u52A8\u53F0",
+    icon: "grid",
+    geom: { left: 22, top: 16, width: 56, height: 58 },
+    z: 20,
+    open: false,
+    nav: [
+      { section: "apps", icon: "apps", label: "\u5E94\u7528" },
+      { section: "files", icon: "file", label: "\u6587\u4EF6" },
+      { section: "links", icon: "link", label: "\u94FE\u63A5" },
+      { section: "acts", icon: "bolt", label: "\u64CD\u4F5C" }
+    ],
+    content: content3,
+    searchPlaceholder: "\u641C\u7D22\u5E94\u7528\u3001\u6587\u4EF6\u3001\u94FE\u63A5\u3001\u64CD\u4F5C\u2026",
+    searchOpen: true
+  };
 
-  // src/ui.ts
+  // src/apps/index.ts
+  function winIdOf(appId) {
+    return `win-${appId}`;
+  }
+  var APPS = [settingsApp, phoneApp, launcherApp];
+
+  // src/host.ts
   function bindScrollIndicator(root) {
     const scroller = $(".content-scroll", root);
     const ind = $(".scroll-indicator", root);
@@ -6573,8 +6075,8 @@ svg {
     on(window, "pointermove", (e) => {
       if (!dragging) return;
       const ev = e;
-      root.style.width = `${clamp3(w0 + (ev.clientX - x0), 200, 480)}px`;
-      root.style.height = `${clamp3(h0 + (ev.clientY - y0), 160, 560)}px`;
+      root.style.width = `${clamp(w0 + (ev.clientX - x0), 200, 480)}px`;
+      root.style.height = `${clamp(h0 + (ev.clientY - y0), 160, 560)}px`;
     });
     on(window, "pointerup", () => {
       dragging = false;
@@ -6587,240 +6089,821 @@ svg {
     });
     on(root, "pointerleave", () => knob.classList.remove("is-on"));
   }
-  function initUi(wins) {
-    $$("button[data-theme]").forEach((b) => {
-      on(b, "click", () => {
-        const m = b.getAttribute("data-theme");
-        document.documentElement.setAttribute("data-theme", m);
-        $$("button[data-theme]").forEach(
-          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-theme") === m ? "true" : "false")
-        );
-      });
-    });
-    $$(".cd").forEach((d) => {
-      on(d, "click", () => {
-        $$(".cd").forEach((x) => x.classList.remove("active"));
-        d.classList.add("active");
-        const c = getComputedStyle(d).getPropertyValue("--c").trim();
-        if (c) document.documentElement.style.setProperty("--accent", c);
-      });
-    });
-    const bindDur = (id, token, label) => {
-      const el = $(`#${id}`);
-      if (!el) return;
-      on(el, "input", () => {
-        document.documentElement.style.setProperty(token, `${el.value}ms`);
-        const l = $(`#${label}`);
-        if (l) l.textContent = `${el.value}ms`;
-      });
-    };
-    bindDur("animGlobal", "--dur", "animGlobalVal");
-    bindDur("animWindow", "--anim-window", "animWindowVal");
-    bindDur("animPane", "--anim-pane", "animPaneVal");
-    bindDur("animMenu", "--anim-menu", "animMenuVal");
-    $$("[data-scroll-mode]").forEach((b) => {
-      on(b, "click", () => {
-        const m = b.getAttribute("data-scroll-mode");
-        $$(".scroll-indicator").forEach((el) => el.dataset.mode = m);
-        $$("[data-scroll-mode]").forEach(
-          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-scroll-mode") === m ? "true" : "false")
-        );
-      });
-    });
-    $$("[data-net-mode]").forEach((b) => {
-      on(b, "click", () => {
-        const m = b.getAttribute("data-net-mode");
-        $(".sys-status")?.setAttribute("data-net", m);
-        $$("[data-net-mode]").forEach(
-          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-net-mode") === m ? "true" : "false")
-        );
-      });
-    });
-    wins.forEach((win) => {
-      const btns = $$(".nav-btn", win);
-      const panes = $$(".set-pane", win);
-      let cur = btns.find((b) => b.classList.contains("active"))?.dataset.section || "";
-      let busy = false;
-      btns.forEach((btn) => {
-        on(btn, "click", () => {
-          if (busy) return;
-          const name = btn.dataset.section;
-          if (!name || name === cur) return;
-          const oldP = panes.find((p) => p.dataset.pane === cur);
-          const newP = panes.find((p) => p.dataset.pane === name);
-          if (!newP) return;
-          const order = btns.map((b) => b.dataset.section);
-          const fwd = order.indexOf(name) > order.indexOf(cur);
-          const d = durMs("--anim-pane");
-          busy = true;
-          btns.forEach((b) => b.classList.toggle("active", b === btn));
-          if (oldP) {
-            oldP.classList.add(fwd ? "leave-up" : "leave-down");
-            window.setTimeout(() => {
-              oldP.hidden = true;
-              oldP.classList.remove("leave-up", "leave-down");
-              newP.hidden = false;
-              newP.classList.add(fwd ? "enter-up" : "enter-down");
-              window.setTimeout(() => {
-                newP.classList.remove("enter-up", "enter-down");
-                cur = name;
-                busy = false;
-              }, d);
-            }, d);
-          } else {
-            newP.hidden = false;
-            cur = name;
-            busy = false;
-          }
-        });
-      });
-      bindScrollIndicator(win);
-      $$(".slider", win).forEach((s) => {
-        const el = s;
-        const sync = () => {
-          const min = Number(el.min || 0);
-          const max = Number(el.max || 100);
-          el.style.setProperty("--val", `${(Number(el.value) - min) / (max - min) * 100}%`);
-          const lab = el.closest(".slider-row")?.querySelector(".slider-val");
-          if (lab) lab.textContent = `${Math.round(Number(el.value))}%`;
-        };
-        on(el, "input", sync);
-        sync();
-      });
-      const disp = $("#dialDisplay", win);
-      let num = "";
-      on($("#dialPad", win), "click", (e) => {
-        const k = e.target.closest(".dial-key")?.querySelector("b")?.textContent?.trim();
-        if (k && num.length < 16) {
-          num += k;
-          if (disp) disp.textContent = num;
-        }
-      });
-      on($("#dialBack", win), "click", () => {
-        num = num.slice(0, -1);
-        if (disp) disp.textContent = num || "\u8F93\u5165\u53F7\u7801";
-      });
-    });
-    $$("[data-temp]").forEach((panel) => {
-      bindScrollIndicator(panel);
-      bindResize(panel);
-    });
-  }
-
-  // src/viewport.ts
-  function initViewport(onChange) {
+  function initHost(store, api) {
     const vp = $("#viewport");
     const handle = $("#vpResize");
     if (!vp) return;
     $$("button[data-size]").forEach((b) => {
       on(b, "click", () => {
-        const v = b.getAttribute("data-size");
-        vp.dataset.size = v;
+        vp.dataset.size = b.getAttribute("data-size");
         vp.style.width = "";
         vp.style.height = "";
         $$("button[data-size]").forEach(
-          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-size") === v ? "true" : "false")
+          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-size") === b.getAttribute("data-size") ? "true" : "false")
         );
-        onChange();
+        api.alignAll();
       });
     });
     $$("button[data-screen]").forEach((b) => {
       on(b, "click", () => {
-        const v = b.getAttribute("data-screen");
-        vp.dataset.screen = v;
+        vp.dataset.screen = b.getAttribute("data-screen");
         $$("button[data-screen]").forEach(
-          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-screen") === v ? "true" : "false")
+          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-screen") === b.getAttribute("data-screen") ? "true" : "false")
         );
-        onChange();
+        api.alignAll();
       });
     });
-    if (!handle) return;
-    let dragging = false;
-    let x0 = 0;
-    let y0 = 0;
-    let w0 = 0;
-    let h0 = 0;
-    on(handle, "pointerdown", (e) => {
-      dragging = true;
-      x0 = e.clientX;
-      y0 = e.clientY;
-      w0 = vp.offsetWidth;
-      h0 = vp.offsetHeight;
-      vp.dataset.size = "custom";
-      handle.setPointerCapture(e.pointerId);
-      e.preventDefault();
-      e.stopPropagation();
+    $$(".host-tools button[data-theme]").forEach((b) => {
+      on(b, "click", () => {
+        const m = b.getAttribute("data-theme");
+        store.update((s) => s.settings.theme = m);
+      });
     });
-    on(window, "pointermove", (e) => {
-      if (!dragging) return;
-      vp.style.width = `${clamp3(w0 + (e.clientX - x0), 360, window.innerWidth - 24)}px`;
-      vp.style.height = `${clamp3(h0 + (e.clientY - y0), 420, window.innerHeight - 100)}px`;
-      onChange();
-    });
-    on(window, "pointerup", () => {
-      if (!dragging) return;
-      dragging = false;
-      onChange();
-    });
-  }
-
-  // src/temp.ts
-  function initTempWindows() {
-    const isInsideAnchor = (t, sel) => {
-      if (!sel) return false;
-      try {
-        return !!t.closest(sel);
-      } catch {
-        return false;
-      }
-    };
+    if (handle) {
+      let dragging = false;
+      let x0 = 0;
+      let y0 = 0;
+      let w0 = 0;
+      let h0 = 0;
+      on(handle, "pointerdown", (e) => {
+        dragging = true;
+        x0 = e.clientX;
+        y0 = e.clientY;
+        w0 = vp.offsetWidth;
+        h0 = vp.offsetHeight;
+        vp.dataset.size = "custom";
+        handle.setPointerCapture(e.pointerId);
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      on(window, "pointermove", (e) => {
+        if (!dragging) return;
+        vp.style.width = `${clamp(w0 + (e.clientX - x0), 360, window.innerWidth - 24)}px`;
+        vp.style.height = `${clamp(h0 + (e.clientY - y0), 420, window.innerHeight - 100)}px`;
+        api.alignAll();
+      });
+      on(window, "pointerup", () => {
+        dragging = false;
+        api.alignAll();
+      });
+    }
+    for (const s of $$(".slider")) {
+      const el = s;
+      const sync = () => {
+        const lab = el.closest(".slider-row")?.querySelector(".slider-val");
+        if (lab && !lab.id) lab.textContent = `${Math.round(Number(el.value))}%`;
+      };
+      on(el, "input", sync);
+      sync();
+    }
     const closePanel = (panel) => {
       panel.hidden = true;
       panel.dispatchEvent(new CustomEvent("temp:close", { bubbles: true }));
     };
-    const closeWin = (win) => {
-      win.style.display = "none";
-      win.dataset.open = "0";
-      win.dispatchEvent(new CustomEvent("temp:close", { bubbles: true }));
-    };
     on(document, "pointerdown", (e) => {
       const t = e.target;
       if (!t || typeof t.closest !== "function") return;
-      $$("[data-temp]").forEach((panel) => {
-        if (panel.hidden) return;
-        if (panel.contains(t)) return;
-        if (isInsideAnchor(t, panel.dataset.tempAnchor)) return;
+      for (const panel of $$("[data-temp]")) {
+        if (panel.hidden) continue;
+        if (panel.contains(t)) continue;
+        const anchor = panel.dataset.tempAnchor;
+        if (anchor) {
+          try {
+            if (t.closest(anchor)) continue;
+          } catch {
+          }
+        }
         closePanel(panel);
+      }
+    });
+    for (const panel of $$("[data-temp]")) {
+      bindScrollIndicator(panel);
+      bindResize(panel);
+    }
+  }
+
+  // src/windows.ts
+  function initialState(apps) {
+    const wins = {};
+    for (const a of apps) {
+      wins[winIdOf(a.id)] = {
+        id: winIdOf(a.id),
+        app: a.id,
+        title: a.title,
+        open: a.open,
+        focused: !!a.focused && a.open,
+        mode: "floating",
+        geom: a.geom,
+        z: a.z
+      };
+    }
+    return {
+      wins,
+      settings: {
+        theme: "light",
+        accent: "#3b82f6",
+        animGlobal: 360,
+        animWindow: 360,
+        animPane: 200,
+        animMenu: 200,
+        scrollMode: "percent",
+        net: "wifi"
+      }
+    };
+  }
+  function initWindows(store) {
+    const viewport = $("#viewport");
+    let dragWin = null;
+    let dragMode = "move";
+    let moved = false;
+    let sx = 0;
+    let sy = 0;
+    let ox = 0;
+    let oy = 0;
+    let ow = 0;
+    let oh = 0;
+    const el = (id) => $(`#${id}`);
+    const focusedId = () => focusedWin(store.get())?.id ?? null;
+    viewport.insertAdjacentHTML(
+      "beforeend",
+      APPS.map(
+        (a) => windowShellHTML({
+          id: winIdOf(a.id),
+          app: a.id,
+          title: a.title,
+          geom: a.geom,
+          z: a.z,
+          open: a.open,
+          focused: !!a.focused,
+          nav: a.nav,
+          content: a.content,
+          searchPlaceholder: a.searchPlaceholder,
+          searchOpen: a.searchOpen,
+          editItems: a.editItems
+        })
+      ).join("")
+    );
+    store.subscribe((s) => {
+      if (dragWin) return;
+      for (const ws of Object.values(s.wins)) {
+        const w = el(ws.id);
+        if (w) patchWinEl(w, ws);
+      }
+    });
+    const appIcon = (win) => $(`.app-item[data-app-id="${win.dataset.app}"]`);
+    function focus(id) {
+      store.update((s) => {
+        let maxZ = 20;
+        for (const w of Object.values(s.wins)) maxZ = Math.max(maxZ, w.z);
+        for (const w of Object.values(s.wins)) {
+          patchWin(s, w.id, { focused: w.id === id, z: w.id === id ? maxZ + 1 : w.z });
+        }
       });
-      $$(".window").forEach((win) => {
-        if (win.hidden || win.style.display === "none") return;
-        if (win.dataset.open === "0") return;
-        if ($("[data-topbar]", win)) return;
-        if (win.contains(t)) return;
-        if (isInsideAnchor(t, win.dataset.tempAnchor)) return;
-        closeWin(win);
+      for (const w of $$(".window")) {
+        if (w.id === id) continue;
+        $$("[data-resize].is-on", w).forEach((b) => b.classList.remove("is-on"));
+      }
+      const win = el(id);
+      if (win) align(win);
+    }
+    function blurAll() {
+      store.update((s) => {
+        for (const w of Object.values(s.wins)) patchWin(s, w.id, { focused: false });
+      });
+      $$("[data-resize].is-on").forEach((b) => b.classList.remove("is-on"));
+    }
+    function open(id) {
+      const win = el(id);
+      if (!win || win.dataset.anim === "1") return;
+      const ws = store.get().wins[id];
+      if (ws?.open && !win.hidden) {
+        focus(id);
+        return;
+      }
+      win.dataset.anim = "1";
+      win.hidden = false;
+      focus(id);
+      openFrom(win, appIcon(win), () => {
+        win.dataset.anim = "0";
+        store.update((s) => patchWin(s, id, { open: true }));
+        align(win);
+      });
+    }
+    function minimize(id) {
+      const win = el(id);
+      if (!win || win.dataset.anim === "1") return;
+      win.dataset.anim = "1";
+      minimizeTo(win, appIcon(win), () => {
+        win.dataset.anim = "0";
+        store.update((s) => {
+          patchWin(s, id, { open: false, focused: false });
+          for (const w of Object.values(s.wins)) {
+            if (w.id !== id) patchWin(s, w.id, { focused: false });
+          }
+        });
+      });
+    }
+    function close(id) {
+      const win = el(id);
+      if (!win || win.dataset.anim === "1") return;
+      win.dataset.anim = "1";
+      closeIn(win, () => {
+        win.dataset.anim = "0";
+        store.update((s) => {
+          patchWin(s, id, { open: false, focused: false });
+          for (const w of Object.values(s.wins)) {
+            if (w.id !== id) patchWin(s, w.id, { focused: false });
+          }
+        });
+      });
+    }
+    function toggleMaximize(id) {
+      const win = el(id);
+      if (!win || win.dataset.flipping === "1") return;
+      focus(id);
+      const first = captureShell(win);
+      win.dataset.flipping = "1";
+      store.update((s) => {
+        const w = s.wins[id];
+        patchWin(s, id, { mode: w.mode === "maximized" ? "floating" : "maximized" });
+      });
+      playShell(win, first);
+    }
+    for (const a of APPS) {
+      const win = el(winIdOf(a.id));
+      if (!win) continue;
+      on(win, "pointerdown", (e) => {
+        const t = e.target;
+        if (t.closest(".content, .top-bar, .nav-bar, .recover")) focus(win.id);
+      }, true);
+      const zone = $(".top-bar [data-drag-zone]", win);
+      if (zone) {
+        on(zone, "pointerdown", (e) => {
+          const t = e.target;
+          if (t.closest("[data-win-min], [data-win-cls]")) return;
+          startMove(win, e);
+        });
+        on(zone, "dblclick", (e) => {
+          const t = e.target;
+          if (t.closest("[data-win-min], [data-win-cls]")) return;
+          toggleMaximize(win.id);
+        });
+      }
+      $$("[data-topbar] [data-win-min]", win).forEach(
+        (b) => on(b, "click", (e) => {
+          e.stopPropagation();
+          if (!moved) minimize(win.id);
+        })
+      );
+      $$("[data-topbar] [data-win-cls]", win).forEach(
+        (b) => on(b, "click", (e) => {
+          e.stopPropagation();
+          if (!moved) close(win.id);
+        })
+      );
+      const cre = $("[data-resize]", win);
+      const content4 = $(".content", win);
+      if (cre && content4) {
+        let creOn = false;
+        on(content4, "pointermove", (e) => {
+          const ev = e;
+          const r = content4.getBoundingClientRect();
+          const ok = win.classList.contains("is-focused") && ev.clientX > r.right - 120 && ev.clientY > r.bottom - 120;
+          if (ok === creOn) return;
+          creOn = ok;
+          cre.classList.toggle("is-on", ok);
+        });
+        on(content4, "pointerleave", () => {
+          creOn = false;
+          cre.classList.remove("is-on");
+        });
+        on(cre, "pointerdown", (e) => {
+          if (!win.classList.contains("is-focused")) return;
+          if (win.getAttribute("data-mode") === "maximized") return;
+          dragWin = win;
+          dragMode = "resize";
+          moved = false;
+          const wr = win.getBoundingClientRect();
+          const vr = viewport.getBoundingClientRect();
+          ox = wr.left - vr.left;
+          oy = wr.top - vr.top;
+          ow = wr.width;
+          oh = wr.height;
+          sx = e.clientX;
+          sy = e.clientY;
+          win.style.transition = "none";
+          e.preventDefault();
+          e.stopPropagation();
+        });
+      }
+      bindNavPanes(win);
+      bindScrollIndicator(win);
+      a.bind?.(win, store);
+      align(win);
+    }
+    function startMove(win, e) {
+      focus(win.id);
+      if (win.getAttribute("data-mode") === "maximized") {
+        e.preventDefault();
+        return;
+      }
+      dragWin = win;
+      dragMode = "move";
+      moved = false;
+      const wr = win.getBoundingClientRect();
+      const vr = viewport.getBoundingClientRect();
+      ox = wr.left - vr.left;
+      oy = wr.top - vr.top;
+      ow = wr.width;
+      oh = wr.height;
+      sx = e.clientX;
+      sy = e.clientY;
+      win.style.transition = "none";
+      win.style.left = `${ox}px`;
+      win.style.top = `${oy}px`;
+      win.style.width = `${ow}px`;
+      win.style.height = `${oh}px`;
+      e.preventDefault();
+    }
+    on(window, "pointermove", (e) => {
+      if (!dragWin) return;
+      const ev = e;
+      if (Math.abs(ev.clientX - sx) > 3 || Math.abs(ev.clientY - sy) > 3) moved = true;
+      if (dragMode === "resize") {
+        dragWin.style.width = `${Math.max(240, ow + (ev.clientX - sx))}px`;
+        dragWin.style.height = `${Math.max(180, oh + (ev.clientY - sy))}px`;
+      } else {
+        dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
+        dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
+      }
+      align(dragWin);
+    });
+    on(window, "pointerup", () => {
+      if (!dragWin) return;
+      const win = dragWin;
+      dragWin = null;
+      win.style.transition = "";
+      const ws = store.get().wins[win.id];
+      if (ws && ws.mode === "floating") {
+        const vr = viewport.getBoundingClientRect();
+        const wr = win.getBoundingClientRect();
+        const geom = {
+          left: (wr.left - vr.left) / vr.width * 100,
+          top: (wr.top - vr.top) / vr.height * 100,
+          width: wr.width / vr.width * 100,
+          height: wr.height / vr.height * 100
+        };
+        store.update((s) => patchWin(s, win.id, { geom }));
+      }
+      align(win);
+    });
+    on(viewport, "pointerdown", (e) => {
+      const t = e.target;
+      if (t.closest(".window") || t.closest(".sys-status") || t.closest(".sys-appbar") || t.closest(".vp-resize")) {
+        return;
+      }
+      blurAll();
+    }, true);
+    on(document, "keydown", (e) => {
+      if (e.key !== "Escape") return;
+      if ($("[data-more-panel]:not([hidden]), [data-search-panel]:not([hidden])")) return;
+      const id = focusedId();
+      const ws = id ? store.get().wins[id] : null;
+      if (ws?.mode === "maximized") toggleMaximize(id);
+    });
+    const reAlign = () => {
+      if (dragWin || $$(".window[data-flipping='1']").length) return;
+      for (const w of $$(".window")) align(w);
+    };
+    new ResizeObserver(reAlign).observe(viewport);
+    window.addEventListener("resize", reAlign);
+    window.addEventListener("load", reAlign);
+    const firstId = focusedWin(store.get())?.id;
+    if (firstId) focus(firstId);
+    return {
+      el,
+      focusedId,
+      focus,
+      blurAll,
+      isDragging: () => !!dragWin,
+      toggleMaximize,
+      minimize,
+      close,
+      open,
+      alignAll: reAlign
+    };
+  }
+  function bindNavPanes(win) {
+    const btns = $$(".nav-btn", win);
+    const panes = $$(".set-pane", win);
+    if (!btns.length || !panes.length) return;
+    let cur = btns.find((b) => b.classList.contains("active"))?.dataset.section || "";
+    let busy = false;
+    btns.forEach((btn) => {
+      on(btn, "click", () => {
+        if (busy) return;
+        const name = btn.dataset.section;
+        if (!name || name === cur) return;
+        const oldP = panes.find((p) => p.dataset.pane === cur);
+        const newP = panes.find((p) => p.dataset.pane === name);
+        if (!newP) return;
+        const order = btns.map((b) => b.dataset.section);
+        const fwd = order.indexOf(name) > order.indexOf(cur);
+        const d = durMs("--anim-pane");
+        busy = true;
+        btns.forEach((b) => b.classList.toggle("active", b === btn));
+        if (oldP) {
+          oldP.classList.add(fwd ? "leave-up" : "leave-down");
+          window.setTimeout(() => {
+            oldP.hidden = true;
+            oldP.classList.remove("leave-up", "leave-down");
+            newP.hidden = false;
+            newP.classList.add(fwd ? "enter-up" : "enter-down");
+            window.setTimeout(() => {
+              newP.classList.remove("enter-up", "enter-down");
+              cur = name;
+              busy = false;
+            }, d);
+          }, d);
+        } else {
+          newP.hidden = false;
+          cur = name;
+          busy = false;
+        }
       });
     });
+  }
+
+  // src/menus.ts
+  function initMenus(api) {
+    for (const a of APPS) {
+      const win = api.el(winIdOf(a.id));
+      if (!win) continue;
+      const more = $("[data-more]", win);
+      const panel = $("[data-more-panel]", win);
+      const search = $("[data-search]", win);
+      const searchPanel = $("[data-search-panel]", win);
+      if (!panel) continue;
+      const close = () => {
+        panel.hidden = true;
+        more?.setAttribute("aria-expanded", "false");
+        if (searchPanel) searchPanel.hidden = true;
+        search?.setAttribute("aria-expanded", "false");
+        $$(".mp-expand", panel).forEach((p) => p.classList.remove("open"));
+      };
+      win._closeMenus = close;
+      on(more, "click", (e) => {
+        e.stopPropagation();
+        api.focus(win.id);
+        const open = panel.hidden;
+        close();
+        if (open) {
+          panel.hidden = false;
+          more?.setAttribute("aria-expanded", "true");
+        }
+      });
+      on(search, "click", (e) => {
+        e.stopPropagation();
+        api.focus(win.id);
+        const open = searchPanel ? searchPanel.hidden : false;
+        close();
+        if (searchPanel && open) {
+          searchPanel.hidden = false;
+          search?.setAttribute("aria-expanded", "true");
+          $("input", searchPanel)?.focus();
+        }
+      });
+      $$("[data-expand]", panel).forEach((btn) => {
+        on(btn, "click", (e) => {
+          e.stopPropagation();
+          const key = btn.getAttribute("data-expand");
+          const pane = key ? $(`[data-expand-pane="${key}"]`, panel) : null;
+          if (!pane) return;
+          const was = pane.classList.contains("open");
+          $$(".mp-expand", panel).forEach((p) => p.classList.remove("open"));
+          if (!was) pane.classList.add("open");
+        });
+      });
+      $$("[data-act]", panel).forEach((el) => {
+        on(el, "click", (e) => {
+          e.stopPropagation();
+          const act = el.getAttribute("data-act");
+          close();
+          if (act === "about") {
+            alert(`${win.dataset.title || "\u5E94\u7528"} \xB7 anios 1.0`);
+          } else if (act === "quit") {
+            api.close(win.id);
+          } else if (act === "min") {
+            api.minimize(win.id);
+          } else if (act === "max") {
+            api.toggleMaximize(win.id);
+          }
+        });
+      });
+    }
+    on(document, "pointerdown", (e) => {
+      const t = e.target;
+      if (t.closest("[data-more-panel], [data-more], [data-search-panel], [data-search]")) return;
+      for (const w of $$(".window")) w._closeMenus?.();
+    });
+    on(document, "keydown", (e) => {
+      if (e.key !== "Escape") return;
+      for (const w of $$(".window")) w._closeMenus?.();
+    });
+  }
+
+  // src/recover.ts
+  var GAP = 5;
+  var NEAR = 28 + 2 * GAP;
+  function initRecover(store, api) {
+    const viewport = $("#viewport");
+    const hideAll = () => {
+      for (const w of $$(".window")) {
+        const r = $("[data-recover]", w);
+        if (!r) continue;
+        r.hidden = true;
+        r.classList.remove("is-on");
+      }
+    };
+    let lastFocused = api.focusedId();
+    store.subscribe(() => {
+      const cur = api.focusedId();
+      if (cur !== lastFocused) {
+        lastFocused = cur;
+        hideAll();
+      }
+    });
+    function place(e) {
+      const id = api.focusedId();
+      const win = id ? api.el(id) : null;
+      const ws = id ? store.get().wins[id] : null;
+      if (!win || !ws || api.isDragging() || ws.mode !== "floating") {
+        hideAll();
+        return;
+      }
+      const content4 = $(".content", win);
+      const zone = $(".top-bar [data-drag-zone]", win);
+      const rec = $("[data-recover]", win);
+      if (!content4 || !rec) return;
+      const vr = viewport.getBoundingClientRect();
+      const zr = zone?.getBoundingClientRect();
+      const chromeVisible = !!zr && zr.left >= vr.left - 1 && zr.top >= vr.top - 1 && zr.right <= vr.right + 1 && zr.bottom <= vr.bottom + 1;
+      if (chromeVisible) {
+        hideAll();
+        return;
+      }
+      const wr = content4.getBoundingClientRect();
+      const mx = e.clientX;
+      const my = e.clientY;
+      const dist = {
+        left: Math.abs(mx - wr.left),
+        right: Math.abs(mx - wr.right),
+        top: Math.abs(my - wr.top),
+        bottom: Math.abs(my - wr.bottom)
+      };
+      let edge = "top";
+      let best = dist.top;
+      for (const k of ["bottom", "left", "right"]) {
+        if (dist[k] < best) {
+          edge = k;
+          best = dist[k];
+        }
+      }
+      if (best > NEAR) {
+        hideAll();
+        return;
+      }
+      const x0 = Math.max(wr.left, vr.left);
+      const x1 = Math.min(wr.right, vr.right);
+      const y0 = Math.max(wr.top, vr.top);
+      const y1 = Math.min(wr.bottom, vr.bottom);
+      for (const w of $$(".window")) {
+        const r = $("[data-recover]", w);
+        if (!r) continue;
+        if (w === win) {
+          r.hidden = false;
+          r.classList.add("is-on");
+        } else {
+          r.hidden = true;
+          r.classList.remove("is-on");
+        }
+      }
+      rec.dataset.orient = edge === "left" || edge === "right" ? "v" : "h";
+      const hw = rec.offsetWidth / 2 || 14;
+      const hh = rec.offsetHeight / 2 || 14;
+      let cx;
+      let cy;
+      if (edge === "top") {
+        cx = (x0 + x1) / 2;
+        cy = wr.top - GAP - hh;
+      } else if (edge === "bottom") {
+        cx = (x0 + x1) / 2;
+        cy = wr.bottom + GAP + hh;
+      } else if (edge === "left") {
+        cx = wr.left - GAP - hw;
+        cy = (y0 + y1) / 2;
+      } else {
+        cx = wr.right + GAP + hw;
+        cy = (y0 + y1) / 2;
+      }
+      cx = clamp(cx, hw, vr.left + vr.width - hw);
+      cy = clamp(cy, hh, vr.top + vr.height - hh);
+      const box = win.getBoundingClientRect();
+      rec.style.left = `${cx - box.left}px`;
+      rec.style.top = `${cy - box.top}px`;
+    }
+    let raf = 0;
+    let ev = null;
+    on(viewport, "pointermove", (e) => {
+      ev = e;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        if (ev) place(ev);
+      });
+    });
+    on(viewport, "pointerleave", hideAll);
+    for (const win of $$(".window")) {
+      const zone = $("[data-recover] [data-drag-zone]", win);
+      if (!zone) continue;
+      on(zone, "pointerdown", (e) => {
+        const t = e.target;
+        if (t.closest("[data-win-min], [data-win-cls]")) return;
+        $("[data-topbar] [data-drag-zone]", win)?.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            bubbles: true,
+            clientX: e.clientX,
+            clientY: e.clientY
+          })
+        );
+      });
+      on(zone, "dblclick", () => {
+        api.toggleMaximize(win.id);
+        hideAll();
+      });
+      on($("[data-recover] [data-win-min]", win), "click", () => {
+        $("[data-topbar] [data-win-min]", win)?.click();
+        hideAll();
+      });
+      on($("[data-recover] [data-win-cls]", win), "click", () => {
+        $("[data-topbar] [data-win-cls]", win)?.click();
+        hideAll();
+      });
+    }
+  }
+
+  // src/systembar.ts
+  function initStatusBar(store) {
+    const viewport = $("#viewport");
+    viewport.insertAdjacentHTML("beforeend", statusBarHTML());
+    const root = $(".sys-status");
+    const capsule = $(".status-capsule", root);
+    const content4 = $(".status-content", root);
+    const openBtn = $("[data-status-toggle]", root);
+    const time = $("[data-time]", root);
+    const arc = $("[data-battery] .bat-arc", root);
+    const pct = $("[data-battery] .bat-pct", root);
+    const tick = () => {
+      if (!time) return;
+      const d = /* @__PURE__ */ new Date();
+      time.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      $$("[data-time-full]", root).forEach(
+        (el) => el.textContent = `\u4ECA\u65E5 ${d.getMonth() + 1}\u6708${d.getDate()}\u65E5`
+      );
+    };
+    tick();
+    window.setInterval(tick, 3e4);
+    const bat = (p) => {
+      if (!arc || !pct) return;
+      const r = 14;
+      const c = 2 * Math.PI * r;
+      const sweep = 270 / 360 * c;
+      arc.style.strokeDasharray = `${sweep} ${c}`;
+      arc.style.strokeDashoffset = String(sweep * (1 - p / 100));
+      pct.textContent = String(Math.round(p));
+    };
+    bat(72);
+    const setOpen = (open) => {
+      root.classList.toggle("is-open", open);
+      if (content4) content4.hidden = !open;
+      openBtn?.setAttribute("aria-expanded", open ? "true" : "false");
+      capsule?.classList.toggle("is-open", open);
+    };
+    on(openBtn, "click", (e) => {
+      e.stopPropagation();
+      setOpen(!root.classList.contains("is-open"));
+    });
+    $$("[data-quick]", root).forEach((btn) => {
+      on(btn, "click", () => {
+        const k = btn.getAttribute("data-quick");
+        if (k === "wifi" || k === "cell") {
+          store.update((s) => s.settings.net = k);
+        }
+        if (k === "theme-light" || k === "theme-dark") {
+          store.update((s) => s.settings.theme = k === "theme-dark" ? "dark" : "light");
+        }
+        btn.classList.toggle("on");
+      });
+    });
+    on(document, "pointerdown", (e) => {
+      if (e.target.closest(".sys-status")) return;
+      setOpen(false);
+    });
+  }
+  function initAppBar(store, api) {
+    const viewport = $("#viewport");
+    const items = APPS.map((a) => ({
+      appId: a.id,
+      icon: a.icon,
+      label: a.title
+    })).sort((a, b) => a.appId === "launcher" ? 1 : b.appId === "launcher" ? -1 : 0);
+    viewport.insertAdjacentHTML("beforeend", appBarHTML(items));
+    const bar = $(".sys-appbar");
+    const sync = () => {
+      const s = store.get();
+      bar.classList.toggle("only-launch", anyMaximized(s));
+      for (const btn of $$(".app-item", bar)) {
+        const appId = btn.getAttribute("data-app-id") || "";
+        const ws = s.wins[winIdOf(appId)];
+        btn.classList.toggle("open", !!ws?.open);
+        btn.classList.toggle("active", !!ws?.open && ws.focused);
+      }
+    };
+    store.subscribe(sync);
+    for (const btn of $$(".app-item", bar)) {
+      on(btn, "click", (e) => {
+        e.stopPropagation();
+        const appId = btn.getAttribute("data-app-id") || "";
+        const id = winIdOf(appId);
+        const ws = store.get().wins[id];
+        if (!ws) return;
+        if (ws.open) api.minimize(id);
+        else api.open(id);
+      });
+    }
+    sync();
+  }
+  function bindSettingsPatch(store) {
+    const apply = () => {
+      const st = store.get().settings;
+      const root = document.documentElement;
+      root.setAttribute("data-theme", st.theme);
+      root.style.setProperty("--accent", st.accent);
+      root.style.setProperty("--anim-window", `${st.animWindow}ms`);
+      root.style.setProperty("--anim-pane", `${st.animPane}ms`);
+      root.style.setProperty("--anim-menu", `${st.animMenu}ms`);
+      $$(".scroll-indicator").forEach((el) => el.dataset.mode = st.scrollMode);
+      $(".sys-status")?.setAttribute("data-net", st.net);
+      const syncGroup = (sel, attr, val) => {
+        for (const b of $$(sel)) {
+          b.setAttribute("aria-pressed", b.getAttribute(attr) === val ? "true" : "false");
+        }
+      };
+      syncGroup("button[data-theme]", "data-theme", st.theme);
+      syncGroup("[data-net-mode]", "data-net-mode", st.net);
+      syncGroup("[data-scroll-mode]", "data-scroll-mode", st.scrollMode);
+      const syncSlider = (id, v) => {
+        const el = $(`#${id}`);
+        if (el && Number(el.value) !== v) el.value = String(v);
+        const l = $(`#${id}Val`);
+        if (l) l.textContent = `${v}ms`;
+      };
+      syncSlider("animGlobal", st.animGlobal);
+      syncSlider("animWindow", st.animWindow);
+      syncSlider("animPane", st.animPane);
+      syncSlider("animMenu", st.animMenu);
+      for (const d of $$(".cd")) {
+        d.classList.toggle(
+          "active",
+          getComputedStyle(d).getPropertyValue("--c").trim() === st.accent
+        );
+      }
+    };
+    store.subscribe(apply);
+    apply();
   }
 
   // src/main.ts
   function boot() {
     try {
-      const api = initWindows();
+      const store = createStore(initialState(APPS));
+      bindSettingsPatch(store);
+      const api = initWindows(store);
       initMenus(api);
-      initRecover(api);
-      initStatusBar();
-      initAppBar(api);
-      initUi(api.wins);
-      initTempWindows();
-      initViewport(() => {
-        api.wins.forEach((w) => api.align(w));
-      });
-      requestAnimationFrame(() => {
-        api.wins.forEach((w) => api.align(w));
-      });
+      initRecover(store, api);
+      initStatusBar(store);
+      initAppBar(store, api);
+      initHost(store, api);
+      api.alignAll();
     } catch (err) {
       console.error("[anios] boot failed", err);
+      const vp = $("#viewport");
+      if (vp) {
+        vp.insertAdjacentHTML(
+          "beforeend",
+          '<div class="content" style="inset:auto 16px 16px 16px;top:auto;padding:16px">\u542F\u52A8\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u63A7\u5236\u53F0\u3002</div>'
+        );
+      }
     }
   }
   if (document.readyState === "loading") {

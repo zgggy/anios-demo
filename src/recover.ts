@@ -1,31 +1,40 @@
-import { $, on, clamp } from "./dom";
-import type { Edge, WinApi } from "./types";
+/** 临时拖动 recover：与控制栏拖动钮同一组件、同一套 hover。 */
+import { $, $$, on, clamp } from "./dom";
+import type { Store } from "./state";
+import type { WinApi } from "./windows";
+
+type Edge = "top" | "bottom" | "left" | "right";
 
 const GAP = 5;
 const NEAR = 28 + 2 * GAP; // 38px
 
-/**
- * Recover = same drag-zone component as top-bar.
- * Coordinates are window-relative (recover lives inside .window).
- * Show when drag chrome is off-screen AND pointer is within 38px of a content edge.
- * Place on the on-screen remainder of the nearest content edge, gap 5px outside.
- * Left/right edges rotate the group 90°. Does not follow the pointer.
- */
-export function initRecover(api: WinApi): void {
+export function initRecover(store: Store, api: WinApi): void {
   const viewport = $<HTMLElement>("#viewport")!;
 
   const hideAll = () => {
-    api.wins.forEach((w) => {
+    for (const w of $$<HTMLElement>(".window")) {
       const r = $<HTMLElement>("[data-recover]", w);
-      if (!r) return;
+      if (!r) continue;
       r.hidden = true;
       r.classList.remove("is-on");
-    });
+    }
   };
 
+  // 焦点变化 → 立即收起（视图瞬态跟随语义状态）
+  let lastFocused = api.focusedId();
+  store.subscribe(() => {
+    const cur = api.focusedId();
+    if (cur !== lastFocused) {
+      lastFocused = cur;
+      hideAll();
+    }
+  });
+
   function place(e: PointerEvent): void {
-    const win = api.focused();
-    if (!win || api.isDragging() || win.getAttribute("data-mode") !== "floating") {
+    const id = api.focusedId();
+    const win = id ? api.el(id) : null;
+    const ws = id ? store.get().wins[id] : null;
+    if (!win || !ws || api.isDragging() || ws.mode !== "floating") {
       hideAll();
       return;
     }
@@ -58,8 +67,7 @@ export function initRecover(api: WinApi): void {
     };
     let edge: Edge = "top";
     let best = dist.top;
-    const others: Edge[] = ["bottom", "left", "right"];
-    for (const k of others) {
+    for (const k of ["bottom", "left", "right"] as Edge[]) {
       if (dist[k] < best) {
         edge = k;
         best = dist[k];
@@ -70,16 +78,15 @@ export function initRecover(api: WinApi): void {
       return;
     }
 
-    // on-screen remainder of this content edge
+    // 该内容边的屏内剩余段
     const x0 = Math.max(wr.left, vr.left);
     const x1 = Math.min(wr.right, vr.right);
     const y0 = Math.max(wr.top, vr.top);
     const y1 = Math.min(wr.bottom, vr.bottom);
 
-    // hide other recovers; show this one
-    api.wins.forEach((w) => {
+    for (const w of $$<HTMLElement>(".window")) {
       const r = $<HTMLElement>("[data-recover]", w);
-      if (!r) return;
+      if (!r) continue;
       if (w === win) {
         r.hidden = false;
         r.classList.add("is-on");
@@ -87,7 +94,7 @@ export function initRecover(api: WinApi): void {
         r.hidden = true;
         r.classList.remove("is-on");
       }
-    });
+    }
 
     rec.dataset.orient = edge === "left" || edge === "right" ? "v" : "h";
 
@@ -111,7 +118,7 @@ export function initRecover(api: WinApi): void {
     cx = clamp(cx, hw, vr.left + vr.width - hw);
     cy = clamp(cy, hh, vr.top + vr.height - hh);
 
-    // recover is inside .window → window-relative
+    // recover 在 .window 内 → 窗口相对坐标
     const box = win.getBoundingClientRect();
     rec.style.left = `${cx - box.left}px`;
     rec.style.top = `${cy - box.top}px`;
@@ -129,10 +136,10 @@ export function initRecover(api: WinApi): void {
   });
   on(viewport, "pointerleave", hideAll);
 
-  api.wins.forEach((win) => {
+  // 拖 recover = 拖窗：转发给顶栏拖动钮
+  for (const win of $$<HTMLElement>(".window")) {
     const zone = $<HTMLElement>("[data-recover] [data-drag-zone]", win);
-    if (!zone) return;
-    // recover drag = window drag (forward to top-bar drag-zone)
+    if (!zone) continue;
     on(zone, "pointerdown", (e) => {
       const t = e.target as Element;
       if (t.closest("[data-win-min], [data-win-cls]")) return;
@@ -145,7 +152,7 @@ export function initRecover(api: WinApi): void {
       );
     });
     on(zone, "dblclick", () => {
-      api.toggleMaximize(win);
+      api.toggleMaximize(win.id);
       hideAll();
     });
     on($<HTMLElement>("[data-recover] [data-win-min]", win), "click", () => {
@@ -156,5 +163,5 @@ export function initRecover(api: WinApi): void {
       $<HTMLElement>("[data-topbar] [data-win-cls]", win)?.click();
       hideAll();
     });
-  });
+  }
 }
