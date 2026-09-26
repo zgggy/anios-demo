@@ -842,6 +842,99 @@ svg {
   flex-shrink: 0;
 }
 .app-row .a-ic svg { width: 18px; height: 18px; }
+
+/* ══════════ 窗口类型学 ══════════ */
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 140;
+  background: rgba(15, 23, 42, 0.28);
+}
+.modal-scrim[hidden] { display: none !important; }
+
+/* 无 chrome 类型：内容即窗口本体 */
+.window[data-wintype="dialog"] .content,
+.window[data-wintype="transient"] .content,
+.window[data-wintype="chromeless"] .content,
+.window[data-wintype="immersive"] .content {
+  inset: 0;
+  border-radius: var(--win-radius);
+}
+.window[data-wintype="immersive"] .content {
+  border-radius: 0;
+  border: 0;
+}
+.window[data-wintype="chromeless"] .content {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+}
+.window[data-wintype]:not([data-wintype="normal"]) .content-scroll { padding: 14px; }
+.window[data-wintype="immersive"] .content-scroll { padding: 0; }
+
+/* 样例卡片：对话框 / 通知横幅 / 悬浮控制 / 沉浸放映 */
+.dlg {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  justify-content: center;
+  padding: 8px 18px;
+  text-align: center;
+}
+.dlg-title { font-size: var(--font-row); font-weight: 600; }
+.dlg-desc { font-size: var(--font-desc); color: var(--ink-3); }
+.dlg-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
+.dlg-actions .btn-quiet,
+.dlg-actions .btn-call { padding: 0 18px; }
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  justify-content: center;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--frost-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--frost-blur);
+  -webkit-backdrop-filter: var(--frost-blur);
+}
+.hud-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.cast {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: linear-gradient(160deg, #101725, #1c2b45);
+  color: #e8eef7;
+}
+.cast-title { font-size: var(--font-title); font-weight: 700; }
+.cast-sub { font-size: var(--font-desc); opacity: 0.75; }
 /* maximized: hide other apps + capsule shell; launcher = single-element nav */
 .sys-appbar.only-launch .app-item:not([data-app-id="launcher"]) {
   display: none;

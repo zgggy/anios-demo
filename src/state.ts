@@ -34,6 +34,96 @@ export type Settings = {
   derivTerms: Record<string, number>;
 };
 
+/* ── 窗口类型学：类型 = 一组系统给定的行为契约（策略表单一来源） ── */
+
+export type WinType = "normal" | "dialog" | "transient" | "chromeless" | "immersive";
+
+export type WinPolicy = {
+  chrome: { topbar: boolean; nav: boolean; recover: boolean };
+  drag: "handle" | "anywhere" | "none";
+  resize: boolean;
+  maximize: boolean;
+  /** 点击窗口外即关闭（轻取消） */
+  lightDismiss: boolean;
+  /** 打开时夺取焦点（对话框要，通知横幅不要） */
+  stealFocus: boolean;
+  /** App 栏图标（对话框/临时窗/沉浸窗不入栏） */
+  appIcon: boolean;
+  /** z 基带：0=普通窗序 · 60=普通窗之上系统栏之下 · 150=模态 · 200=沉浸（唯一可盖系统栏） */
+  zBase: number;
+  /** 模态遮罩 */
+  scrim: boolean;
+  /** 自动退场毫秒（0 = 不自动） */
+  autoCloseMs: number;
+};
+
+export const WIN_TYPES: Record<WinType, WinPolicy> = {
+  normal: {
+    chrome: { topbar: true, nav: true, recover: true },
+    drag: "handle",
+    resize: true,
+    maximize: true,
+    lightDismiss: false,
+    stealFocus: true,
+    appIcon: true,
+    zBase: 0,
+    scrim: false,
+    autoCloseMs: 0,
+  },
+  dialog: {
+    chrome: { topbar: false, nav: false, recover: false },
+    drag: "none",
+    resize: false,
+    maximize: false,
+    lightDismiss: false,
+    stealFocus: true,
+    appIcon: false,
+    zBase: 150,
+    scrim: true,
+    autoCloseMs: 0,
+  },
+  transient: {
+    chrome: { topbar: false, nav: false, recover: false },
+    drag: "none",
+    resize: false,
+    maximize: false,
+    lightDismiss: true,
+    stealFocus: false,
+    appIcon: false,
+    zBase: 60,
+    scrim: false,
+    autoCloseMs: 6000,
+  },
+  chromeless: {
+    chrome: { topbar: false, nav: false, recover: false },
+    drag: "anywhere",
+    resize: false,
+    maximize: false,
+    lightDismiss: false,
+    stealFocus: false,
+    appIcon: false,
+    zBase: 60,
+    scrim: false,
+    autoCloseMs: 0,
+  },
+  immersive: {
+    chrome: { topbar: false, nav: false, recover: false },
+    drag: "none",
+    resize: false,
+    maximize: false,
+    lightDismiss: false,
+    stealFocus: true,
+    appIcon: false,
+    zBase: 200,
+    scrim: false,
+    autoCloseMs: 0,
+  },
+};
+
+export function policyOf(t?: WinType): WinPolicy {
+  return WIN_TYPES[t ?? "normal"];
+}
+
 /* ── 几何度量：间距/尺寸/字号的运行时参数（设置可调） ──
    派生关系保持公式化，不出滑杆：
      --nav-w = topbar-h × 1.5  ·  --inset = gap  ·  拖动展开 = btn × 3

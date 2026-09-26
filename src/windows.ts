@@ -6,6 +6,7 @@ import { $, $$, on, durMs } from "./dom";
 import {
   Store,
   State,
+  policyOf,
   patchWin,
   focusedWin,
   defaultMetrics,
@@ -92,12 +93,24 @@ export function initWindows(store: Store): WinApi {
         focused: !!a.focused,
         nav: a.nav,
         content: a.content,
+        winType: a.winType,
         searchPlaceholder: a.searchPlaceholder,
         searchOpen: a.searchOpen,
         editItems: a.editItems,
       }),
-    ).join(""),
+    ).join("") + '<div class="modal-scrim" data-scrim hidden></div>',
   );
+
+  /** 模态遮罩：任一对话框类窗口可见即铺开 */
+  const scrim = $<HTMLElement>("[data-scrim]", viewport);
+  function syncScrim(): void {
+    if (!scrim) return;
+    const anyModal = APPS.some((a) => {
+      const w = el(winIdOf(a.id));
+      return policyOf(a.winType).scrim && !!w && !w.hidden;
+    });
+    scrim.hidden = !anyModal;
+  }
 
   /* ── 属性补丁：状态 → DOM ── */
   store.subscribe((s) => {
@@ -108,6 +121,7 @@ export function initWindows(store: Store): WinApi {
       if (!w || w.dataset.flipping === "1") continue;
       patchWinEl(w, ws);
     }
+    syncScrim();
   });
 
   const appIcon = (win: HTMLElement): HTMLElement | null => {
@@ -117,9 +131,13 @@ export function initWindows(store: Store): WinApi {
     return $<HTMLElement>('.app-item[data-app-id="launcher"]');
   };
 
+  const policyFor = (id: string) =>
+    policyOf(APPS.find((a) => winIdOf(a.id) === id)?.winType);
+
   const actions: AppActions = {
     openApp: (appId) => open(winIdOf(appId)),
     minimizeApp: (appId) => minimize(winIdOf(appId)),
+    closeApp: (appId) => close(winIdOf(appId)),
   };
 
   function focus(id: string): void {
@@ -130,7 +148,10 @@ export function initWindows(store: Store): WinApi {
         .sort((a, b) => a.z - b.z)
         .filter((w) => w.id !== id);
       stack.push(s.wins[id]);
-      stack.forEach((w, i) => patchWin(s, w.id, { focused: w.id === id, z: i + 1 }));
+      // z = 类型基带 + 序号：模态/沉浸永远压过系统栏，普通窗序其下
+      stack.forEach((w, i) =>
+        patchWin(s, w.id, { focused: w.id === id, z: policyFor(w.id).zBase + i + 1 }),
+      );
     });
     // 视图瞬态：他窗缩放钮收起
     for (const w of $$(".window")) {
@@ -155,13 +176,25 @@ export function initWindows(store: Store): WinApi {
       focus(id);
       return;
     }
+    const pol = policyFor(id);
     win.dataset.anim = "1";
     win.hidden = false;
-    focus(id);
+    if (pol.stealFocus) focus(id);
+    syncScrim();
     openFrom(win, appIcon(win), () => {
       win.dataset.anim = "0";
       store.update((s) => patchWin(s, id, { status: "open" }));
+      syncScrim();
     });
+    // 对话框：焦点圈入框内；临时窗：到时自动退场
+    if (pol.scrim) {
+      window.setTimeout(() => $<HTMLElement>(".content button, .content input", win)?.focus(), 0);
+    }
+    if (pol.autoCloseMs) {
+      window.setTimeout(() => {
+        if (store.get().wins[id].status === "open") close(id);
+      }, pol.autoCloseMs);
+    }
   }
 
   function minimize(id: string): void {
@@ -214,16 +247,22 @@ export function initWindows(store: Store): WinApi {
   for (const a of APPS) {
     const win = el(winIdOf(a.id));
     if (!win) continue;
+    const pol = policyOf(a.winType);
 
-    // 点内容区/真实胶囊/浮层 → 焦点
+    // 点内容区/真实胶囊/浮层 → 焦点（不夺焦的类型仅点击自身时聚焦）
     on(win, "pointerdown", (e) => {
       const t = e.target as Element;
       if (t.closest(".content, .top-bar, .nav-bar, .recover, .menu-panel, .search-panel")) focus(win.id);
     }, true);
 
+    // 无背景窗口：任意处拖动
+    if (pol.drag === "anywhere") {
+      on(win, "pointerdown", (e) => startMove(win, e as PointerEvent));
+    }
+
     // 拖动钮：>3px 算拖，否则算点；双击最大化
     const zone = $<HTMLElement>(".top-bar [data-drag-zone]", win);
-    if (zone) {
+    if (zone && pol.drag === "handle") {
       // 区上任何按压（含收起/关闭点）都进入手势：startMove 复位 moved
       // 并允许从收起/关闭上拖窗（规范 §3.5）；moved 只在本手势内区分拖与点
       on(zone, "pointerdown", (e) => {
@@ -371,13 +410,59 @@ export function initWindows(store: Store): WinApi {
     blurAll();
   }, true);
 
-  // Esc：退出最大化（菜单开着时交给 menus.ts）
+  // 键盘契约：对话框（Esc 关闭 / Tab 圈内）> 菜单 > 退出最大化
   on(document, "keydown", (e) => {
-    if ((e as KeyboardEvent).key !== "Escape") return;
+    const k = e as KeyboardEvent;
+    const dlgApp = APPS.find((a) => {
+      const w = el(winIdOf(a.id));
+      return policyOf(a.winType).scrim && !!w && !w.hidden;
+    });
+    if (dlgApp) {
+      const id = winIdOf(dlgApp.id);
+      const w = el(id)!;
+      if (k.key === "Escape") {
+        close(id);
+        e.preventDefault();
+        return;
+      }
+      if (k.key === "Tab") {
+        const f = $$<HTMLElement>("button, input, [tabindex]", w).filter((x) => !x.hasAttribute("disabled"));
+        if (!f.length) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        const act = document.activeElement as HTMLElement | null;
+        if (!act || !w.contains(act)) {
+          first.focus();
+          e.preventDefault();
+        } else if (k.shiftKey && act === first) {
+          last.focus();
+          e.preventDefault();
+        } else if (!k.shiftKey && act === last) {
+          first.focus();
+          e.preventDefault();
+        }
+        return;
+      }
+      return;
+    }
+    if (k.key !== "Escape") return;
     if ($("[data-more-panel]:not([hidden]), [data-search-panel]:not([hidden])")) return;
     const id = focusedId();
     const ws = id ? store.get().wins[id] : null;
     if (ws?.mode === "maximized") toggleMaximize(id!);
+  });
+
+  // 轻取消：点击临时窗口之外即关闭
+  on(document, "pointerdown", (e) => {
+    const t = e.target as Element;
+    for (const a of APPS) {
+      if (!policyOf(a.winType).lightDismiss) continue;
+      const id = winIdOf(a.id);
+      const w = el(id);
+      if (!w || w.hidden) continue;
+      if (t.closest(`#${id}`)) continue;
+      close(id);
+    }
   });
 
   /** 尺寸变化必须重对齐：--content-cx/cy 是像素值，而窗口几何是百分比 */

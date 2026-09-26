@@ -9,6 +9,7 @@ export function makeLauncherApp(apps: AppDef[]): AppDef {
   <header class="set-head"><h1>启动台</h1><p>应用 · 文件 · 链接 · 操作</p></header>
   <div class="set-group">
     ${apps
+      .filter((a) => a.listed !== false)
       .map(
         (a) => `<button type="button" class="set-row app-row" data-launch="${a.id}">
           <span class="a-ic">${icon(a.icon)}</span>
@@ -33,9 +34,24 @@ export function makeLauncherApp(apps: AppDef[]): AppDef {
   </div>
 </section>
 <section class="set-pane" data-pane="acts" hidden>
-  <header class="set-head"><h1>操作</h1></header>
+  <header class="set-head"><h1>操作</h1><p>窗口类型学 · 每行是一种行为契约</p></header>
   <div class="set-group">
-    <div class="set-row"><div><div class="row-t">快捷操作</div><div class="row-s">勿扰 · 蓝牙 · 截屏</div></div></div>
+    <button type="button" class="set-row app-row" data-launch="perm">
+      <span class="a-ic">${icon("net")}</span>
+      <div><div class="row-t">位置权限</div><div class="row-s">对话框 · 模态（遮罩/焦点陷阱/Esc）</div></div>
+    </button>
+    <button type="button" class="set-row app-row" data-launch="notify">
+      <span class="a-ic">${icon("clock")}</span>
+      <div><div class="row-t">屏幕使用时间</div><div class="row-s">通知横幅 · 轻取消/不夺焦/自动退场</div></div>
+    </button>
+    <button type="button" class="set-row app-row" data-launch="hud">
+      <span class="a-ic">${icon("sound")}</span>
+      <div><div class="row-t">媒体控制</div><div class="row-s">悬浮控制 · 无底板/任意处拖动</div></div>
+    </button>
+    <button type="button" class="set-row app-row" data-launch="cast">
+      <span class="a-ic">${icon("display")}</span>
+      <div><div class="row-t">演示放映</div><div class="row-s">沉浸窗口 · 唯一覆盖系统栏</div></div>
+    </button>
   </div>
 </section>`;
 

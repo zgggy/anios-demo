@@ -7,6 +7,7 @@ import {
   Store,
   anyMaximized,
   isRunning,
+  policyOf,
   METRICS,
   ANIMS,
   DERIVS,
@@ -87,11 +88,9 @@ export function initStatusBar(store: Store): void {
 export function initAppBar(store: Store, api: WinApi): void {
   const viewport = $<HTMLElement>("#viewport")!;
   // 自上而下：已打开 → 快速启动 → 启动台（永远最下）
-  const items: AppBarItem[] = APPS.map((a) => ({
-    appId: a.id,
-    icon: a.icon,
-    label: a.title,
-  })).sort((a, b) => (a.appId === "launcher" ? 1 : b.appId === "launcher" ? -1 : 0));
+  const items: AppBarItem[] = APPS.filter((a) => policyOf(a.winType).appIcon)
+    .map((a) => ({ appId: a.id, icon: a.icon, label: a.title }))
+    .sort((a, b) => (a.appId === "launcher" ? 1 : b.appId === "launcher" ? -1 : 0));
   viewport.insertAdjacentHTML("beforeend", appBarHTML(items));
   const bar = $<HTMLElement>(".sys-appbar")!;
 

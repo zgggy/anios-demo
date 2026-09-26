@@ -4,7 +4,7 @@
  * chrome 的 DOM 结构只在本文件存在一次。
  */
 import { $ } from "./dom";
-import type { Geom, WinState } from "./state";
+import { policyOf, type Geom, type WinState, type WinType } from "./state";
 
 /* ── 图标：24×24 viewBox、stroke-width 1.7、currentColor、圆头圆接 ── */
 
@@ -111,30 +111,33 @@ export type WindowShellOpts = {
   searchPlaceholder: string;
   searchOpen?: boolean;
   editItems?: string[];
+  /** 窗口类型（默认 normal）：chrome 按类型策略裁剪 */
+  winType?: WinType;
 };
 
-/** 窗口单元 = top-bar + nav-bar + content + 浮层（菜单/搜索）+ recover */
+/** 窗口单元 = top-bar + nav-bar + content + 浮层 + recover；chrome 按窗口类型策略裁剪 */
 export function windowShellHTML(o: WindowShellOpts): string {
   const g = o.geom;
-  return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
-    <div class="top-bar" data-topbar>
+  const p = policyOf(o.winType);
+  return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-wintype="${o.winType ?? "normal"}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
+    ${p.chrome.topbar ? `<div class="top-bar" data-topbar>
       ${topCapsuleHTML()}
-    </div>
-    <div class="nav-bar" data-nav>
+    </div>` : ""}
+    ${p.chrome.nav && o.nav.length ? `<div class="nav-bar" data-nav>
       <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
-    </div>
+    </div>` : ""}
     <div class="content">
       <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-      <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
+      ${p.resize ? `<button type="button" class="resize-knob" data-resize aria-label="缩放"></button>` : ""}
       <div class="content-scroll">${o.content}</div>
     </div>
-    <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
+    ${p.chrome.topbar ? `<div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
       <input class="search-input" placeholder="${o.searchPlaceholder}" />
     </div>
-    ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
-    <div class="recover" data-recover hidden data-orient="h">
+    ${menuPanelHTML({ title: o.title, editItems: o.editItems })}` : ""}
+    ${p.chrome.recover ? `<div class="recover" data-recover hidden data-orient="h">
       ${dragZoneHTML("data-recover-zone")}
-    </div>
+    </div>` : ""}
   </div>`;
 }
 

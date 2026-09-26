@@ -882,6 +882,99 @@ svg {
   flex-shrink: 0;
 }
 .app-row .a-ic svg { width: 18px; height: 18px; }
+
+/* ══════════ 窗口类型学 ══════════ */
+.modal-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 140;
+  background: rgba(15, 23, 42, 0.28);
+}
+.modal-scrim[hidden] { display: none !important; }
+
+/* 无 chrome 类型：内容即窗口本体 */
+.window[data-wintype="dialog"] .content,
+.window[data-wintype="transient"] .content,
+.window[data-wintype="chromeless"] .content,
+.window[data-wintype="immersive"] .content {
+  inset: 0;
+  border-radius: var(--win-radius);
+}
+.window[data-wintype="immersive"] .content {
+  border-radius: 0;
+  border: 0;
+}
+.window[data-wintype="chromeless"] .content {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+}
+.window[data-wintype]:not([data-wintype="normal"]) .content-scroll { padding: 14px; }
+.window[data-wintype="immersive"] .content-scroll { padding: 0; }
+
+/* 样例卡片：对话框 / 通知横幅 / 悬浮控制 / 沉浸放映 */
+.dlg {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  justify-content: center;
+  padding: 8px 18px;
+  text-align: center;
+}
+.dlg-title { font-size: var(--font-row); font-weight: 600; }
+.dlg-desc { font-size: var(--font-desc); color: var(--ink-3); }
+.dlg-actions { display: flex; gap: 10px; justify-content: center; margin-top: 8px; }
+.dlg-actions .btn-quiet,
+.dlg-actions .btn-call { padding: 0 18px; }
+
+.note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  justify-content: center;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 100%;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--frost-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--frost-blur);
+  -webkit-backdrop-filter: var(--frost-blur);
+}
+.hud-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.cast {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: linear-gradient(160deg, #101725, #1c2b45);
+  color: #e8eef7;
+}
+.cast-title { font-size: var(--font-title); font-weight: 700; }
+.cast-sub { font-size: var(--font-desc); opacity: 0.75; }
 /* maximized: hide other apps + capsule shell; launcher = single-element nav */
 .sys-appbar.only-launch .app-item:not([data-app-id="launcher"]) {
   display: none;
@@ -1191,6 +1284,71 @@ svg {
   }
 
   // src/state.ts
+  var WIN_TYPES = {
+    normal: {
+      chrome: { topbar: true, nav: true, recover: true },
+      drag: "handle",
+      resize: true,
+      maximize: true,
+      lightDismiss: false,
+      stealFocus: true,
+      appIcon: true,
+      zBase: 0,
+      scrim: false,
+      autoCloseMs: 0
+    },
+    dialog: {
+      chrome: { topbar: false, nav: false, recover: false },
+      drag: "none",
+      resize: false,
+      maximize: false,
+      lightDismiss: false,
+      stealFocus: true,
+      appIcon: false,
+      zBase: 150,
+      scrim: true,
+      autoCloseMs: 0
+    },
+    transient: {
+      chrome: { topbar: false, nav: false, recover: false },
+      drag: "none",
+      resize: false,
+      maximize: false,
+      lightDismiss: true,
+      stealFocus: false,
+      appIcon: false,
+      zBase: 60,
+      scrim: false,
+      autoCloseMs: 6e3
+    },
+    chromeless: {
+      chrome: { topbar: false, nav: false, recover: false },
+      drag: "anywhere",
+      resize: false,
+      maximize: false,
+      lightDismiss: false,
+      stealFocus: false,
+      appIcon: false,
+      zBase: 60,
+      scrim: false,
+      autoCloseMs: 0
+    },
+    immersive: {
+      chrome: { topbar: false, nav: false, recover: false },
+      drag: "none",
+      resize: false,
+      maximize: false,
+      lightDismiss: false,
+      stealFocus: true,
+      appIcon: false,
+      zBase: 200,
+      scrim: false,
+      autoCloseMs: 0
+    }
+  };
+  function policyOf(t) {
+    return WIN_TYPES[t ?? "normal"];
+  }
   var METRICS = [
     { key: "winPad", label: "\u7A97\u53E3\u5185\u8DDD", desc: "\u7A97\u53E3\u8FB9\u7F18\u4E0E\u680F/\u5185\u5BB9\u4E4B\u95F4\u7684\u5916\u6846\u7559\u767D", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
     { key: "gap", label: "\u680F\u2194\u5185\u5BB9\u95F4\u8DDD", desc: "\u680F\u4E0E\u5185\u5BB9\u533A\u4E4B\u95F4\u7684\u7F1D\u9699\uFF1B\u8D34\u8FB9\u4E0E\u6D3E\u751F\u5173\u7CFB\u4EE5\u6B64\u4E3A\u57FA\u51C6", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 8 },
@@ -1382,25 +1540,26 @@ svg {
   }
   function windowShellHTML(o) {
     const g = o.geom;
-    return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
-    <div class="top-bar" data-topbar>
+    const p = policyOf(o.winType);
+    return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-wintype="${o.winType ?? "normal"}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
+    ${p.chrome.topbar ? `<div class="top-bar" data-topbar>
       ${topCapsuleHTML()}
-    </div>
-    <div class="nav-bar" data-nav>
+    </div>` : ""}
+    ${p.chrome.nav && o.nav.length ? `<div class="nav-bar" data-nav>
       <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
-    </div>
+    </div>` : ""}
     <div class="content">
       <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-      <button type="button" class="resize-knob" data-resize aria-label="\u7F29\u653E"></button>
+      ${p.resize ? `<button type="button" class="resize-knob" data-resize aria-label="\u7F29\u653E"></button>` : ""}
       <div class="content-scroll">${o.content}</div>
     </div>
-    <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
+    ${p.chrome.topbar ? `<div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
       <input class="search-input" placeholder="${o.searchPlaceholder}" />
     </div>
-    ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
-    <div class="recover" data-recover hidden data-orient="h">
+    ${menuPanelHTML({ title: o.title, editItems: o.editItems })}` : ""}
+    ${p.chrome.recover ? `<div class="recover" data-recover hidden data-orient="h">
       ${dragZoneHTML("data-recover-zone")}
-    </div>
+    </div>` : ""}
   </div>`;
   }
   function statusBarHTML() {
@@ -6395,13 +6554,101 @@ svg {
     editItems: ["\u5168\u9009", "\u6E05\u9664\u6700\u8FD1"]
   };
 
+  // src/apps/samples.ts
+  var samplePerm = {
+    id: "perm",
+    title: "\u4F4D\u7F6E\u6743\u9650",
+    icon: "net",
+    winType: "dialog",
+    listed: false,
+    geom: { left: 30, top: 32, width: 40, height: 32 },
+    z: 150,
+    open: false,
+    nav: [],
+    content: `
+    <div class="dlg">
+      <div class="dlg-title">\u5141\u8BB8\u300C\u65F6\u949F\u300D\u4F7F\u7528\u4F60\u7684\u4F4D\u7F6E\uFF1F</div>
+      <div class="dlg-desc">\u7528\u4E8E\u663E\u793A\u672C\u5730\u65F6\u95F4\u4E0E\u65F6\u533A\u3002\u53EF\u968F\u65F6\u5728\u8BBE\u7F6E\u4E2D\u5173\u95ED\u3002</div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-quiet" data-act="deny">\u4E0D\u5141\u8BB8</button>
+        <button type="button" class="btn-call" data-act="allow">\u5141\u8BB8</button>
+      </div>
+    </div>`,
+    searchPlaceholder: "",
+    bind(root, _store, actions) {
+      $$("[data-act]", root).forEach((b) => {
+        on(b, "click", () => actions.closeApp("perm"));
+      });
+    }
+  };
+  var sampleNote = {
+    id: "notify",
+    title: "\u5C4F\u5E55\u4F7F\u7528\u65F6\u95F4",
+    icon: "clock",
+    winType: "transient",
+    listed: false,
+    geom: { left: 30, top: 6, width: 40, height: 14 },
+    z: 60,
+    open: false,
+    nav: [],
+    content: `
+    <div class="note">
+      <div class="row-t">\u5C4F\u5E55\u4F7F\u7528\u65F6\u95F4</div>
+      <div class="row-s">\u4F60\u4ECA\u5929\u7684\u5C4F\u5E55\u65F6\u95F4\u6BD4\u6628\u5929\u5C11 32 \u5206\u949F\u3002\u8F7B\u89E6\u6216\u70B9\u5916\u90E8\u5173\u95ED\u3002</div>
+    </div>`,
+    searchPlaceholder: "",
+    bind(root, _store, actions) {
+      on(root, "click", () => actions.closeApp("notify"));
+    }
+  };
+  var sampleHud = {
+    id: "hud",
+    title: "\u5A92\u4F53\u63A7\u5236",
+    icon: "sound",
+    winType: "chromeless",
+    listed: false,
+    geom: { left: 36, top: 72, width: 28, height: 10 },
+    z: 60,
+    open: false,
+    nav: [],
+    content: `
+    <div class="hud">
+      <button type="button" class="hud-btn" aria-label="\u64AD\u653E">\u25B6</button>
+      <div><div class="row-t">\u8033\u673A \xB7 \u591C\u822A\u661F</div><div class="row-s">3:42 \xB7 \u53EF\u5728\u4EFB\u610F\u5904\u62D6\u52A8</div></div>
+    </div>`,
+    searchPlaceholder: ""
+  };
+  var sampleCast = {
+    id: "cast",
+    title: "\u6F14\u793A\u653E\u6620",
+    icon: "display",
+    winType: "immersive",
+    listed: false,
+    geom: { left: 0, top: 0, width: 100, height: 100 },
+    z: 200,
+    open: false,
+    nav: [],
+    content: `
+    <div class="cast">
+      <div class="cast-title">\u6F14\u793A\u653E\u6620</div>
+      <div class="cast-sub">\u6C89\u6D78\u7A97\u53E3\u8986\u76D6\u7CFB\u7EDF\u680F \u2014\u2014 \u552F\u4E00\u88AB\u5141\u8BB8\u8FD9\u6837\u505A\u7684\u7A97\u53E3\u7C7B\u578B</div>
+      <button type="button" class="btn-call" data-act="exit">\u9000\u51FA\u6C89\u6D78</button>
+    </div>`,
+    searchPlaceholder: "",
+    bind(root, _store, actions) {
+      $$("[data-act]", root).forEach((b) => {
+        on(b, "click", () => actions.closeApp("cast"));
+      });
+    }
+  };
+
   // src/apps/launcher.ts
   function makeLauncherApp(apps) {
     const content5 = `
 <section class="set-pane" data-pane="apps">
   <header class="set-head"><h1>\u542F\u52A8\u53F0</h1><p>\u5E94\u7528 \xB7 \u6587\u4EF6 \xB7 \u94FE\u63A5 \xB7 \u64CD\u4F5C</p></header>
   <div class="set-group">
-    ${apps.map(
+    ${apps.filter((a) => a.listed !== false).map(
       (a) => `<button type="button" class="set-row app-row" data-launch="${a.id}">
           <span class="a-ic">${icon(a.icon)}</span>
           <div><div class="row-t">${a.title}</div><div class="row-s">${a.blurb ?? ""}</div></div>
@@ -6424,9 +6671,24 @@ svg {
   </div>
 </section>
 <section class="set-pane" data-pane="acts" hidden>
-  <header class="set-head"><h1>\u64CD\u4F5C</h1></header>
+  <header class="set-head"><h1>\u64CD\u4F5C</h1><p>\u7A97\u53E3\u7C7B\u578B\u5B66 \xB7 \u6BCF\u884C\u662F\u4E00\u79CD\u884C\u4E3A\u5951\u7EA6</p></header>
   <div class="set-group">
-    <div class="set-row"><div><div class="row-t">\u5FEB\u6377\u64CD\u4F5C</div><div class="row-s">\u52FF\u6270 \xB7 \u84DD\u7259 \xB7 \u622A\u5C4F</div></div></div>
+    <button type="button" class="set-row app-row" data-launch="perm">
+      <span class="a-ic">${icon("net")}</span>
+      <div><div class="row-t">\u4F4D\u7F6E\u6743\u9650</div><div class="row-s">\u5BF9\u8BDD\u6846 \xB7 \u6A21\u6001\uFF08\u906E\u7F69/\u7126\u70B9\u9677\u9631/Esc\uFF09</div></div>
+    </button>
+    <button type="button" class="set-row app-row" data-launch="notify">
+      <span class="a-ic">${icon("clock")}</span>
+      <div><div class="row-t">\u5C4F\u5E55\u4F7F\u7528\u65F6\u95F4</div><div class="row-s">\u901A\u77E5\u6A2A\u5E45 \xB7 \u8F7B\u53D6\u6D88/\u4E0D\u593A\u7126/\u81EA\u52A8\u9000\u573A</div></div>
+    </button>
+    <button type="button" class="set-row app-row" data-launch="hud">
+      <span class="a-ic">${icon("sound")}</span>
+      <div><div class="row-t">\u5A92\u4F53\u63A7\u5236</div><div class="row-s">\u60AC\u6D6E\u63A7\u5236 \xB7 \u65E0\u5E95\u677F/\u4EFB\u610F\u5904\u62D6\u52A8</div></div>
+    </button>
+    <button type="button" class="set-row app-row" data-launch="cast">
+      <span class="a-ic">${icon("display")}</span>
+      <div><div class="row-t">\u6F14\u793A\u653E\u6620</div><div class="row-s">\u6C89\u6D78\u7A97\u53E3 \xB7 \u552F\u4E00\u8986\u76D6\u7CFB\u7EDF\u680F</div></div>
+    </button>
   </div>
 </section>`;
     return {
@@ -6463,7 +6725,8 @@ svg {
     return `win-${appId}`;
   }
   var baseApps = [settingsApp, phoneApp, clockApp, filesApp];
-  var APPS = [...baseApps, makeLauncherApp(baseApps)];
+  var samples = [samplePerm, sampleNote, sampleHud, sampleCast];
+  var APPS = [...baseApps, ...samples, makeLauncherApp(baseApps)];
 
   // src/host.ts
   function bindScrollIndicator(root) {
@@ -6688,12 +6951,22 @@ svg {
           focused: !!a.focused,
           nav: a.nav,
           content: a.content,
+          winType: a.winType,
           searchPlaceholder: a.searchPlaceholder,
           searchOpen: a.searchOpen,
           editItems: a.editItems
         })
-      ).join("")
+      ).join("") + '<div class="modal-scrim" data-scrim hidden></div>'
     );
+    const scrim = $("[data-scrim]", viewport);
+    function syncScrim() {
+      if (!scrim) return;
+      const anyModal = APPS.some((a) => {
+        const w = el(winIdOf(a.id));
+        return policyOf(a.winType).scrim && !!w && !w.hidden;
+      });
+      scrim.hidden = !anyModal;
+    }
     store.subscribe((s) => {
       if (dragWin) return;
       for (const ws of Object.values(s.wins)) {
@@ -6701,21 +6974,26 @@ svg {
         if (!w || w.dataset.flipping === "1") continue;
         patchWinEl(w, ws);
       }
+      syncScrim();
     });
     const appIcon = (win) => {
       const own = $(`.app-item[data-app-id="${win.dataset.app}"]`);
       if (own && own.offsetParent !== null) return own;
       return $('.app-item[data-app-id="launcher"]');
     };
+    const policyFor = (id) => policyOf(APPS.find((a) => winIdOf(a.id) === id)?.winType);
     const actions = {
       openApp: (appId) => open(winIdOf(appId)),
-      minimizeApp: (appId) => minimize(winIdOf(appId))
+      minimizeApp: (appId) => minimize(winIdOf(appId)),
+      closeApp: (appId) => close(winIdOf(appId))
     };
     function focus(id) {
       store.update((s) => {
         const stack = Object.values(s.wins).sort((a, b) => a.z - b.z).filter((w) => w.id !== id);
         stack.push(s.wins[id]);
-        stack.forEach((w, i) => patchWin(s, w.id, { focused: w.id === id, z: i + 1 }));
+        stack.forEach(
+          (w, i) => patchWin(s, w.id, { focused: w.id === id, z: policyFor(w.id).zBase + i + 1 })
+        );
       });
       for (const w of $$(".window")) {
         if (w.id === id) continue;
@@ -6736,13 +7014,24 @@ svg {
         focus(id);
         return;
       }
+      const pol = policyFor(id);
       win.dataset.anim = "1";
       win.hidden = false;
-      focus(id);
+      if (pol.stealFocus) focus(id);
+      syncScrim();
       openFrom(win, appIcon(win), () => {
         win.dataset.anim = "0";
         store.update((s) => patchWin(s, id, { status: "open" }));
+        syncScrim();
       });
+      if (pol.scrim) {
+        window.setTimeout(() => $(".content button, .content input", win)?.focus(), 0);
+      }
+      if (pol.autoCloseMs) {
+        window.setTimeout(() => {
+          if (store.get().wins[id].status === "open") close(id);
+        }, pol.autoCloseMs);
+      }
     }
     function minimize(id) {
       const win = el(id);
@@ -6787,12 +7076,16 @@ svg {
     for (const a of APPS) {
       const win = el(winIdOf(a.id));
       if (!win) continue;
+      const pol = policyOf(a.winType);
       on(win, "pointerdown", (e) => {
         const t = e.target;
         if (t.closest(".content, .top-bar, .nav-bar, .recover, .menu-panel, .search-panel")) focus(win.id);
       }, true);
+      if (pol.drag === "anywhere") {
+        on(win, "pointerdown", (e) => startMove(win, e));
+      }
       const zone = $(".top-bar [data-drag-zone]", win);
-      if (zone) {
+      if (zone && pol.drag === "handle") {
         on(zone, "pointerdown", (e) => {
           startMove(win, e);
         });
@@ -6917,11 +7210,55 @@ svg {
       blurAll();
     }, true);
     on(document, "keydown", (e) => {
-      if (e.key !== "Escape") return;
+      const k = e;
+      const dlgApp = APPS.find((a) => {
+        const w = el(winIdOf(a.id));
+        return policyOf(a.winType).scrim && !!w && !w.hidden;
+      });
+      if (dlgApp) {
+        const id2 = winIdOf(dlgApp.id);
+        const w = el(id2);
+        if (k.key === "Escape") {
+          close(id2);
+          e.preventDefault();
+          return;
+        }
+        if (k.key === "Tab") {
+          const f = $$("button, input, [tabindex]", w).filter((x) => !x.hasAttribute("disabled"));
+          if (!f.length) return;
+          const first = f[0];
+          const last = f[f.length - 1];
+          const act = document.activeElement;
+          if (!act || !w.contains(act)) {
+            first.focus();
+            e.preventDefault();
+          } else if (k.shiftKey && act === first) {
+            last.focus();
+            e.preventDefault();
+          } else if (!k.shiftKey && act === last) {
+            first.focus();
+            e.preventDefault();
+          }
+          return;
+        }
+        return;
+      }
+      if (k.key !== "Escape") return;
       if ($("[data-more-panel]:not([hidden]), [data-search-panel]:not([hidden])")) return;
       const id = focusedId();
       const ws = id ? store.get().wins[id] : null;
       if (ws?.mode === "maximized") toggleMaximize(id);
+    });
+    on(document, "pointerdown", (e) => {
+      const t = e.target;
+      for (const a of APPS) {
+        if (!policyOf(a.winType).lightDismiss) continue;
+        const id = winIdOf(a.id);
+        const w = el(id);
+        if (!w || w.hidden) continue;
+        if (t.closest(`#${id}`)) continue;
+        close(id);
+      }
     });
     const reAlign = () => {
       if (dragWin || $$(".window[data-flipping='1']").length) return;
@@ -7262,11 +7599,7 @@ svg {
   }
   function initAppBar(store, api) {
     const viewport = $("#viewport");
-    const items = APPS.map((a) => ({
-      appId: a.id,
-      icon: a.icon,
-      label: a.title
-    })).sort((a, b) => a.appId === "launcher" ? 1 : b.appId === "launcher" ? -1 : 0);
+    const items = APPS.filter((a) => policyOf(a.winType).appIcon).map((a) => ({ appId: a.id, icon: a.icon, label: a.title })).sort((a, b) => a.appId === "launcher" ? 1 : b.appId === "launcher" ? -1 : 0);
     viewport.insertAdjacentHTML("beforeend", appBarHTML(items));
     const bar = $(".sys-appbar");
     const sync = () => {

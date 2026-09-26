@@ -2,18 +2,21 @@
  * 应用注册表：系统给控件与模式，应用只填内容。
  * 新增应用 = 加一个 AppDef（内容 + 可选 bind），chrome 由 render.windowShell 统一生成。
  */
-import type { Geom, Store } from "../state";
+import type { Geom, Store, WinType } from "../state";
+import { policyOf } from "../state";
 import type { IconName, NavItem } from "../render";
 import { settingsApp } from "./settings";
 import { phoneApp } from "./phone";
 import { clockApp } from "./clock";
 import { filesApp } from "./files";
+import { samplePerm, sampleNote, sampleHud, sampleCast } from "./samples";
 import { makeLauncherApp } from "./launcher";
 
 /** 应用可调用的系统动作（按 appId，应用不接触窗口内部） */
 export type AppActions = {
   openApp: (appId: string) => void;
   minimizeApp: (appId: string) => void;
+  closeApp: (appId: string) => void;
 };
 
 export type AppDef = {
@@ -28,6 +31,10 @@ export type AppDef = {
   focused?: boolean;
   /** 快速启动（用户固定）：App 栏常驻；未固定者仅在打开时出现在「已打开」区 */
   pinned?: boolean;
+  /** 窗口类型（默认 normal）：决定 chrome/拖动/模态/层级等行为契约 */
+  winType?: WinType;
+  /** 是否出现在启动台应用网格（系统样例等为 false，由「操作」页唤起） */
+  listed?: boolean;
   nav: NavItem[];
   /** 应用内容 = content-scroll 内部 HTML */
   content: string;
@@ -43,7 +50,13 @@ export function winIdOf(appId: string): string {
 }
 
 const baseApps: AppDef[] = [settingsApp, phoneApp, clockApp, filesApp];
+export const samples: AppDef[] = [samplePerm, sampleNote, sampleHud, sampleCast];
 
-export const APPS: AppDef[] = [...baseApps, makeLauncherApp(baseApps)];
+export const APPS: AppDef[] = [...baseApps, ...samples, makeLauncherApp(baseApps)];
 
-export { settingsApp, phoneApp, clockApp, filesApp };
+/** 应用的窗口行为契约（类型策略） */
+export function appPolicy(app: AppDef) {
+  return policyOf(app.winType);
+}
+
+export { settingsApp, phoneApp, clockApp, filesApp, samplePerm, sampleNote, sampleHud, sampleCast };
