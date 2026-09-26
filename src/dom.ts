@@ -20,3 +20,9 @@ export function durMs(name: string): number {
   const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
   return Number.isFinite(v) && v > 0 ? v : 360;
 }
+
+/** 从 CSS 令牌读像素值（几何度量运行时可调，JS 侧按需读取） */
+export function pxVar(name: string, fallback: number): number {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  return Number.isFinite(v) ? v : fallback;
+}

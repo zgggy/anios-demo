@@ -3,7 +3,7 @@
  * 手势快速路径例外：拖动/缩放中直写 DOM，结束 commit 成状态（百分比几何）。
  */
 import { $, $$, on, durMs } from "./dom";
-import { Store, State, patchWin, focusedWin, type Geom } from "./state";
+import { Store, State, patchWin, focusedWin, defaultMetrics, type Geom } from "./state";
 import { patchWinEl, windowShellHTML, align } from "./render";
 import { captureShell, playShell, minimizeTo, openFrom, closeIn } from "./anim";
 import { APPS, winIdOf, type AppDef } from "./apps";
@@ -47,6 +47,7 @@ export function initialState(apps: AppDef[]): State {
       animMenu: 200,
       scrollMode: "percent",
       net: "wifi",
+      metrics: defaultMetrics(),
     },
   };
 }

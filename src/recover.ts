@@ -1,12 +1,9 @@
 /** 临时拖动 recover：与控制栏拖动钮同一组件、同一套 hover。 */
-import { $, $$, on, clamp } from "./dom";
+import { $, $$, on, clamp, pxVar } from "./dom";
 import type { Store } from "./state";
 import type { WinApi } from "./windows";
 
 type Edge = "top" | "bottom" | "left" | "right";
-
-const GAP = 5;
-const NEAR = 28 + 2 * GAP; // 38px
 
 export function initRecover(store: Store, api: WinApi): void {
   const viewport = $<HTMLElement>("#viewport")!;
@@ -59,6 +56,9 @@ export function initRecover(store: Store, api: WinApi): void {
     const wr = content.getBoundingClientRect();
     const mx = e.clientX;
     const my = e.clientY;
+    // 几何度量运行时可调：贴边间距 = gap，显示阈值 = gutter + 2×gap
+    const gap = pxVar("--gap", 5);
+    const near = pxVar("--gutter", 28) + 2 * gap;
     const dist: Record<Edge, number> = {
       left: Math.abs(mx - wr.left),
       right: Math.abs(mx - wr.right),
@@ -73,7 +73,7 @@ export function initRecover(store: Store, api: WinApi): void {
         best = dist[k];
       }
     }
-    if (best > NEAR) {
+    if (best > near) {
       hideAll();
       return;
     }
@@ -104,15 +104,15 @@ export function initRecover(store: Store, api: WinApi): void {
     let cy: number;
     if (edge === "top") {
       cx = (x0 + x1) / 2;
-      cy = wr.top - GAP - hh;
+      cy = wr.top - gap - hh;
     } else if (edge === "bottom") {
       cx = (x0 + x1) / 2;
-      cy = wr.bottom + GAP + hh;
+      cy = wr.bottom + gap + hh;
     } else if (edge === "left") {
-      cx = wr.left - GAP - hw;
+      cx = wr.left - gap - hw;
       cy = (y0 + y1) / 2;
     } else {
-      cx = wr.right + GAP + hw;
+      cx = wr.right + gap + hw;
       cy = (y0 + y1) / 2;
     }
     cx = clamp(cx, hw, vr.left + vr.width - hw);

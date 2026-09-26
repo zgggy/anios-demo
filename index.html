@@ -11,8 +11,11 @@
    Capsule / icon-btn / drag-zone / nav-btn defined ONCE. */
 
 :root {
+  /* 几何令牌 = 运行时参数（设置 → 尺寸面板可调）；此处为默认值，
+     须与 src/state.ts METRICS 的 def 同步。派生关系保持公式化：
+     nav-w = topbar-h × 1.5 · inset = gap · 拖动展开 = btn × 3 */
   --topbar-h: 28px;
-  --nav-w: 42px;
+  --nav-w: calc(var(--topbar-h) * 1.5);
   --nav-btn: 30px;
   --nav-btn-h: 46px;
   --btn: 22px;
@@ -22,6 +25,18 @@
   --inset: var(--gap);
   --gutter: 28px;
   --win-radius: 16px;
+  --knob: 12px;
+  --scroll-w: 6px;
+  --menu-drop: 8px;
+  --menu-w: 220px;
+  /* 字号（主 UI，规格 §7.5 六角色 + 大数字） */
+  --font-title: 22px;
+  --font-row: 13.5px;
+  --font-desc: 11.5px;
+  --font-ctl: 12.5px;
+  --font-nav: 8.5px;
+  --font-num: 9px;
+  --font-stat: 18px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --anim-window: 360ms;
   --anim-pane: 200ms;
@@ -120,11 +135,11 @@ svg {
   height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--font-ctl);
   font-weight: 600;
   color: var(--ink-3);
 }
-.seg.small button { height: 24px; font-size: 11px; }
+.seg.small button { height: 24px; font-size: var(--font-desc); }
 .seg button[aria-pressed="true"] {
   background: rgba(255, 255, 255, 0.82);
   color: var(--ink);
@@ -166,8 +181,8 @@ svg {
   position: absolute;
   left: 100%;
   top: 100%;
-  width: 12px;
-  height: 12px;
+  width: var(--knob);
+  height: var(--knob);
   border-radius: 50%;
   background: var(--frost-bg);
   border: 1px solid var(--line);
@@ -299,7 +314,7 @@ svg {
 .nav-btn.active { color: var(--accent); }
 .nav-btn svg { width: 13px; height: 13px; }
 .nav-text {
-  font-size: 8.5px;
+  font-size: var(--font-nav);
   font-weight: 650;
   line-height: 1;
   opacity: 0;
@@ -475,11 +490,11 @@ svg {
 .search-panel {
   position: absolute;
   /* 挂在控制栏下（窗口坐标）：win-pad + topbar-h + 8px */
-  top: calc(var(--win-pad) + var(--topbar-h) + 8px);
+  top: calc(var(--win-pad) + var(--topbar-h) + var(--menu-drop));
   /* 与控制栏水平居中对齐（锚同一派生变量） */
   left: var(--content-cx);
   transform: translateX(-50%);
-  min-width: 220px;
+  min-width: var(--menu-w);
   padding: 8px;
   border-radius: 14px;
   background: var(--frost-bg);
@@ -503,7 +518,7 @@ svg {
   min-height: 30px;
   padding: 0 10px;
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: var(--font-ctl);
   font-weight: 600;
   color: var(--ink-2);
   display: flex;
@@ -517,8 +532,8 @@ svg {
   align-items: flex-start;
   gap: 2px;
 }
-.mp-info strong { color: var(--ink); font-size: 13px; }
-.mp-info span { color: var(--ink-3); font-size: 11px; font-weight: 400; }
+.mp-info strong { color: var(--ink); font-size: var(--font-ctl); }
+.mp-info span { color: var(--ink-3); font-size: var(--font-desc); font-weight: 400; }
 .menu-panel .danger { color: #dc2626; }
 .menu-panel hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
 .mp-expand {
@@ -536,7 +551,7 @@ svg {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
   padding: 0 12px;
-  font-size: 13px;
+  font-size: var(--font-ctl);
   outline: none;
   color: var(--ink);
 }
@@ -554,10 +569,10 @@ svg {
 
 .scroll-indicator {
   position: absolute;
-  right: calc((var(--gutter) - 6px) / 2);
+  right: calc((var(--gutter) - var(--scroll-w)) / 2);
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
+  width: var(--scroll-w);
   height: 80px;
   border-radius: 3px;
   background: rgba(120, 130, 145, 0.28);
@@ -580,10 +595,10 @@ svg {
 
 .resize-knob {
   position: absolute;
-  right: calc((var(--gutter) - 12px) / 2);
-  bottom: calc((var(--gutter) - 12px) / 2);
-  width: 12px;
-  height: 12px;
+  right: calc((var(--gutter) - var(--knob)) / 2);
+  bottom: calc((var(--gutter) - var(--knob)) / 2);
+  width: var(--knob);
+  height: var(--knob);
   border-radius: 50%;
   background: var(--frost-bg);
   border: 1px solid var(--line);
@@ -683,13 +698,13 @@ svg {
 .status-content[hidden] { display: none !important; }
 
 .st-time {
-  font-size: 9px;
+  font-size: var(--font-num);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .st-big {
-  font-size: 18px;
+  font-size: var(--font-stat);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -819,8 +834,8 @@ svg {
 
 /* ══════════ app content ══════════ */
 .set-head { margin: 4px 0 16px; }
-.set-head h1 { margin: 0; font-size: 22px; font-weight: 700; }
-.set-head p { margin: 4px 0 0; color: var(--ink-3); font-size: 12px; }
+.set-head h1 { margin: 0; font-size: var(--font-title); font-weight: 700; }
+.set-head p { margin: 4px 0 0; color: var(--ink-3); font-size: var(--font-desc); }
 
 .set-group {
   border-radius: 14px;
@@ -831,7 +846,7 @@ svg {
 }
 .set-group-title {
   padding: 10px 14px 4px;
-  font-size: 11px;
+  font-size: var(--font-desc);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -847,13 +862,13 @@ svg {
   border-top: 1px solid var(--line);
 }
 .set-row.col { flex-direction: column; align-items: stretch; }
-.row-t { font-size: 13.5px; font-weight: 600; }
-.row-s { font-size: 11.5px; font-weight: 400; color: var(--ink-3); margin-top: 2px; }
+.row-t { font-size: var(--font-row); font-weight: 600; }
+.row-s { font-size: var(--font-desc); font-weight: 400; color: var(--ink-3); margin-top: 2px; }
 
 .slider-row { display: flex; align-items: center; gap: 10px; }
 .slider { flex: 1; accent-color: var(--accent); }
 .slider-val {
-  font-size: 11px;
+  font-size: var(--font-desc);
   color: var(--ink-3);
   width: 48px;
   text-align: right;
@@ -1052,8 +1067,41 @@ svg {
     const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
     return Number.isFinite(v) && v > 0 ? v : 360;
   }
+  function pxVar(name, fallback) {
+    const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  }
 
   // src/state.ts
+  var METRICS = [
+    { key: "winPad", label: "\u7A97\u53E3\u5185\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
+    { key: "gap", label: "\u680F\u2194\u5185\u5BB9\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
+    { key: "gutter", label: "\u6EDA\u52A8\u7559\u767D", group: "\u95F4\u8DDD", min: 12, max: 48, step: 1, def: 28 },
+    { key: "menuDrop", label: "\u83DC\u5355\u4E0B\u79FB", group: "\u95F4\u8DDD", min: 0, max: 24, step: 1, def: 8 },
+    { key: "topbarH", label: "\u9876\u680F\u9AD8", group: "\u63A7\u4EF6", min: 20, max: 48, step: 1, def: 28 },
+    { key: "btn", label: "\u9876\u680F\u5706\u94AE", group: "\u63A7\u4EF6", min: 16, max: 32, step: 1, def: 22 },
+    { key: "navBtn", label: "\u5BFC\u822A\u94AE", group: "\u63A7\u4EF6", min: 22, max: 44, step: 1, def: 30 },
+    { key: "navBtnH", label: "\u5BFC\u822A\u94AE\u5C55\u5F00\u9AD8", group: "\u63A7\u4EF6", min: 32, max: 64, step: 1, def: 46 },
+    { key: "knob", label: "\u7F29\u653E\u94AE\u5F84", group: "\u63A7\u4EF6", min: 8, max: 20, step: 1, def: 12 },
+    { key: "scrollW", label: "\u6EDA\u52A8\u6307\u793A\u5BBD", group: "\u63A7\u4EF6", min: 3, max: 12, step: 1, def: 6 },
+    { key: "winRadius", label: "\u7A97\u53E3\u5706\u89D2", group: "\u63A7\u4EF6", min: 0, max: 28, step: 1, def: 16 },
+    { key: "menuW", label: "\u83DC\u5355\u6700\u5C0F\u5BBD", group: "\u63A7\u4EF6", min: 140, max: 360, step: 10, def: 220 },
+    { key: "fontTitle", label: "\u9875\u9762\u6807\u9898", group: "\u5B57\u53F7", min: 16, max: 32, step: 0.5, def: 22 },
+    { key: "fontRow", label: "\u884C\u6807\u9898", group: "\u5B57\u53F7", min: 11, max: 18, step: 0.5, def: 13.5 },
+    { key: "fontDesc", label: "\u884C\u8BF4\u660E", group: "\u5B57\u53F7", min: 9, max: 16, step: 0.5, def: 11.5 },
+    { key: "fontCtl", label: "\u83DC\u5355/\u94AE", group: "\u5B57\u53F7", min: 10, max: 16, step: 0.5, def: 12.5 },
+    { key: "fontNav", label: "\u5BFC\u822A\u5C0F\u5B57", group: "\u5B57\u53F7", min: 6, max: 12, step: 0.5, def: 8.5 },
+    { key: "fontNum", label: "\u72B6\u6001\u6570\u5B57", group: "\u5B57\u53F7", min: 7, max: 14, step: 1, def: 9 },
+    { key: "fontStat", label: "\u5927\u6570\u5B57", group: "\u5B57\u53F7", min: 12, max: 28, step: 1, def: 18 }
+  ];
+  function defaultMetrics() {
+    const m = {};
+    for (const d of METRICS) m[d.key] = d.def;
+    return m;
+  }
+  function metricVar(key) {
+    return "--" + key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+  }
   function createStore(init4) {
     let state = init4;
     const subs = /* @__PURE__ */ new Set();
@@ -5839,6 +5887,24 @@ svg {
     </div>
   </div>
 </section>`;
+  var metricsPane = `
+<section class="set-pane" data-pane="metrics" hidden>
+  <header class="set-head"><h1>\u5C3A\u5BF8</h1><p>\u95F4\u8DDD \xB7 \u63A7\u4EF6 \xB7 \u5B57\u53F7</p></header>
+  ${["\u95F4\u8DDD", "\u63A7\u4EF6", "\u5B57\u53F7"].map(
+    (g) => `<div class="set-group">
+        <div class="set-group-title">${g}</div>
+        ${METRICS.filter((m) => m.group === g).map(
+      (m) => `<div class="set-row col">
+              <div class="row-t">${m.label}</div>
+              <div class="slider-row">
+                <input class="slider" type="range" data-metric="${m.key}" min="${m.min}" max="${m.max}" step="${m.step}" value="${m.def}" />
+                <span class="slider-val" data-metric-val="${m.key}">${m.def}px</span>
+              </div>
+            </div>`
+    ).join("")}
+      </div>`
+  ).join("")}
+</section>`;
   var settingsApp = {
     id: "settings",
     title: "\u8BBE\u7F6E",
@@ -5851,9 +5917,10 @@ svg {
       { section: "home", icon: "home", label: "\u4E3B\u9875" },
       { section: "network", icon: "net", label: "\u7F51\u7EDC" },
       { section: "sound", icon: "sound", label: "\u58F0\u97F3" },
-      { section: "display", icon: "display", label: "\u663E\u793A" }
+      { section: "display", icon: "display", label: "\u663E\u793A" },
+      { section: "metrics", icon: "grid", label: "\u5C3A\u5BF8" }
     ],
-    content,
+    content: content + metricsPane,
     searchPlaceholder: "\u5728\u8BBE\u7F6E\u4E2D\u641C\u7D22\u2026",
     editItems: ["\u64A4\u9500", "\u91CD\u505A", "\u526A\u5207", "\u62F7\u8D1D"],
     bind(root, store) {
@@ -5900,6 +5967,15 @@ svg {
         on(b, "click", () => {
           const m = b.getAttribute("data-net-mode");
           store.update((s) => s.settings.net = m);
+        });
+      });
+      $$("[data-metric]", root).forEach((el) => {
+        on(el, "input", () => {
+          const key = el.getAttribute("data-metric");
+          const v = Number(el.value);
+          store.update((s) => {
+            s.settings.metrics = { ...s.settings.metrics, [key]: v };
+          });
         });
       });
     }
@@ -6161,6 +6237,7 @@ svg {
     }
     for (const s of $$(".slider")) {
       const el = s;
+      if (el.hasAttribute("data-metric")) continue;
       const sync = () => {
         const lab = el.closest(".slider-row")?.querySelector(".slider-val");
         if (lab && !lab.id) lab.textContent = `${Math.round(Number(el.value))}%`;
@@ -6219,7 +6296,8 @@ svg {
         animPane: 200,
         animMenu: 200,
         scrollMode: "percent",
-        net: "wifi"
+        net: "wifi",
+        metrics: defaultMetrics()
       }
     };
   }
@@ -6622,8 +6700,6 @@ svg {
   }
 
   // src/recover.ts
-  var GAP = 5;
-  var NEAR = 28 + 2 * GAP;
   function initRecover(store, api) {
     const viewport = $("#viewport");
     const hideAll = () => {
@@ -6664,6 +6740,8 @@ svg {
       const wr = content4.getBoundingClientRect();
       const mx = e.clientX;
       const my = e.clientY;
+      const gap = pxVar("--gap", 5);
+      const near = pxVar("--gutter", 28) + 2 * gap;
       const dist = {
         left: Math.abs(mx - wr.left),
         right: Math.abs(mx - wr.right),
@@ -6678,7 +6756,7 @@ svg {
           best = dist[k];
         }
       }
-      if (best > NEAR) {
+      if (best > near) {
         hideAll();
         return;
       }
@@ -6704,15 +6782,15 @@ svg {
       let cy;
       if (edge === "top") {
         cx = (x0 + x1) / 2;
-        cy = wr.top - GAP - hh;
+        cy = wr.top - gap - hh;
       } else if (edge === "bottom") {
         cx = (x0 + x1) / 2;
-        cy = wr.bottom + GAP + hh;
+        cy = wr.bottom + gap + hh;
       } else if (edge === "left") {
-        cx = wr.left - GAP - hw;
+        cx = wr.left - gap - hw;
         cy = (y0 + y1) / 2;
       } else {
-        cx = wr.right + GAP + hw;
+        cx = wr.right + gap + hw;
         cy = (y0 + y1) / 2;
       }
       cx = clamp(cx, hw, vr.left + vr.width - hw);
@@ -6881,6 +6959,17 @@ svg {
       syncSlider("animWindow", st.animWindow);
       syncSlider("animPane", st.animPane);
       syncSlider("animMenu", st.animMenu);
+      for (const m of METRICS) {
+        const v = st.metrics[m.key];
+        root.style.setProperty(metricVar(m.key), `${v}px`);
+        const input = $(`[data-metric="${m.key}"]`);
+        if (input && Number(input.value) !== v) input.value = String(v);
+        const lab = $(`[data-metric-val="${m.key}"]`);
+        if (lab) lab.textContent = `${v}px`;
+      }
+      for (const w of $$(".window")) {
+        if (w.dataset.flipping !== "1") align(w);
+      }
       for (const d of $$(".cd")) {
         d.classList.toggle(
           "active",

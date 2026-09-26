@@ -146,9 +146,10 @@ export function initHost(store: Store, api: WinApi): void {
     });
   }
 
-  // 通用滑杆：.slider-val 标签回显（百分比）
+  // 通用滑杆：.slider-val 标签回显（百分比）；度量滑杆由设置补丁回显 px
   for (const s of $$(".slider")) {
     const el = s as HTMLInputElement;
+    if (el.hasAttribute("data-metric")) continue;
     const sync = () => {
       const lab = el.closest(".slider-row")?.querySelector(".slider-val");
       if (lab && !lab.id) lab.textContent = `${Math.round(Number(el.value))}%`;

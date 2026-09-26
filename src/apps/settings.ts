@@ -1,6 +1,6 @@
-/** 设置应用：内容 + 内容行为（主题/强调色/动画/滚动指示/网络类型） */
+/** 设置应用：内容 + 内容行为（主题/强调色/动画/滚动指示/网络类型/几何尺寸） */
 import { $, $$, on } from "../dom";
-import type { Store } from "../state";
+import { METRICS, type MetricKey, type Store } from "../state";
 import type { AppDef } from "./index";
 
 const content = `
@@ -78,6 +78,30 @@ const content = `
   </div>
 </section>`;
 
+/** 尺寸面板：滑杆表由 METRICS 生成——参数定义只存在于 state.ts 一处 */
+const metricsPane = `
+<section class="set-pane" data-pane="metrics" hidden>
+  <header class="set-head"><h1>尺寸</h1><p>间距 · 控件 · 字号</p></header>
+  ${(["间距", "控件", "字号"] as const)
+    .map(
+      (g) => `<div class="set-group">
+        <div class="set-group-title">${g}</div>
+        ${METRICS.filter((m) => m.group === g)
+          .map(
+            (m) => `<div class="set-row col">
+              <div class="row-t">${m.label}</div>
+              <div class="slider-row">
+                <input class="slider" type="range" data-metric="${m.key}" min="${m.min}" max="${m.max}" step="${m.step}" value="${m.def}" />
+                <span class="slider-val" data-metric-val="${m.key}">${m.def}px</span>
+              </div>
+            </div>`,
+          )
+          .join("")}
+      </div>`,
+    )
+    .join("")}
+</section>`;
+
 export const settingsApp: AppDef = {
   id: "settings",
   title: "设置",
@@ -91,8 +115,9 @@ export const settingsApp: AppDef = {
     { section: "network", icon: "net", label: "网络" },
     { section: "sound", icon: "sound", label: "声音" },
     { section: "display", icon: "display", label: "显示" },
+    { section: "metrics", icon: "grid", label: "尺寸" },
   ],
-  content,
+  content: content + metricsPane,
   searchPlaceholder: "在设置中搜索…",
   editItems: ["撤销", "重做", "剪切", "拷贝"],
   bind(root, store: Store) {
@@ -144,6 +169,16 @@ export const settingsApp: AppDef = {
       on(b, "click", () => {
         const m = b.getAttribute("data-net-mode") as "wifi" | "cell";
         store.update((s) => (s.settings.net = m));
+      });
+    });
+    // 几何度量：间距/控件/字号 → CSS 令牌
+    $$("[data-metric]", root).forEach((el) => {
+      on(el, "input", () => {
+        const key = el.getAttribute("data-metric") as MetricKey;
+        const v = Number((el as HTMLInputElement).value);
+        store.update((s) => {
+          s.settings.metrics = { ...s.settings.metrics, [key]: v };
+        });
       });
     });
   },

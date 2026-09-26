@@ -4,8 +4,11 @@
    Capsule / icon-btn / drag-zone / nav-btn defined ONCE. */
 
 :root {
+  /* 几何令牌 = 运行时参数（设置 → 尺寸面板可调）；此处为默认值，
+     须与 src/state.ts METRICS 的 def 同步。派生关系保持公式化：
+     nav-w = topbar-h × 1.5 · inset = gap · 拖动展开 = btn × 3 */
   --topbar-h: 28px;
-  --nav-w: 42px;
+  --nav-w: calc(var(--topbar-h) * 1.5);
   --nav-btn: 30px;
   --nav-btn-h: 46px;
   --btn: 22px;
@@ -15,6 +18,18 @@
   --inset: var(--gap);
   --gutter: 28px;
   --win-radius: 16px;
+  --knob: 12px;
+  --scroll-w: 6px;
+  --menu-drop: 8px;
+  --menu-w: 220px;
+  /* 字号（主 UI，规格 §7.5 六角色 + 大数字） */
+  --font-title: 22px;
+  --font-row: 13.5px;
+  --font-desc: 11.5px;
+  --font-ctl: 12.5px;
+  --font-nav: 8.5px;
+  --font-num: 9px;
+  --font-stat: 18px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --anim-window: 360ms;
   --anim-pane: 200ms;
@@ -113,11 +128,11 @@ svg {
   height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: var(--font-ctl);
   font-weight: 600;
   color: var(--ink-3);
 }
-.seg.small button { height: 24px; font-size: 11px; }
+.seg.small button { height: 24px; font-size: var(--font-desc); }
 .seg button[aria-pressed="true"] {
   background: rgba(255, 255, 255, 0.82);
   color: var(--ink);
@@ -159,8 +174,8 @@ svg {
   position: absolute;
   left: 100%;
   top: 100%;
-  width: 12px;
-  height: 12px;
+  width: var(--knob);
+  height: var(--knob);
   border-radius: 50%;
   background: var(--frost-bg);
   border: 1px solid var(--line);
@@ -292,7 +307,7 @@ svg {
 .nav-btn.active { color: var(--accent); }
 .nav-btn svg { width: 13px; height: 13px; }
 .nav-text {
-  font-size: 8.5px;
+  font-size: var(--font-nav);
   font-weight: 650;
   line-height: 1;
   opacity: 0;
@@ -468,11 +483,11 @@ svg {
 .search-panel {
   position: absolute;
   /* 挂在控制栏下（窗口坐标）：win-pad + topbar-h + 8px */
-  top: calc(var(--win-pad) + var(--topbar-h) + 8px);
+  top: calc(var(--win-pad) + var(--topbar-h) + var(--menu-drop));
   /* 与控制栏水平居中对齐（锚同一派生变量） */
   left: var(--content-cx);
   transform: translateX(-50%);
-  min-width: 220px;
+  min-width: var(--menu-w);
   padding: 8px;
   border-radius: 14px;
   background: var(--frost-bg);
@@ -496,7 +511,7 @@ svg {
   min-height: 30px;
   padding: 0 10px;
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: var(--font-ctl);
   font-weight: 600;
   color: var(--ink-2);
   display: flex;
@@ -510,8 +525,8 @@ svg {
   align-items: flex-start;
   gap: 2px;
 }
-.mp-info strong { color: var(--ink); font-size: 13px; }
-.mp-info span { color: var(--ink-3); font-size: 11px; font-weight: 400; }
+.mp-info strong { color: var(--ink); font-size: var(--font-ctl); }
+.mp-info span { color: var(--ink-3); font-size: var(--font-desc); font-weight: 400; }
 .menu-panel .danger { color: #dc2626; }
 .menu-panel hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
 .mp-expand {
@@ -529,7 +544,7 @@ svg {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
   padding: 0 12px;
-  font-size: 13px;
+  font-size: var(--font-ctl);
   outline: none;
   color: var(--ink);
 }
@@ -547,10 +562,10 @@ svg {
 
 .scroll-indicator {
   position: absolute;
-  right: calc((var(--gutter) - 6px) / 2);
+  right: calc((var(--gutter) - var(--scroll-w)) / 2);
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
+  width: var(--scroll-w);
   height: 80px;
   border-radius: 3px;
   background: rgba(120, 130, 145, 0.28);
@@ -573,10 +588,10 @@ svg {
 
 .resize-knob {
   position: absolute;
-  right: calc((var(--gutter) - 12px) / 2);
-  bottom: calc((var(--gutter) - 12px) / 2);
-  width: 12px;
-  height: 12px;
+  right: calc((var(--gutter) - var(--knob)) / 2);
+  bottom: calc((var(--gutter) - var(--knob)) / 2);
+  width: var(--knob);
+  height: var(--knob);
   border-radius: 50%;
   background: var(--frost-bg);
   border: 1px solid var(--line);
@@ -676,13 +691,13 @@ svg {
 .status-content[hidden] { display: none !important; }
 
 .st-time {
-  font-size: 9px;
+  font-size: var(--font-num);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 .st-big {
-  font-size: 18px;
+  font-size: var(--font-stat);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
@@ -812,8 +827,8 @@ svg {
 
 /* ══════════ app content ══════════ */
 .set-head { margin: 4px 0 16px; }
-.set-head h1 { margin: 0; font-size: 22px; font-weight: 700; }
-.set-head p { margin: 4px 0 0; color: var(--ink-3); font-size: 12px; }
+.set-head h1 { margin: 0; font-size: var(--font-title); font-weight: 700; }
+.set-head p { margin: 4px 0 0; color: var(--ink-3); font-size: var(--font-desc); }
 
 .set-group {
   border-radius: 14px;
@@ -824,7 +839,7 @@ svg {
 }
 .set-group-title {
   padding: 10px 14px 4px;
-  font-size: 11px;
+  font-size: var(--font-desc);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -840,13 +855,13 @@ svg {
   border-top: 1px solid var(--line);
 }
 .set-row.col { flex-direction: column; align-items: stretch; }
-.row-t { font-size: 13.5px; font-weight: 600; }
-.row-s { font-size: 11.5px; font-weight: 400; color: var(--ink-3); margin-top: 2px; }
+.row-t { font-size: var(--font-row); font-weight: 600; }
+.row-s { font-size: var(--font-desc); font-weight: 400; color: var(--ink-3); margin-top: 2px; }
 
 .slider-row { display: flex; align-items: center; gap: 10px; }
 .slider { flex: 1; accent-color: var(--accent); }
 .slider-val {
-  font-size: 11px;
+  font-size: var(--font-desc);
   color: var(--ink-3);
   width: 48px;
   text-align: right;

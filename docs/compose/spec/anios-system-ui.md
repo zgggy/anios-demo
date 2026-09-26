@@ -23,6 +23,7 @@ commits: see git history
    - 教训：scale FLIP 会让内部排版瞬间跳成终态再被视觉拉回（内容先「变成放大后的样子」再随盒子恢复正常）。
 3. **四层架构（单向数据流）**：state（纯 TS 唯一数据源）→ render（构造器 + 属性补丁）→ interact（只 dispatch；手势快速路径例外，拖动中直写 DOM、结束 commit）→ anim（只读插值，不写语义状态）。
 4. **对齐变量必须跟随尺寸变化**：`--content-cx/cy` 是像素值而窗口几何是百分比，任何 resize（浏览器窗口、滚动条、预设）都要重对齐（ResizeObserver + resize/load），否则栏与内容失准直到下次点击。
+5. **几何令牌是运行时参数**：全部间距/尺寸/字号令牌由 `state.metrics`（METRICS 表 = 唯一定义源）驱动，设置 → 尺寸面板调参；派生关系保持公式化（nav-w = topbar-h×1.5、inset = gap、拖动展开 = btn×3、recover 阈值 = gutter+2×gap），JS 派生常量经 `pxVar()` 读令牌。
 
 ## Structure
 

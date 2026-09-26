@@ -3,8 +3,8 @@
  * App 栏状态订阅 store（开/焦点/最大化），不用 MutationObserver。
  */
 import { $, $$, on } from "./dom";
-import { Store, anyMaximized } from "./state";
-import { statusBarHTML, appBarHTML, type AppBarItem } from "./render";
+import { Store, anyMaximized, METRICS, metricVar } from "./state";
+import { statusBarHTML, appBarHTML, align, type AppBarItem } from "./render";
 import { APPS, winIdOf } from "./apps";
 import type { WinApi } from "./windows";
 
@@ -145,6 +145,19 @@ export function bindSettingsPatch(store: Store): void {
     syncSlider("animWindow", st.animWindow);
     syncSlider("animPane", st.animPane);
     syncSlider("animMenu", st.animMenu);
+    // 几何度量 → CSS 令牌 + 滑杆回显
+    for (const m of METRICS) {
+      const v = st.metrics[m.key];
+      root.style.setProperty(metricVar(m.key), `${v}px`);
+      const input = $<HTMLInputElement>(`[data-metric="${m.key}"]`);
+      if (input && Number(input.value) !== v) input.value = String(v);
+      const lab = $(`[data-metric-val="${m.key}"]`);
+      if (lab) lab.textContent = `${v}px`;
+    }
+    // 度量变化会移动内容盒 → 同任务刷新派生对齐（补间中的窗口除外）
+    for (const w of $$(".window")) {
+      if (w.dataset.flipping !== "1") align(w);
+    }
     // 强调色圆点高亮
     for (const d of $$(".cd")) {
       d.classList.toggle(
