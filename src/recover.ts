@@ -141,8 +141,6 @@ export function initRecover(store: Store, api: WinApi): void {
     const zone = $<HTMLElement>("[data-recover] [data-drag-zone]", win);
     if (!zone) continue;
     on(zone, "pointerdown", (e) => {
-      const t = e.target as Element;
-      if (t.closest("[data-win-min], [data-win-cls]")) return;
       $<HTMLElement>("[data-topbar] [data-drag-zone]", win)?.dispatchEvent(
         new PointerEvent("pointerdown", {
           bubbles: true,

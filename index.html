@@ -6794,8 +6794,6 @@ svg {
       const zone = $(".top-bar [data-drag-zone]", win);
       if (zone) {
         on(zone, "pointerdown", (e) => {
-          const t = e.target;
-          if (t.closest("[data-win-min], [data-win-cls]")) return;
           startMove(win, e);
         });
         on(zone, "dblclick", (e) => {
@@ -7181,8 +7179,6 @@ svg {
       const zone = $("[data-recover] [data-drag-zone]", win);
       if (!zone) continue;
       on(zone, "pointerdown", (e) => {
-        const t = e.target;
-        if (t.closest("[data-win-min], [data-win-cls]")) return;
         $("[data-topbar] [data-drag-zone]", win)?.dispatchEvent(
           new PointerEvent("pointerdown", {
             bubbles: true,

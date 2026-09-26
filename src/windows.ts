@@ -224,9 +224,9 @@ export function initWindows(store: Store): WinApi {
     // 拖动钮：>3px 算拖，否则算点；双击最大化
     const zone = $<HTMLElement>(".top-bar [data-drag-zone]", win);
     if (zone) {
+      // 区上任何按压（含收起/关闭点）都进入手势：startMove 复位 moved
+      // 并允许从收起/关闭上拖窗（规范 §3.5）；moved 只在本手势内区分拖与点
       on(zone, "pointerdown", (e) => {
-        const t = e.target as Element;
-        if (t.closest("[data-win-min], [data-win-cls]")) return;
         startMove(win, e as PointerEvent);
       });
       on(zone, "dblclick", (e) => {
