@@ -1,0 +1,531 @@
+<!-- AI生成 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>anios Desktop</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<p data-aigc-mark="1" style="margin:0 0 8px;font-size:10px;line-height:1.3;color:#6b6560;font-weight:400;">AI生成</p>
+
+  <div class="host-tools">
+    <div class="host-group">
+      <span class="host-label">视口</span>
+      <div class="seg" role="group" aria-label="视口尺寸">
+        <button type="button" data-size-preset="compact">紧凑</button>
+        <button type="button" data-size-preset="large" aria-pressed="true">大型</button>
+      </div>
+    </div>
+    <div class="host-group">
+      <span class="host-label">屏幕</span>
+      <div class="seg" role="group" aria-label="屏幕类型">
+        <button type="button" data-screen="touch">触控</button>
+        <button type="button" data-screen="pointer" aria-pressed="true">指针</button>
+        <button type="button" data-screen="spatial">空间</button>
+      </div>
+    </div>
+    <div class="host-group">
+      <span class="host-label">色彩</span>
+      <div class="seg" role="group" aria-label="色彩模式">
+        <button type="button" data-theme="light" aria-pressed="true">浅色</button>
+        <button type="button" data-theme="dark">深色</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="viewport-wrap">
+    <div class="viewport" id="viewport" data-size-preset="large" data-screen="pointer">
+      <div class="wallpaper"></div>
+
+      <!-- ========== 设置 ========== -->
+      <div class="window is-focused" id="winSettings" data-app="settings" data-mode="floating" data-title="设置" style="left:12%; top:12%; width:58%; height:68%; z-index:12;">
+        <div class="topbar" data-topbar>
+          <a-capsule axis="h">
+            <button type="button" class="tb-btn" aria-label="后退" title="后退">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg>
+            </button>
+            <button type="button" class="tb-btn" aria-label="前进" title="前进">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg>
+            </button>
+            <span class="drag-pad" aria-hidden="true"></span>
+            <a-drag-ctl data-drag-zone></a-drag-ctl>
+            <span class="drag-pad" aria-hidden="true"></span>
+            <button type="button" class="tb-btn" aria-label="搜索" title="搜索">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M16 16l3.5 3.5"/></svg>
+            </button>
+            <button type="button" class="tb-btn btn-plus" data-plus aria-label="更多" title="更多" aria-haspopup="menu" aria-expanded="false">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+            </button>
+          </a-capsule>
+          <div class="menu-panel app-menu" data-app-menu hidden role="menu">
+              <button type="button" class="mp-item mp-info" data-act="about">
+                <span class="mp-info-row">
+                  <span class="mp-app-icon" data-app-icon></span>
+                  <span>
+                    <span class="mp-app-name" data-app-name>设置</span>
+                    <span class="mp-app-ver">anios Studio · 1.0</span>
+                  </span>
+                </span>
+                <span class="mp-chev">›</span>
+              </button>
+              <div class="mp-sep"></div>
+
+              
+        </div>
+
+        class="navbar" aria-label="导航">
+            <a-capsule axis="v">
+              <button type="button" class="nav-btn active" data-section="home">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-8.5z"/></svg></span>
+                <span class="nav-text">主页</span>
+              </button>
+              <button type="button" class="nav-btn" data-section="network">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.8 2.5 13.2 0 16M12 4c-2.5 2.8-2.5 13.2 0 16"/></svg></span>
+                <span class="nav-text">网络</span>
+              </button>
+              <button type="button" class="nav-btn" data-section="sound">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 10v4h3l4 3V7L7 10H4z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path d="M18 7.5a6.5 6.5 0 0 1 0 9"/></svg></span>
+                <span class="nav-text">声音</span>
+              </button>
+              <button type="button" class="nav-btn" data-section="display">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+                <span class="nav-text">显示</span>
+              </button>
+            </a-capsule>
+          </nav>
+
+          <main class="content" data-content>
+            <div class="scroll-indicator" data-scroll-indicator data-mode="percent" aria-hidden="true">
+              <div class="scroll-thumb" data-scroll-thumb></div>
+            </div>
+            <button type="button" class="content-resize" data-content-resize title="缩放窗口" aria-label="缩放窗口"></button>
+            <div class="content-scroll" data-content-scroll>
+              <section class="set-pane" data-pane="home">
+                <header class="set-head"><h1>主页</h1><p>系统与个性化</p></header>
+                <div class="set-group">
+                  <div class="set-group-title">外观</div>
+                  <div class="set-row">
+                    <div class="set-row-main">
+                      <div class="set-row-title">主题</div>
+                      <div class="set-row-sub">浅色 · 深色</div>
+                    </div>
+                    <div class="seg small" role="group" aria-label="主题">
+                      <button type="button" data-theme="light" aria-pressed="true">浅色</button>
+                      <button type="button" data-theme="dark">深色</button>
+                    </div>
+                  </div>
+                  <div class="set-row">
+                    <div class="set-row-main">
+                      <div class="set-row-title">强调色</div>
+                      <div class="set-row-sub">用于控件与高亮</div>
+                    </div>
+                    <div class="color-dots">
+                      <button type="button" class="cd active" style="--c:#3b82f6" aria-label="蓝"></button>
+                      <button type="button" class="cd" style="--c:#7c5cff" aria-label="紫"></button>
+                      <button type="button" class="cd" style="--c:#10b981" aria-label="绿"></button>
+                      <button type="button" class="cd" style="--c:#f59e0b" aria-label="琥珀"></button>
+                    </div>
+                  </div>
+                </div>
+                <div class="set-group">
+                  <div class="set-group-title">界面</div>
+                  <div class="set-row">
+                    <div class="set-row-main">
+                      <div class="set-row-title">滚动指示</div>
+                      <div class="set-row-sub">百分比 = 顶对齐（Watch 风格）· 位置 = 滑块</div>
+                    </div>
+                    <div class="seg small" role="group" aria-label="滚动指示样式">
+                      <button type="button" data-scroll-mode="percent" aria-pressed="true">百分比</button>
+                      <button type="button" data-scroll-mode="position">位置</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="set-group">
+                  <div class="set-group-title">动画</div>
+                  <div class="set-row col">
+                    <div class="set-row-main">
+                      <div class="set-row-title">全局动画速度</div>
+                      <div class="set-row-sub">统一影响窗口、菜单、切换等过渡</div>
+                    </div>
+                    <div class="slider-row">
+                      <span class="slider-ico">⏱</span>
+                      <input class="slider" id="animGlobal" type="range" min="100" max="2000" step="50" value="360" />
+                      <span class="slider-val" id="animGlobalVal">360ms</span>
+                    </div>
+                  </div>
+                  <div class="set-row col">
+                    <div class="set-row-main">
+                      <div class="set-row-title">窗口动画</div>
+                      <div class="set-row-sub">最大化 / 还原</div>
+                    </div>
+                    <div class="slider-row">
+                      <span class="slider-ico">▣</span>
+                      <input class="slider" id="animWindow" type="range" min="100" max="2000" step="50" value="360" />
+                      <span class="slider-val" id="animWindowVal">360ms</span>
+                    </div>
+                  </div>
+                  <div class="set-row col">
+                    <div class="set-row-main">
+                      <div class="set-row-title">内容切换动画</div>
+                      <div class="set-row-sub">导航切换设置页</div>
+                    </div>
+                    <div class="slider-row">
+                      <span class="slider-ico">↕</span>
+                      <input class="slider" id="animPane" type="range" min="100" max="2000" step="50" value="200" />
+                      <span class="slider-val" id="animPaneVal">200ms</span>
+                    </div>
+                  </div>
+                  <div class="set-row col">
+                    <div class="set-row-main">
+                      <div class="set-row-title">菜单动画</div>
+                      <div class="set-row-sub">加号菜单展开</div>
+                    </div>
+                    <div class="slider-row">
+                      <span class="slider-ico">☰</span>
+                      <input class="slider" id="animMenu" type="range" min="100" max="2000" step="50" value="200" />
+                      <span class="slider-val" id="animMenuVal">200ms</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="set-group">
+                  <div class="set-group-title">系统</div>
+                  <label class="set-row">
+                    <div class="set-row-main">
+                      <div class="set-row-title">自动更新</div>
+                      <div class="set-row-sub">在后台下载并安装更新</div>
+                    </div>
+                    <span class="switch"><input type="checkbox" checked /><i></i></span>
+                  </label>
+                </div>
+              </section>
+
+              <section class="set-pane" data-pane="network" hidden>
+                <header class="set-head"><h1>网络</h1><p>Wi-Fi · 代理</p></header>
+                <div class="set-group">
+                  <div class="set-group-title">连接方式</div>
+                  <div class="set-row">
+                    <div class="set-row-main">
+                      <div class="set-row-title">网络类型</div>
+                      <div class="set-row-sub">状态栏按此显示 Wi-Fi 或 5G</div>
+                    </div>
+                    <div class="seg small" role="group" aria-label="网络类型">
+                      <button type="button" data-net-mode="wifi" aria-pressed="true">Wi-Fi</button>
+                      <button type="button" data-net-mode="cell">5G</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="set-group">
+                  <div class="set-group-title">Wi-Fi</div>
+                  <label class="set-row">
+                    <div class="set-row-main"><div class="set-row-title">Wi-Fi</div><div class="set-row-sub">Studio-5G</div></div>
+                    <span class="switch"><input type="checkbox" checked /><i></i></span>
+                  </label>
+                </div>
+              </section>
+
+              <section class="set-pane" data-pane="sound" hidden>
+                <header class="set-head"><h1>声音</h1><p>输出 · 提示音</p></header>
+                <div class="set-group">
+                  <div class="set-group-title">输出</div>
+                  <div class="set-row col">
+                    <div class="set-row-main"><div class="set-row-title">输出音量</div></div>
+                    <div class="slider-row">
+                      <span class="slider-ico">♪</span>
+                      <input class="slider" type="range" min="0" max="100" value="62" />
+                      <span class="slider-val">62%</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="set-pane" data-pane="display" hidden>
+                <header class="set-head"><h1>显示</h1><p>亮度 · 分辨率</p></header>
+                <div class="set-group">
+                  <div class="set-group-title">内建显示器</div>
+                  <div class="set-row col">
+                    <div class="set-row-main"><div class="set-row-title">亮度</div></div>
+                    <div class="slider-row">
+                      <span class="slider-ico">☀</span>
+                      <input class="slider" type="range" min="0" max="100" value="78" />
+                      <span class="slider-val">78%</span>
+                    </div>
+                  </div>
+                  <label class="set-row">
+                    <div class="set-row-main"><div class="set-row-title">夜览</div></div>
+                    <span class="switch"><input type="checkbox" checked /><i></i></span>
+                  </label>
+                </div>
+              </section>
+            </div>
+          </main>
+
+        <!-- window-owned recover drag control (same chrome as topbar drag) -->
+        <div class="recover" data-recover hidden data-orient="h">
+          <a-drag-ctl data-recover-zone></a-drag-ctl>
+        </div>
+      </div>
+
+      <!-- ========== 电话 ========== -->
+      <div class="window" id="winPhone" data-app="phone" data-mode="floating" data-title="电话" style="left:38%; top:22%; width:52%; height:62%; z-index:11;">
+        <div class="topbar" data-topbar>
+          <a-capsule axis="h">
+            <button type="button" class="tb-btn" aria-label="后退" title="后退">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg>
+            </button>
+            <button type="button" class="tb-btn" aria-label="前进" title="前进">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6.5 15 12l-5.5 5.5"/></svg>
+            </button>
+            <span class="drag-pad" aria-hidden="true"></span>
+            <a-drag-ctl data-drag-zone></a-drag-ctl>
+            <span class="drag-pad" aria-hidden="true"></span>
+            <button type="button" class="tb-btn" aria-label="搜索" title="搜索">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M16 16l3.5 3.5"/></svg>
+            </button>
+            <button type="button" class="tb-btn btn-plus" data-plus aria-label="更多" title="更多" aria-haspopup="menu" aria-expanded="false">
+              <svg class="tb-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg>
+            </button>
+          </a-capsule>
+          <div class="menu-panel app-menu" data-app-menu hidden role="menu">
+              <button type="button" class="mp-item mp-info" data-act="about">
+                <span class="mp-info-row">
+                  <span class="mp-app-icon phone-icon" data-app-icon></span>
+                  <span>
+                    <span class="mp-app-name" data-app-name>电话</span>
+                    <span class="mp-app-ver">anios Studio · 1.0</span>
+                  </span>
+                </span>
+                <span class="mp-chev">›</span>
+              </button>
+              <div class="mp-sep"></div>
+              
+        </div>
+
+        class="navbar" aria-label="导航">
+            <a-capsule axis="v">
+              <button type="button" class="nav-btn active" data-section="dial">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor" stroke="none"/></svg></span>
+                <span class="nav-text">拨号</span>
+              </button>
+              <button type="button" class="nav-btn" data-section="recent">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
+                <span class="nav-text">最近</span>
+              </button>
+              <button type="button" class="nav-btn" data-section="contacts">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.5"/><path d="M5.5 19c1.5-3 4-4.5 6.5-4.5S16 16 17.5 19"/></svg></span>
+                <span class="nav-text">联系人</span>
+              </button>
+              <button type="button" class="nav-btn" data-section="fav">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 4.5l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L4.8 9.8l5-.7z"/></svg></span>
+                <span class="nav-text">收藏</span>
+              </button>
+            </a-capsule>
+          </nav>
+
+          <main class="content" data-content>
+            <div class="scroll-indicator" data-scroll-indicator data-mode="percent" aria-hidden="true">
+              <div class="scroll-thumb" data-scroll-thumb></div>
+            </div>
+            <button type="button" class="content-resize" data-content-resize title="缩放窗口" aria-label="缩放窗口"></button>
+            <div class="content-scroll" data-content-scroll>
+              <!-- 拨号 -->
+              <section class="set-pane" data-pane="dial">
+                <header class="set-head"><h1>拨号</h1><p>输入号码或姓名开始通话</p></header>
+                <div class="dial-display" id="dialDisplay">输入号码</div>
+                <div class="dial-pad" id="dialPad">
+                  <button type="button" class="dial-key"><b>1</b><small>&nbsp;</small></button>
+                  <button type="button" class="dial-key"><b>2</b><small>ABC</small></button>
+                  <button type="button" class="dial-key"><b>3</b><small>DEF</small></button>
+                  <button type="button" class="dial-key"><b>4</b><small>GHI</small></button>
+                  <button type="button" class="dial-key"><b>5</b><small>JKL</small></button>
+                  <button type="button" class="dial-key"><b>6</b><small>MNO</small></button>
+                  <button type="button" class="dial-key"><b>7</b><small>PQRS</small></button>
+                  <button type="button" class="dial-key"><b>8</b><small>TUV</small></button>
+                  <button type="button" class="dial-key"><b>9</b><small>WXYZ</small></button>
+                  <button type="button" class="dial-key"><b>*</b><small>&nbsp;</small></button>
+                  <button type="button" class="dial-key"><b>0</b><small>+</small></button>
+                  <button type="button" class="dial-key"><b>#</b><small>&nbsp;</small></button>
+                </div>
+                <div class="dial-actions">
+                  <button type="button" class="btn-quiet" aria-label="添加号码">+</button>
+                  <button type="button" class="btn-call" aria-label="呼叫">呼叫</button>
+                  <button type="button" class="btn-quiet" id="dialBack" aria-label="退格">⌫</button>
+                </div>
+              </section>
+
+              <!-- 最近 -->
+              <section class="set-pane" data-pane="recent" hidden>
+                <header class="set-head"><h1>最近通话</h1><p>今天 · 昨天 · 更早</p></header>
+                <div class="set-group">
+                  <div class="call-row">
+                    <div class="call-av">王</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">王小明</div>
+                      <div class="set-row-sub">移动 · 呼出 · 12 分钟前</div>
+                    </div>
+                    <button type="button" class="btn-quiet">详细</button>
+                  </div>
+                  <div class="call-row">
+                    <div class="call-av v2">李</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">李工</div>
+                      <div class="set-row-sub">办公 · 未接来电 · 1 小时前</div>
+                    </div>
+                    <button type="button" class="btn-quiet">详细</button>
+                  </div>
+                  <div class="call-row">
+                    <div class="call-av v3">陈</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">陈女士</div>
+                      <div class="set-row-sub">移动 · 呼入 · 昨天</div>
+                    </div>
+                    <button type="button" class="btn-quiet">详细</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 联系人 -->
+              <section class="set-pane" data-pane="contacts" hidden>
+                <header class="set-head"><h1>联系人</h1><p>128 位联系人</p></header>
+                <div class="set-group">
+                  <div class="call-row">
+                    <div class="call-av">王</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">王小明</div>
+                      <div class="set-row-sub">138 0013 8000</div>
+                    </div>
+                  </div>
+                  <div class="call-row">
+                    <div class="call-av v2">李</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">李工</div>
+                      <div class="set-row-sub">021-8888 6666</div>
+                    </div>
+                  </div>
+                  <div class="call-row">
+                    <div class="call-av v3">陈</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">陈女士</div>
+                      <div class="set-row-sub">139 2222 3333</div>
+                    </div>
+                  </div>
+                  <div class="call-row">
+                    <div class="call-av v4">妈</div>
+                    <div class="set-row-main">
+                      <div class="set-row-title">妈妈</div>
+                      <div class="set-row-sub">家庭 · 收藏</div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- 收藏 -->
+              <section class="set-pane" data-pane="fav" hidden>
+                <header class="set-head"><h1>收藏</h1><p>快速拨打</p></header>
+                <div class="fav-grid">
+                  <button type="button" class="fav-card"><span class="call-av">妈</span><span>妈妈</span></button>
+                  <button type="button" class="fav-card"><span class="call-av v2">王</span><span>王小明</span></button>
+                  <button type="button" class="fav-card"><span class="call-av v3">李</span><span>李工</span></button>
+                  <button type="button" class="fav-card"><span class="call-av v4">办</span><span>办公室</span></button>
+                </div>
+              </section>
+            </div>
+          </main>
+
+        <!-- window-owned recover drag control (same chrome as topbar drag) -->
+        <div class="recover" data-recover hidden data-orient="h">
+          <a-drag-ctl data-recover-zone></a-drag-ctl>
+        </div>
+      </div>
+
+      <!-- status panel: column 1 = battery / time / network (+ …); hidden side icons when collapsed -->
+      <div class="statusbar" id="statusBar" data-net="wifi">
+        <a-capsule axis="v" class="status-capsule" id="statusCapsule">
+          <!-- first column of the status panel: always the 3 live statuses -->
+          <div class="st-col">
+            <a-icon-btn class="st-item st-battery" label="电量">
+              <svg class="bat-ring" viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="bat-track" cx="18" cy="18" r="14" />
+                <circle class="bat-arc" cx="18" cy="18" r="14" id="batArc" />
+              </svg>
+              <span class="bat-pct" id="batPct">72</span>
+            </a-icon-btn>
+            <a-icon-btn class="st-item st-time" id="stTime" label="时间"><span>12:00</span></a-icon-btn>
+            <a-icon-btn class="st-item st-net" id="stNet" label="网络">
+              <svg class="net-wifi" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4.5 10.5c4.2-4 10.8-4 15 0" />
+                <path d="M7.5 13.5c2.6-2.5 6.4-2.5 9 0" />
+                <path d="M10.5 16.5c.9-.8 2.1-.8 3 0" />
+                <circle cx="12" cy="19" r="1.1" fill="currentColor" stroke="none" />
+              </svg>
+              <div class="net-5g" aria-hidden="true">
+                <span>5G</span><i></i><i></i><i></i><i></i>
+              </div>
+            </a-icon-btn>
+            <a-icon-btn class="st-item st-more" id="stMore" label="更多"><span>…</span></a-icon-btn>
+          </div>
+
+          <!-- rest of the panel: icon-only, ≤4 rows, one icon per cell -->
+          <div class="st-side" id="stSide" aria-hidden="true">
+            <a-icon-btn class="sp-ico" label="音量">>
+              <svg viewBox="0 0 24 24"><path d="M4 10v4h3l4 3V7L7 10H4z"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5"/><path d="M18 7.5a6.5 6.5 0 0 1 0 9"/></svg>
+            </a-icon-btn>
+            <a-icon-btn class="sp-ico" label="蓝牙">>
+              <svg viewBox="0 0 24 24"><path d="M8 8l8 8-4 4V4l4 4-8 8"/></svg>
+            </a-icon-btn>
+            <a-icon-btn class="sp-ico" label="播放中">>
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+            </a-icon-btn>
+            <a-icon-btn class="sp-ico" label="勿扰">>
+              <svg viewBox="0 0 24 24"><path d="M6 10h12M8 6h8v12H8z"/><path d="M10 18v2h4v-2"/></svg>
+            </a-icon-btn>
+          </div>
+        </a-capsule>
+      </div>
+
+      <!-- content ends -->
+    </div>
+
+    <!-- viewport resize OUTSIDE the screen, same circular style as content resize -->
+    <button type="button" class="vp-resize" id="vpResize" title="拖动改变视口大小" aria-label="调整视口大小"></button>
+
+  <!-- debug bar (temporarily off) -->
+  <div class="debug-bar" id="debugBar" hidden aria-label="系统调试">
+    <div class="debug-title">调试 · 临时控件 / 窗口 / 焦点 / 控件 / 视口</div>
+    <div class="debug-grid" id="debugGrid">
+      <!-- recover -->
+      <div class="dbg-cell"><span class="dbg-k">鼠标</span><span class="dbg-v" data-dbg="mouse">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">窗口 rect</span><span class="dbg-v" data-dbg="winRect">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">距边 T/B/L/R</span><span class="dbg-v" data-dbg="dist">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">最近边 / 距离</span><span class="dbg-v" data-dbg="nearest">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">阈值 NEAR</span><span class="dbg-v" data-dbg="near">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">条件1 拖动钮离屏</span><span class="dbg-v" data-dbg="c1">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">条件2 距边&lt;NEAR</span><span class="dbg-v" data-dbg="c2">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">边剩余段</span><span class="dbg-v" data-dbg="remainder">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">排列 / 边</span><span class="dbg-v" data-dbg="orient">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">半宽半高</span><span class="dbg-v" data-dbg="half">—</span></div>
+      <div class="dbg-cell dbg-coord"><span class="dbg-k">临时控件坐标</span><span class="dbg-v" data-dbg="xy">未显示</span></div>
+      <!-- window / focus -->
+      <div class="dbg-cell"><span class="dbg-k">焦点窗口</span><span class="dbg-v" data-dbg="focus">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">窗口模式</span><span class="dbg-v" data-dbg="mode">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">窗口 z-index</span><span class="dbg-v" data-dbg="zindex">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">窗口列表</span><span class="dbg-v" data-dbg="winList">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">窗口尺寸</span><span class="dbg-v" data-dbg="winSize">—</span></div>
+      <!-- controls -->
+      <div class="dbg-cell"><span class="dbg-k">拖动钮 rect</span><span class="dbg-v" data-dbg="dragRect">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">顶栏对齐 cx</span><span class="dbg-v" data-dbg="cx">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">导航 / 顶栏可见</span><span class="dbg-v" data-dbg="chromeVis">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">+ 菜单</span><span class="dbg-v" data-dbg="menu">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">滚动指示</span><span class="dbg-v" data-dbg="scroll">—</span></div>
+      <!-- viewport -->
+      <div class="dbg-cell"><span class="dbg-k">视口尺寸</span><span class="dbg-v" data-dbg="vpSize">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">视口预设 / 屏幕</span><span class="dbg-v" data-dbg="vpMeta">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">主题 / 密度</span><span class="dbg-v" data-dbg="theme">—</span></div>
+      <div class="dbg-cell"><span class="dbg-k">动画 dur</span><span class="dbg-v" data-dbg="dur">—</span></div>
+    </div>
+  </div>
+
+  <script type="module" src="dist/main.js"></script>
+</body>
+</html>
