@@ -107,7 +107,7 @@ export const METRICS: MetricDef[] = [
   { key: "fontNum", label: "状态数字", desc: "状态栏时钟等数字字号", group: "字号", min: 7, max: 14, step: 1, def: 9 },
   { key: "fontStat", label: "大数字", desc: "状态面板大数字字号", group: "字号", min: 12, max: 28, step: 1, def: 18 },
   { key: "navW", label: "导航宽", desc: "导航胶囊宽度（独立参数；42 = 顶栏高×1.5 是数值巧合而非约束）", group: "控件", min: 30, max: 64, step: 1, def: 42 },
-  { key: "inset", label: "屏幕贴边", desc: "状态栏/App 栏贴屏幕边缘的距离；最大化导航贴边同此", group: "间距", min: 0, max: 16, step: 1, def: 5 },
+  { key: "inset", label: "屏幕贴边", desc: "状态栏/App 栏贴屏幕边缘的距离；最大化导航贴边同此", group: "间距", min: 0, max: 16, step: 1, def: 8 },
   { key: "recoverNear", label: "recover 触发距离", desc: "鼠标距窗边该距离内才显示临时拖动（38 = 原 28+2×5 公式巧合，现独立）", group: "间距", min: 16, max: 72, step: 1, def: 38 },
   { key: "capsuleGap", label: "胶囊按钮间距", desc: "胶囊壳内按钮之间的水平间距", group: "间距", min: 0, max: 8, step: 1, def: 2 },
   { key: "capsulePad", label: "胶囊内边距", desc: "胶囊壳左右内边距", group: "间距", min: 0, max: 10, step: 1, def: 3 },

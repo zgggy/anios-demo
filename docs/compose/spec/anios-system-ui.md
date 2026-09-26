@@ -55,6 +55,7 @@ src/
 - Gaps 5px chrome↔content; insets 5px system bars (= same gap, maximized nav too); concentric `margin=(edge−btn)/2−1px`.
 - Recover: show if drag chrome off-screen and edge distance &lt; 38px; place on nearest content edge remainder, gap 5px; v = rotate(90deg).
 - Maximize: content rect tween to viewport edges; chrome translate-FLIP follows; radius 16↔0.
+- Lifecycle animations (minimize/open/close) never tween opacity — any ancestor `opacity < 1` forms a backdrop root and the frosted panel turns into clear glass instantly; disappearance = scale + hidden.
 - Z-order: floating = content over chrome (shadows off content); maximized & any `data-flipping` transition = chrome over content (restore slides bars out from inside). System bars (z=100) always topmost — window z renormalizes to compact stack ranks on focus (never accumulates past the system layer).
 - App bar: launcher pinned to the capsule tail — its position is identical in only-launch (maximized) and full states (capsule `min-height` slack goes to the head, not under the launcher).
 - App bar: launchpad bottom → pinned → open; any maximized window ⇒ only launchpad.

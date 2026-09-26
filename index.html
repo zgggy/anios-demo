@@ -33,7 +33,7 @@
   --font-num: 9px;
   --font-stat: 18px;
   --nav-w: 42px;
-  --inset: 5px;
+  --inset: 8px;
   --recover-near: 38px;
   --capsule-gap: 2px;
   --capsule-pad: 3px;
@@ -638,7 +638,7 @@ svg {
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 160ms ease;
+  /* 不做 opacity 过渡：祖先 opacity<1 形成 backdrop root，磨砂变透明 */
 }
 .recover.is-on {
   opacity: 1;
@@ -1165,7 +1165,7 @@ svg {
     { key: "fontNum", label: "\u72B6\u6001\u6570\u5B57", desc: "\u72B6\u6001\u680F\u65F6\u949F\u7B49\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 7, max: 14, step: 1, def: 9 },
     { key: "fontStat", label: "\u5927\u6570\u5B57", desc: "\u72B6\u6001\u9762\u677F\u5927\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 12, max: 28, step: 1, def: 18 },
     { key: "navW", label: "\u5BFC\u822A\u5BBD", desc: "\u5BFC\u822A\u80F6\u56CA\u5BBD\u5EA6\uFF08\u72EC\u7ACB\u53C2\u6570\uFF1B42 = \u9876\u680F\u9AD8\xD71.5 \u662F\u6570\u503C\u5DE7\u5408\u800C\u975E\u7EA6\u675F\uFF09", group: "\u63A7\u4EF6", min: 30, max: 64, step: 1, def: 42 },
-    { key: "inset", label: "\u5C4F\u5E55\u8D34\u8FB9", desc: "\u72B6\u6001\u680F/App \u680F\u8D34\u5C4F\u5E55\u8FB9\u7F18\u7684\u8DDD\u79BB\uFF1B\u6700\u5927\u5316\u5BFC\u822A\u8D34\u8FB9\u540C\u6B64", group: "\u95F4\u8DDD", min: 0, max: 16, step: 1, def: 5 },
+    { key: "inset", label: "\u5C4F\u5E55\u8D34\u8FB9", desc: "\u72B6\u6001\u680F/App \u680F\u8D34\u5C4F\u5E55\u8FB9\u7F18\u7684\u8DDD\u79BB\uFF1B\u6700\u5927\u5316\u5BFC\u822A\u8D34\u8FB9\u540C\u6B64", group: "\u95F4\u8DDD", min: 0, max: 16, step: 1, def: 8 },
     { key: "recoverNear", label: "recover \u89E6\u53D1\u8DDD\u79BB", desc: "\u9F20\u6807\u8DDD\u7A97\u8FB9\u8BE5\u8DDD\u79BB\u5185\u624D\u663E\u793A\u4E34\u65F6\u62D6\u52A8\uFF0838 = \u539F 28+2\xD75 \u516C\u5F0F\u5DE7\u5408\uFF0C\u73B0\u72EC\u7ACB\uFF09", group: "\u95F4\u8DDD", min: 16, max: 72, step: 1, def: 38 },
     { key: "capsuleGap", label: "\u80F6\u56CA\u6309\u94AE\u95F4\u8DDD", desc: "\u80F6\u56CA\u58F3\u5185\u6309\u94AE\u4E4B\u95F4\u7684\u6C34\u5E73\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 8, step: 1, def: 2 },
     { key: "capsulePad", label: "\u80F6\u56CA\u5185\u8FB9\u8DDD", desc: "\u80F6\u56CA\u58F3\u5DE6\u53F3\u5185\u8FB9\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 10, step: 1, def: 3 },
@@ -5872,7 +5872,6 @@ svg {
     }
     gsapWithCSS.to(win, {
       scale: 0.12,
-      opacity: 0,
       x: tx - cx0,
       y: ty - cy0,
       transformOrigin: "50% 50%",
@@ -5881,7 +5880,7 @@ svg {
       overwrite: true,
       onComplete: () => {
         win.hidden = true;
-        gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+        gsapWithCSS.set(win, { clearProps: "transform,scale,x,y,transformOrigin" });
         onDone();
       }
     });
@@ -5902,21 +5901,19 @@ svg {
       win,
       {
         scale: 0.12,
-        opacity: 0,
         x: tx - cx0,
         y: ty - cy0,
         transformOrigin: "50% 50%"
       },
       {
         scale: 1,
-        opacity: 1,
         x: 0,
         y: 0,
         duration: d,
         ease: "power3.out",
         overwrite: true,
         onComplete: () => {
-          gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+          gsapWithCSS.set(win, { clearProps: "transform,scale,x,y,transformOrigin" });
           onDone();
         }
       }
@@ -5925,15 +5922,14 @@ svg {
   function closeIn(win, onDone) {
     const d = durSec("--anim-window");
     gsapWithCSS.to(win, {
-      scale: 0.55,
-      opacity: 0,
+      scale: 0.12,
       transformOrigin: "50% 50%",
       duration: d,
       ease: "power3.in",
       overwrite: true,
       onComplete: () => {
         win.hidden = true;
-        gsapWithCSS.set(win, { clearProps: "transform,opacity,scale,transformOrigin" });
+        gsapWithCSS.set(win, { clearProps: "transform,scale,transformOrigin" });
         onDone();
       }
     });

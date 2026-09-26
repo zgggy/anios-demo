@@ -598,7 +598,7 @@ svg {
   transform: translate(-50%, -50%);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 160ms ease;
+  /* 不做 opacity 过渡：祖先 opacity<1 形成 backdrop root，磨砂变透明 */
 }
 .recover.is-on {
   opacity: 1;

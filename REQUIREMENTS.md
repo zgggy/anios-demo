@@ -537,7 +537,8 @@ margin = (短边 − 钮径)/2 − 1px
 5. 自研动画底座而不复用 GSAP 原语  
 6. 状态栏点网络切换（应在设置）  
 7. 设置应用出现「配置」菜单  
-8. 后台 app 出现在 App 栏  
+8. 后台 app 出现在 App 栏
+9. 对含磨砂（backdrop-filter）的层级补间 opacity —— 祖先 opacity<1 形成 backdrop root，磨砂瞬间变成透明玻璃；收起/打开/关闭用**缩放 + 隐藏**表达  
 
 ---
 

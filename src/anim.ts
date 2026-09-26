@@ -175,9 +175,10 @@ export function minimizeTo(
     tx = ir.left + ir.width / 2;
     ty = ir.top + ir.height / 2;
   }
+  // 不补间 opacity：祖先 opacity<1 会形成 backdrop root，
+  // 磨砂面板瞬间变成透明玻璃；消失用「缩小 + 隐藏」表达
   gsap.to(win, {
     scale: 0.12,
-    opacity: 0,
     x: tx - cx0,
     y: ty - cy0,
     transformOrigin: "50% 50%",
@@ -186,7 +187,7 @@ export function minimizeTo(
     overwrite: true,
     onComplete: () => {
       win.hidden = true;
-      gsap.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+      gsap.set(win, { clearProps: "transform,scale,x,y,transformOrigin" });
       onDone();
     },
   });
@@ -213,21 +214,19 @@ export function openFrom(
     win,
     {
       scale: 0.12,
-      opacity: 0,
       x: tx - cx0,
       y: ty - cy0,
       transformOrigin: "50% 50%",
     },
     {
       scale: 1,
-      opacity: 1,
       x: 0,
       y: 0,
       duration: d,
       ease: "power3.out",
       overwrite: true,
       onComplete: () => {
-        gsap.set(win, { clearProps: "transform,opacity,scale,x,y,transformOrigin" });
+        gsap.set(win, { clearProps: "transform,scale,x,y,transformOrigin" });
         onDone();
       },
     },
@@ -238,15 +237,14 @@ export function openFrom(
 export function closeIn(win: HTMLElement, onDone: () => void): void {
   const d = durSec("--anim-window");
   gsap.to(win, {
-    scale: 0.55,
-    opacity: 0,
+    scale: 0.12,
     transformOrigin: "50% 50%",
     duration: d,
     ease: "power3.in",
     overwrite: true,
     onComplete: () => {
       win.hidden = true;
-      gsap.set(win, { clearProps: "transform,opacity,scale,transformOrigin" });
+      gsap.set(win, { clearProps: "transform,scale,transformOrigin" });
       onDone();
     },
   });
