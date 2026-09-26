@@ -115,11 +115,13 @@ export function initWindows(store: Store): WinApi {
 
   function focus(id: string): void {
     store.update((s) => {
-      let maxZ = 20;
-      for (const w of Object.values(s.wins)) maxZ = Math.max(maxZ, w.z);
-      for (const w of Object.values(s.wins)) {
-        patchWin(s, w.id, { focused: w.id === id, z: w.id === id ? maxZ + 1 : w.z });
-      }
+      // z 只表达层叠顺序：重排为连续小序号（焦点窗置顶），永不累积
+      // 越过系统层（状态栏/App 栏 z=100 必须永远最顶层）
+      const stack = Object.values(s.wins)
+        .sort((a, b) => a.z - b.z)
+        .filter((w) => w.id !== id);
+      stack.push(s.wins[id]);
+      stack.forEach((w, i) => patchWin(s, w.id, { focused: w.id === id, z: i + 1 }));
     });
     // 视图瞬态：他窗缩放钮收起
     for (const w of $$(".window")) {

@@ -327,6 +327,11 @@ svg {
   gap: 4px;
   padding: 0;
 }
+/* launcher 钉在胶囊尾部：only-launch 时胶囊被 min-height 撑高，
+   顶部对齐会让它上移——尾部对齐保证按钮位置与显隐无关 */
+.app-capsule {
+  justify-content: flex-end;
+}
 .app-stack > .nav-btn:first-child {
   margin-top: calc((var(--nav-w) - var(--nav-btn)) / 2 - var(--margin-comp));
 }

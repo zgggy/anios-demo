@@ -357,6 +357,11 @@ svg {
   gap: 4px;
   padding: 0;
 }
+/* launcher 钉在胶囊尾部：only-launch 时胶囊被 min-height 撑高，
+   顶部对齐会让它上移——尾部对齐保证按钮位置与显隐无关 */
+.app-capsule {
+  justify-content: flex-end;
+}
 .app-stack > .nav-btn:first-child {
   margin-top: calc((var(--nav-w) - var(--nav-btn)) / 2 - var(--margin-comp));
 }
@@ -1130,25 +1135,25 @@ svg {
 
   // src/state.ts
   var METRICS = [
-    { key: "winPad", label: "\u7A97\u53E3\u5185\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
-    { key: "gap", label: "\u680F\u2194\u5185\u5BB9\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
-    { key: "gutter", label: "\u6EDA\u52A8\u7559\u767D", group: "\u95F4\u8DDD", min: 12, max: 48, step: 1, def: 28 },
-    { key: "menuDrop", label: "\u83DC\u5355\u4E0B\u79FB", group: "\u95F4\u8DDD", min: 0, max: 24, step: 1, def: 8 },
-    { key: "topbarH", label: "\u9876\u680F\u9AD8", group: "\u63A7\u4EF6", min: 20, max: 48, step: 1, def: 28 },
-    { key: "btn", label: "\u9876\u680F\u5706\u94AE", group: "\u63A7\u4EF6", min: 16, max: 32, step: 1, def: 22 },
-    { key: "navBtn", label: "\u5BFC\u822A\u94AE", group: "\u63A7\u4EF6", min: 22, max: 44, step: 1, def: 30 },
-    { key: "navBtnH", label: "\u5BFC\u822A\u94AE\u5C55\u5F00\u9AD8", group: "\u63A7\u4EF6", min: 32, max: 64, step: 1, def: 46 },
-    { key: "knob", label: "\u7F29\u653E\u94AE\u5F84", group: "\u63A7\u4EF6", min: 8, max: 20, step: 1, def: 12 },
-    { key: "scrollW", label: "\u6EDA\u52A8\u6307\u793A\u5BBD", group: "\u63A7\u4EF6", min: 3, max: 12, step: 1, def: 6 },
-    { key: "winRadius", label: "\u7A97\u53E3\u5706\u89D2", group: "\u63A7\u4EF6", min: 0, max: 28, step: 1, def: 16 },
-    { key: "menuW", label: "\u83DC\u5355\u6700\u5C0F\u5BBD", group: "\u63A7\u4EF6", min: 140, max: 360, step: 10, def: 220 },
-    { key: "fontTitle", label: "\u9875\u9762\u6807\u9898", group: "\u5B57\u53F7", min: 16, max: 32, step: 0.5, def: 22 },
-    { key: "fontRow", label: "\u884C\u6807\u9898", group: "\u5B57\u53F7", min: 11, max: 18, step: 0.5, def: 13.5 },
-    { key: "fontDesc", label: "\u884C\u8BF4\u660E", group: "\u5B57\u53F7", min: 9, max: 16, step: 0.5, def: 11.5 },
-    { key: "fontCtl", label: "\u83DC\u5355/\u94AE", group: "\u5B57\u53F7", min: 10, max: 16, step: 0.5, def: 12.5 },
-    { key: "fontNav", label: "\u5BFC\u822A\u5C0F\u5B57", group: "\u5B57\u53F7", min: 6, max: 12, step: 0.5, def: 8.5 },
-    { key: "fontNum", label: "\u72B6\u6001\u6570\u5B57", group: "\u5B57\u53F7", min: 7, max: 14, step: 1, def: 9 },
-    { key: "fontStat", label: "\u5927\u6570\u5B57", group: "\u5B57\u53F7", min: 12, max: 28, step: 1, def: 18 }
+    { key: "winPad", label: "\u7A97\u53E3\u5185\u8DDD", desc: "\u7A97\u53E3\u8FB9\u7F18\u4E0E\u680F/\u5185\u5BB9\u4E4B\u95F4\u7684\u5916\u6846\u7559\u767D", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
+    { key: "gap", label: "\u680F\u2194\u5185\u5BB9\u95F4\u8DDD", desc: "\u680F\u4E0E\u5185\u5BB9\u533A\u4E4B\u95F4\u7684\u7F1D\u9699\uFF1B\u8D34\u8FB9\u4E0E\u6D3E\u751F\u5173\u7CFB\u4EE5\u6B64\u4E3A\u57FA\u51C6", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
+    { key: "gutter", label: "\u6EDA\u52A8\u7559\u767D", desc: "\u5185\u5BB9\u4E24\u4FA7\u7559\u767D\uFF1B\u6EDA\u52A8\u6307\u793A/\u7F29\u653E\u94AE\u5728\u6B64\u4FA7\u5E26\u5185", group: "\u95F4\u8DDD", min: 12, max: 48, step: 1, def: 28 },
+    { key: "menuDrop", label: "\u83DC\u5355\u4E0B\u79FB", desc: "+ \u83DC\u5355/\u641C\u7D22\u9762\u677F\u60AC\u6302\u5728\u63A7\u5236\u680F\u4E0B\u65B9\u7684\u8DDD\u79BB", group: "\u95F4\u8DDD", min: 0, max: 24, step: 1, def: 8 },
+    { key: "topbarH", label: "\u9876\u680F\u9AD8", desc: "\u63A7\u5236\u680F\u80F6\u56CA\u9AD8\u5EA6\uFF1B\u5BFC\u822A\u5BBD = \u5B83 \xD7 1.5", group: "\u63A7\u4EF6", min: 20, max: 48, step: 1, def: 28 },
+    { key: "btn", label: "\u9876\u680F\u5706\u94AE", desc: "\u63A7\u5236\u680F\u5706\u94AE\u76F4\u5F84\uFF1B\u62D6\u52A8\u5C55\u5F00\u5BBD = \u5B83 \xD7 3", group: "\u63A7\u4EF6", min: 16, max: 32, step: 1, def: 22 },
+    { key: "navBtn", label: "\u5BFC\u822A\u94AE", desc: "\u5BFC\u822A/App \u680F\u5706\u94AE\u76F4\u5F84\uFF1B\u540C\u5FC3\u5706 margin \u968F\u4E4B\u8BA1\u7B97", group: "\u63A7\u4EF6", min: 22, max: 44, step: 1, def: 30 },
+    { key: "navBtnH", label: "\u5BFC\u822A\u94AE\u5C55\u5F00\u9AD8", desc: "hover \u65F6\u5BFC\u822A\u94AE\u5411\u4E0B\u53D8\u9AD8\u7684\u9AD8\u5EA6", group: "\u63A7\u4EF6", min: 32, max: 64, step: 1, def: 46 },
+    { key: "knob", label: "\u7F29\u653E\u94AE\u5F84", desc: "\u5185\u5BB9\u53F3\u4E0B\u4E0E\u89C6\u53E3\u89D2\u7684\u7F29\u653E\u5706\u94AE\u76F4\u5F84", group: "\u63A7\u4EF6", min: 8, max: 20, step: 1, def: 12 },
+    { key: "scrollW", label: "\u6EDA\u52A8\u6307\u793A\u5BBD", desc: "\u6EDA\u52A8\u6307\u793A\u53CC\u80F6\u56CA\u7684\u5BBD\u5EA6", group: "\u63A7\u4EF6", min: 3, max: 12, step: 1, def: 6 },
+    { key: "winRadius", label: "\u7A97\u53E3\u5706\u89D2", desc: "\u7A97\u53E3/\u5185\u5BB9\u5706\u89D2\uFF1B\u6700\u5927\u5316\u52A8\u753B 16 \u2194 0", group: "\u63A7\u4EF6", min: 0, max: 28, step: 1, def: 16 },
+    { key: "menuW", label: "\u83DC\u5355\u6700\u5C0F\u5BBD", desc: "+ \u83DC\u5355/\u641C\u7D22\u9762\u677F\u7684\u6700\u5C0F\u5BBD\u5EA6", group: "\u63A7\u4EF6", min: 140, max: 360, step: 10, def: 220 },
+    { key: "fontTitle", label: "\u9875\u9762\u6807\u9898", desc: "\u5185\u5BB9\u9875 h1 \u6807\u9898\u5B57\u53F7", group: "\u5B57\u53F7", min: 16, max: 32, step: 0.5, def: 22 },
+    { key: "fontRow", label: "\u884C\u6807\u9898", desc: "\u8BBE\u7F6E\u884C\u6807\u9898\u5B57\u53F7", group: "\u5B57\u53F7", min: 11, max: 18, step: 0.5, def: 13.5 },
+    { key: "fontDesc", label: "\u884C\u8BF4\u660E", desc: "\u884C\u8BF4\u660E/\u6B21\u7EA7\u6587\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 9, max: 16, step: 0.5, def: 11.5 },
+    { key: "fontCtl", label: "\u83DC\u5355/\u94AE", desc: "\u83DC\u5355\u9879\u3001\u6309\u94AE\u3001\u8F93\u5165\u6846\u5B57\u53F7", group: "\u5B57\u53F7", min: 10, max: 16, step: 0.5, def: 12.5 },
+    { key: "fontNav", label: "\u5BFC\u822A\u5C0F\u5B57", desc: "\u5BFC\u822A\u94AE\u4E0B\u65B9\u5C0F\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 6, max: 12, step: 0.5, def: 8.5 },
+    { key: "fontNum", label: "\u72B6\u6001\u6570\u5B57", desc: "\u72B6\u6001\u680F\u65F6\u949F\u7B49\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 7, max: 14, step: 1, def: 9 },
+    { key: "fontStat", label: "\u5927\u6570\u5B57", desc: "\u72B6\u6001\u9762\u677F\u5927\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 12, max: 28, step: 1, def: 18 }
   ];
   function defaultMetrics() {
     const m = {};
@@ -5944,10 +5949,10 @@ svg {
   }
 
   // src/apps/settings.ts
-  function paramRow(d, kind, unit, termLabel) {
+  function paramRow(d, kind, unit, opts = {}) {
     const p = (d.def - d.min) / (d.max - d.min);
     return `<div class="slider-row">
-    ${termLabel ? `<span class="term-l">${termLabel}</span>` : ""}
+    ${opts.termLabel ? `<span class="term-l">${opts.termLabel}</span>` : ""}
     <div class="slider-field">
       <input class="slider" type="range" data-${kind}="${d.key}" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.def}" />
       <i class="def-flag" style="--p: ${p.toFixed(3)}" title="\u9ED8\u8BA4 ${d.def}${unit}"></i>
@@ -5956,13 +5961,20 @@ svg {
     <button type="button" class="def-save" data-save="${d.key}" title="\u8BBE\u4E3A\u9ED8\u8BA4\uFF08\u5199\u5165 src/state.ts\uFF09">${icon("save")}</button>
   </div>`;
   }
+  function paramBlock(d, kind, unit) {
+    return `<div class="set-row col">
+    <div class="row-t">${d.label}</div>
+    ${d.desc ? `<div class="row-s">${d.desc}</div>` : ""}
+    ${paramRow(d, kind, unit)}
+  </div>`;
+  }
   var metricsPane = `
 <section class="set-pane" data-pane="metrics" hidden>
   <header class="set-head"><h1>\u5C3A\u5BF8</h1><p>\u95F4\u8DDD \xB7 \u63A7\u4EF6 \xB7 \u5B57\u53F7 \xB7 \u6D3E\u751F</p></header>
   ${["\u95F4\u8DDD", "\u63A7\u4EF6", "\u5B57\u53F7"].map(
     (g) => `<div class="set-group">
         <div class="set-group-title">${g}</div>
-        ${METRICS.filter((m) => m.group === g).map((m) => paramRow(m, "metric", "px")).join("")}
+        ${METRICS.filter((m) => m.group === g).map((m) => paramBlock(m, "metric", "px")).join("")}
       </div>`
   ).join("")}
   <div class="set-group">
@@ -5975,7 +5987,10 @@ svg {
           <div class="deriv-f" data-deriv-f="${d.key}">${d.formula(defaultMetrics(), t)}</div>
           <div class="deriv-v" data-deriv-val="${d.key}">${d.compute(defaultMetrics(), t)}px</div>
         </div>
-        ${d.terms.map((tk) => paramRow(DERIV_TERMS.find((x) => x.key === tk), "term", "", DERIV_TERMS.find((x) => x.key === tk).label)).join("")}
+        ${d.terms.map((tk) => {
+      const t2 = DERIV_TERMS.find((x) => x.key === tk);
+      return paramRow(t2, "term", "", { termLabel: t2.label });
+    }).join("")}
       </div>`;
   }).join("")}
   </div>
@@ -6538,11 +6553,9 @@ svg {
     const appIcon = (win) => $(`.app-item[data-app-id="${win.dataset.app}"]`);
     function focus(id) {
       store.update((s) => {
-        let maxZ = 20;
-        for (const w of Object.values(s.wins)) maxZ = Math.max(maxZ, w.z);
-        for (const w of Object.values(s.wins)) {
-          patchWin(s, w.id, { focused: w.id === id, z: w.id === id ? maxZ + 1 : w.z });
-        }
+        const stack = Object.values(s.wins).sort((a, b) => a.z - b.z).filter((w) => w.id !== id);
+        stack.push(s.wins[id]);
+        stack.forEach((w, i) => patchWin(s, w.id, { focused: w.id === id, z: i + 1 }));
       });
       for (const w of $$(".window")) {
         if (w.id === id) continue;

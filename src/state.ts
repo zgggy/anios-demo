@@ -64,6 +64,8 @@ export type MetricKey = keyof Metrics;
 export type MetricDef = {
   key: MetricKey;
   label: string;
+  /** 参数解释（设置面板展示） */
+  desc: string;
   group: "间距" | "控件" | "字号";
   min: number;
   max: number;
@@ -72,25 +74,25 @@ export type MetricDef = {
 };
 
 export const METRICS: MetricDef[] = [
-  { key: "winPad", label: "窗口内距", group: "间距", min: 0, max: 12, step: 1, def: 5 },
-  { key: "gap", label: "栏↔内容间距", group: "间距", min: 0, max: 12, step: 1, def: 5 },
-  { key: "gutter", label: "滚动留白", group: "间距", min: 12, max: 48, step: 1, def: 28 },
-  { key: "menuDrop", label: "菜单下移", group: "间距", min: 0, max: 24, step: 1, def: 8 },
-  { key: "topbarH", label: "顶栏高", group: "控件", min: 20, max: 48, step: 1, def: 28 },
-  { key: "btn", label: "顶栏圆钮", group: "控件", min: 16, max: 32, step: 1, def: 22 },
-  { key: "navBtn", label: "导航钮", group: "控件", min: 22, max: 44, step: 1, def: 30 },
-  { key: "navBtnH", label: "导航钮展开高", group: "控件", min: 32, max: 64, step: 1, def: 46 },
-  { key: "knob", label: "缩放钮径", group: "控件", min: 8, max: 20, step: 1, def: 12 },
-  { key: "scrollW", label: "滚动指示宽", group: "控件", min: 3, max: 12, step: 1, def: 6 },
-  { key: "winRadius", label: "窗口圆角", group: "控件", min: 0, max: 28, step: 1, def: 16 },
-  { key: "menuW", label: "菜单最小宽", group: "控件", min: 140, max: 360, step: 10, def: 220 },
-  { key: "fontTitle", label: "页面标题", group: "字号", min: 16, max: 32, step: 0.5, def: 22 },
-  { key: "fontRow", label: "行标题", group: "字号", min: 11, max: 18, step: 0.5, def: 13.5 },
-  { key: "fontDesc", label: "行说明", group: "字号", min: 9, max: 16, step: 0.5, def: 11.5 },
-  { key: "fontCtl", label: "菜单/钮", group: "字号", min: 10, max: 16, step: 0.5, def: 12.5 },
-  { key: "fontNav", label: "导航小字", group: "字号", min: 6, max: 12, step: 0.5, def: 8.5 },
-  { key: "fontNum", label: "状态数字", group: "字号", min: 7, max: 14, step: 1, def: 9 },
-  { key: "fontStat", label: "大数字", group: "字号", min: 12, max: 28, step: 1, def: 18 },
+  { key: "winPad", label: "窗口内距", desc: "窗口边缘与栏/内容之间的外框留白", group: "间距", min: 0, max: 12, step: 1, def: 5 },
+  { key: "gap", label: "栏↔内容间距", desc: "栏与内容区之间的缝隙；贴边与派生关系以此为基准", group: "间距", min: 0, max: 12, step: 1, def: 5 },
+  { key: "gutter", label: "滚动留白", desc: "内容两侧留白；滚动指示/缩放钮在此侧带内", group: "间距", min: 12, max: 48, step: 1, def: 28 },
+  { key: "menuDrop", label: "菜单下移", desc: "+ 菜单/搜索面板悬挂在控制栏下方的距离", group: "间距", min: 0, max: 24, step: 1, def: 8 },
+  { key: "topbarH", label: "顶栏高", desc: "控制栏胶囊高度；导航宽 = 它 × 1.5", group: "控件", min: 20, max: 48, step: 1, def: 28 },
+  { key: "btn", label: "顶栏圆钮", desc: "控制栏圆钮直径；拖动展开宽 = 它 × 3", group: "控件", min: 16, max: 32, step: 1, def: 22 },
+  { key: "navBtn", label: "导航钮", desc: "导航/App 栏圆钮直径；同心圆 margin 随之计算", group: "控件", min: 22, max: 44, step: 1, def: 30 },
+  { key: "navBtnH", label: "导航钮展开高", desc: "hover 时导航钮向下变高的高度", group: "控件", min: 32, max: 64, step: 1, def: 46 },
+  { key: "knob", label: "缩放钮径", desc: "内容右下与视口角的缩放圆钮直径", group: "控件", min: 8, max: 20, step: 1, def: 12 },
+  { key: "scrollW", label: "滚动指示宽", desc: "滚动指示双胶囊的宽度", group: "控件", min: 3, max: 12, step: 1, def: 6 },
+  { key: "winRadius", label: "窗口圆角", desc: "窗口/内容圆角；最大化动画 16 ↔ 0", group: "控件", min: 0, max: 28, step: 1, def: 16 },
+  { key: "menuW", label: "菜单最小宽", desc: "+ 菜单/搜索面板的最小宽度", group: "控件", min: 140, max: 360, step: 10, def: 220 },
+  { key: "fontTitle", label: "页面标题", desc: "内容页 h1 标题字号", group: "字号", min: 16, max: 32, step: 0.5, def: 22 },
+  { key: "fontRow", label: "行标题", desc: "设置行标题字号", group: "字号", min: 11, max: 18, step: 0.5, def: 13.5 },
+  { key: "fontDesc", label: "行说明", desc: "行说明/次级文字字号", group: "字号", min: 9, max: 16, step: 0.5, def: 11.5 },
+  { key: "fontCtl", label: "菜单/钮", desc: "菜单项、按钮、输入框字号", group: "字号", min: 10, max: 16, step: 0.5, def: 12.5 },
+  { key: "fontNav", label: "导航小字", desc: "导航钮下方小字字号", group: "字号", min: 6, max: 12, step: 0.5, def: 8.5 },
+  { key: "fontNum", label: "状态数字", desc: "状态栏时钟等数字字号", group: "字号", min: 7, max: 14, step: 1, def: 9 },
+  { key: "fontStat", label: "大数字", desc: "状态面板大数字字号", group: "字号", min: 12, max: 28, step: 1, def: 18 },
 ];
 
 export function defaultMetrics(): Metrics {

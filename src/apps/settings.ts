@@ -23,16 +23,30 @@ type Kind = "metric" | "anim" | "term";
 type RowDef = { key: string; label: string; min: number; max: number; step: number; def: number };
 
 /** 参数滑杆行：默认值旗标（--p = 默认位置）+ 数值回显 + 设为默认按钮 */
-function paramRow(d: RowDef, kind: Kind, unit: string, termLabel?: string): string {
+function paramRow(
+  d: RowDef,
+  kind: Kind,
+  unit: string,
+  opts: { termLabel?: string; desc?: string } = {},
+): string {
   const p = (d.def - d.min) / (d.max - d.min);
   return `<div class="slider-row">
-    ${termLabel ? `<span class="term-l">${termLabel}</span>` : ""}
+    ${opts.termLabel ? `<span class="term-l">${opts.termLabel}</span>` : ""}
     <div class="slider-field">
       <input class="slider" type="range" data-${kind}="${d.key}" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.def}" />
       <i class="def-flag" style="--p: ${p.toFixed(3)}" title="默认 ${d.def}${unit}"></i>
     </div>
     <span class="slider-val" data-${kind}-val="${d.key}">${d.def}${unit}</span>
     <button type="button" class="def-save" data-save="${d.key}" title="设为默认（写入 src/state.ts）">${icon("save")}</button>
+  </div>`;
+}
+
+/** 参数块 = 标题 + 解释 + 滑杆（与派生组的「公式 + 可调项」同款结构） */
+function paramBlock(d: RowDef & { desc?: string }, kind: Kind, unit: string): string {
+  return `<div class="set-row col">
+    <div class="row-t">${d.label}</div>
+    ${d.desc ? `<div class="row-s">${d.desc}</div>` : ""}
+    ${paramRow(d, kind, unit)}
   </div>`;
 }
 
@@ -43,7 +57,7 @@ const metricsPane = `
     .map(
       (g) => `<div class="set-group">
         <div class="set-group-title">${g}</div>
-        ${METRICS.filter((m) => m.group === g).map((m) => paramRow(m, "metric", "px")).join("")}
+        ${METRICS.filter((m) => m.group === g).map((m) => paramBlock(m, "metric", "px")).join("")}
       </div>`,
     )
     .join("")}
@@ -58,7 +72,10 @@ const metricsPane = `
           <div class="deriv-v" data-deriv-val="${d.key}">${d.compute(defaultMetrics(), t)}px</div>
         </div>
         ${d.terms
-          .map((tk) => paramRow(DERIV_TERMS.find((x) => x.key === tk)!, "term", "", DERIV_TERMS.find((x) => x.key === tk)!.label))
+          .map((tk) => {
+            const t = DERIV_TERMS.find((x) => x.key === tk)!;
+            return paramRow(t, "term", "", { termLabel: t.label });
+          })
           .join("")}
       </div>`;
     }).join("")}
