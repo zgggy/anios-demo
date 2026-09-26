@@ -11,7 +11,8 @@
   --btn: 22px;
   --win-pad: 5px;
   --gap: 5px;
-  --inset: 16px;
+  /* 系统栏贴边 + 最大化导航贴边/内容让位 = 导航↔内容间距（统一小间距） */
+  --inset: var(--gap);
   --gutter: 28px;
   --win-radius: 16px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -433,6 +434,12 @@ svg {
 }
 .window[data-mode="maximized"] .top-bar,
 .window[data-mode="maximized"] .nav-bar {
+  z-index: var(--chrome-z-max);
+}
+/* 过渡期 chrome 必须浮在内容之上：还原时栏从内容内部滑出，
+   若此刻套用 floating 层级（content > chrome），整个动画里栏都被压住 */
+.window[data-flipping="1"] .top-bar,
+.window[data-flipping="1"] .nav-bar {
   z-index: var(--chrome-z-max);
 }
 .window[data-mode="maximized"] .content {

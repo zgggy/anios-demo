@@ -51,9 +51,10 @@ src/
 **Contracts (enforced):**
 
 - Content rect is the window; control bar center = content centerX; navbar centerY = content centerY.
-- Gaps 5px chrome↔content; insets 16px system bars; concentric `margin=(edge−btn)/2−1px`.
+- Gaps 5px chrome↔content; insets 5px system bars (= same gap, maximized nav too); concentric `margin=(edge−btn)/2−1px`.
 - Recover: show if drag chrome off-screen and edge distance &lt; 38px; place on nearest content edge remainder, gap 5px; v = rotate(90deg).
 - Maximize: content rect tween to viewport edges; chrome translate-FLIP follows; radius 16↔0.
+- Z-order: floating = content over chrome (shadows off content); maximized & any `data-flipping` transition = chrome over content (restore slides bars out from inside).
 - App bar: launchpad bottom → pinned → open; any maximized window ⇒ only launchpad.
 - Mobile &lt;720px: no control bar, nav bottom + labels, apps maximized only.
 
