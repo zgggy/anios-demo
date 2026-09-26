@@ -6,6 +6,7 @@ import { $, $$, on } from "./dom";
 import {
   Store,
   anyMaximized,
+  isRunning,
   METRICS,
   ANIMS,
   DERIVS,
@@ -94,8 +95,9 @@ export function initAppBar(store: Store, api: WinApi): void {
   viewport.insertAdjacentHTML("beforeend", appBarHTML(items));
   const bar = $<HTMLElement>(".sys-appbar")!;
 
-  // 订阅 store：可见性/分区/开/焦点/最大化 → 按钮状态
-  // 自下而上（order 3→1）：启动台(恒最下) → 快速启动(注册表 pinned) → 已打开(未固定的开窗 app)
+  // 订阅 store：可见性/分区/四态/最大化 → 按钮状态
+  // 自下而上（order 3→1）：启动台(恒最下) → 快速启动(注册表 pinned) → 已打开区(未固定且未关闭)
+  // 四态：active=打开(焦点) · open=后台(开窗未聚焦) · min=收起 · 无类=关闭(仅固定应用在栏)
   const sync = () => {
     const s = store.get();
     bar.classList.toggle("only-launch", anyMaximized(s));
@@ -104,16 +106,17 @@ export function initAppBar(store: Store, api: WinApi): void {
       const def = APPS.find((a) => a.id === appId);
       const ws = s.wins[winIdOf(appId)];
       const launcher = appId === "launcher";
-      const visible = launcher || !!def?.pinned || !!ws?.open;
+      const visible = launcher || !!def?.pinned || (ws ? isRunning(ws) : false);
       btn.classList.toggle("gone", !visible);
       btn.style.order = String(launcher ? 3 : def?.pinned ? 2 : 1);
-      btn.classList.toggle("open", !!ws?.open);
-      btn.classList.toggle("active", !!ws?.open && ws.focused);
+      btn.classList.toggle("open", ws?.status === "open");
+      btn.classList.toggle("min", ws?.status === "minimized");
+      btn.classList.toggle("active", ws?.status === "open" && ws.focused);
     }
   };
   store.subscribe(sync);
 
-  // 每个钮都是 app（含启动台）：toggle 打开/收起
+  // 每个钮都是 app（含启动台）：关闭→打开 · 收起→还原 · 后台→提到前台 · 前台→收起
   for (const btn of $$(".app-item", bar)) {
     on(btn, "click", (e) => {
       e.stopPropagation();
@@ -121,8 +124,12 @@ export function initAppBar(store: Store, api: WinApi): void {
       const id = winIdOf(appId);
       const ws = store.get().wins[id];
       if (!ws) return;
-      if (ws.open) api.minimize(id);
-      else api.open(id);
+      if (ws.status === "open") {
+        if (ws.focused) api.minimize(id);
+        else api.focus(id);
+      } else {
+        api.open(id);
+      }
     });
   }
   sync();

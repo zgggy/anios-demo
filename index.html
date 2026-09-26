@@ -835,6 +835,35 @@ svg {
   -webkit-backdrop-filter: var(--frost-blur);
 }
 .app-item.open:not(.active) { color: var(--ink); }
+
+/* ── App 栏四态指示：圆点=运行 · 短横=收起 · 强调=前台 · 无=关闭 ── */
+.app-item { position: relative; }
+.app-ind {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, width 120ms ease, height 120ms ease;
+}
+/* 后台（开窗未聚焦）：运行圆点 */
+.app-item.open .app-ind { opacity: 1; }
+/* 打开（焦点窗口）：强调色圆点 */
+.app-item.active .app-ind { opacity: 1; background: var(--accent); }
+/* 收起（最小化至 App 栏）：短横记号 + 图标略淡 */
+.app-item.min .app-ind {
+  opacity: 0.85;
+  width: 9px;
+  height: 2px;
+  border-radius: 1px;
+}
+.app-item.min { opacity: 0.62; }
+/* 关闭：无指示（固定应用回静默态，未固定者已隐去） */
 /* 后台不显示：未固定的 app 收起后从 App 栏隐去（启动台里仍可打开） */
 .app-item.gone { display: none; }
 
@@ -1276,7 +1305,10 @@ svg {
     return null;
   }
   function anyMaximized(s) {
-    return Object.values(s.wins).some((w) => w.open && w.mode === "maximized");
+    return Object.values(s.wins).some((w) => w.status === "open" && w.mode === "maximized");
+  }
+  function isRunning(w) {
+    return w.status !== "closed";
   }
 
   // src/render.ts
@@ -1455,7 +1487,7 @@ svg {
     <div class="capsule nav-capsule app-capsule">
       <div class="app-stack">
         ${items.map(
-      (it) => `<button type="button" class="nav-btn app-item" data-app-id="${it.appId}" aria-label="${it.label}">${icon(it.icon)}<span class="nav-text">${it.label}</span></button>`
+      (it) => `<button type="button" class="nav-btn app-item" data-app-id="${it.appId}" aria-label="${it.label}">${icon(it.icon)}<span class="nav-text">${it.label}</span><i class="app-ind"></i></button>`
     ).join("")}
       </div>
     </div>
@@ -6606,7 +6638,7 @@ svg {
         id: winIdOf(a.id),
         app: a.id,
         title: a.title,
-        open: a.open,
+        status: a.open ? "open" : "closed",
         focused: !!a.focused && a.open,
         mode: "floating",
         geom: a.geom,
@@ -6700,7 +6732,7 @@ svg {
       const win = el(id);
       if (!win || win.dataset.anim === "1") return;
       const ws = store.get().wins[id];
-      if (ws?.open && !win.hidden) {
+      if (ws?.status === "open") {
         focus(id);
         return;
       }
@@ -6709,7 +6741,7 @@ svg {
       focus(id);
       openFrom(win, appIcon(win), () => {
         win.dataset.anim = "0";
-        store.update((s) => patchWin(s, id, { open: true }));
+        store.update((s) => patchWin(s, id, { status: "open" }));
       });
     }
     function minimize(id) {
@@ -6719,7 +6751,7 @@ svg {
       minimizeTo(win, appIcon(win), () => {
         win.dataset.anim = "0";
         store.update((s) => {
-          patchWin(s, id, { open: false, focused: false });
+          patchWin(s, id, { status: "minimized", focused: false });
           for (const w of Object.values(s.wins)) {
             if (w.id !== id) patchWin(s, w.id, { focused: false });
           }
@@ -6733,7 +6765,7 @@ svg {
       closeIn(win, () => {
         win.dataset.anim = "0";
         store.update((s) => {
-          patchWin(s, id, { open: false, focused: false });
+          patchWin(s, id, { status: "closed", focused: false });
           for (const w of Object.values(s.wins)) {
             if (w.id !== id) patchWin(s, w.id, { focused: false });
           }
@@ -7249,11 +7281,12 @@ svg {
         const def = APPS.find((a) => a.id === appId);
         const ws = s.wins[winIdOf(appId)];
         const launcher = appId === "launcher";
-        const visible = launcher || !!def?.pinned || !!ws?.open;
+        const visible = launcher || !!def?.pinned || (ws ? isRunning(ws) : false);
         btn.classList.toggle("gone", !visible);
         btn.style.order = String(launcher ? 3 : def?.pinned ? 2 : 1);
-        btn.classList.toggle("open", !!ws?.open);
-        btn.classList.toggle("active", !!ws?.open && ws.focused);
+        btn.classList.toggle("open", ws?.status === "open");
+        btn.classList.toggle("min", ws?.status === "minimized");
+        btn.classList.toggle("active", ws?.status === "open" && ws.focused);
       }
     };
     store.subscribe(sync);
@@ -7264,8 +7297,12 @@ svg {
         const id = winIdOf(appId);
         const ws = store.get().wins[id];
         if (!ws) return;
-        if (ws.open) api.minimize(id);
-        else api.open(id);
+        if (ws.status === "open") {
+          if (ws.focused) api.minimize(id);
+          else api.focus(id);
+        } else {
+          api.open(id);
+        }
       });
     }
     sync();

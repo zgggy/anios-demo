@@ -229,7 +229,7 @@ export function appBarHTML(items: AppBarItem[]): string {
         ${items
           .map(
             (it) =>
-              `<button type="button" class="nav-btn app-item" data-app-id="${it.appId}" aria-label="${it.label}">${icon(it.icon)}<span class="nav-text">${it.label}</span></button>`,
+              `<button type="button" class="nav-btn app-item" data-app-id="${it.appId}" aria-label="${it.label}">${icon(it.icon)}<span class="nav-text">${it.label}</span><i class="app-ind"></i></button>`,
           )
           .join("")}
       </div>

@@ -6,12 +6,14 @@
 
 export type Geom = { left: number; top: number; width: number; height: number }; // % of viewport (0–100)
 export type WinMode = "floating" | "maximized";
+export type WinStatus = "closed" | "minimized" | "open";
 
 export type WinState = {
   id: string; // window element id
   app: string; // data-app / app registry id
   title: string;
-  open: boolean;
+  /** closed=退出（未固定者不在 App 栏）· minimized=收起至 App 栏 · open=窗口可见 */
+  status: WinStatus;
   focused: boolean;
   mode: WinMode;
   geom: Geom; // floating geometry; restore target after maximize
@@ -263,5 +265,10 @@ export function focusedWin(s: State): WinState | null {
 
 /** 可见窗口中任一最大化 ⇒ App 栏只显示启动台（已收起/关闭的窗口不计） */
 export function anyMaximized(s: State): boolean {
-  return Object.values(s.wins).some((w) => w.open && w.mode === "maximized");
+  return Object.values(s.wins).some((w) => w.status === "open" && w.mode === "maximized");
+}
+
+/** 未关闭 = 打开或收起（App 栏上应有其图标） */
+export function isRunning(w: WinState): boolean {
+  return w.status !== "closed";
 }

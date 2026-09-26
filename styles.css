@@ -795,6 +795,35 @@ svg {
   -webkit-backdrop-filter: var(--frost-blur);
 }
 .app-item.open:not(.active) { color: var(--ink); }
+
+/* ── App 栏四态指示：圆点=运行 · 短横=收起 · 强调=前台 · 无=关闭 ── */
+.app-item { position: relative; }
+.app-ind {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, width 120ms ease, height 120ms ease;
+}
+/* 后台（开窗未聚焦）：运行圆点 */
+.app-item.open .app-ind { opacity: 1; }
+/* 打开（焦点窗口）：强调色圆点 */
+.app-item.active .app-ind { opacity: 1; background: var(--accent); }
+/* 收起（最小化至 App 栏）：短横记号 + 图标略淡 */
+.app-item.min .app-ind {
+  opacity: 0.85;
+  width: 9px;
+  height: 2px;
+  border-radius: 1px;
+}
+.app-item.min { opacity: 0.62; }
+/* 关闭：无指示（固定应用回静默态，未固定者已隐去） */
 /* 后台不显示：未固定的 app 收起后从 App 栏隐去（启动台里仍可打开） */
 .app-item.gone { display: none; }
 

@@ -38,7 +38,7 @@ export function initialState(apps: AppDef[]): State {
       id: winIdOf(a.id),
       app: a.id,
       title: a.title,
-      open: a.open,
+      status: a.open ? "open" : "closed",
       focused: !!a.focused && a.open,
       mode: "floating",
       geom: a.geom,
@@ -151,7 +151,7 @@ export function initWindows(store: Store): WinApi {
     const win = el(id);
     if (!win || win.dataset.anim === "1") return;
     const ws = store.get().wins[id];
-    if (ws?.open && !win.hidden) {
+    if (ws?.status === "open") {
       focus(id);
       return;
     }
@@ -160,7 +160,7 @@ export function initWindows(store: Store): WinApi {
     focus(id);
     openFrom(win, appIcon(win), () => {
       win.dataset.anim = "0";
-      store.update((s) => patchWin(s, id, { open: true }));
+      store.update((s) => patchWin(s, id, { status: "open" }));
     });
   }
 
@@ -171,7 +171,7 @@ export function initWindows(store: Store): WinApi {
     minimizeTo(win, appIcon(win), () => {
       win.dataset.anim = "0";
       store.update((s) => {
-        patchWin(s, id, { open: false, focused: false });
+        patchWin(s, id, { status: "minimized", focused: false });
         for (const w of Object.values(s.wins)) {
           if (w.id !== id) patchWin(s, w.id, { focused: false });
         }
@@ -186,7 +186,7 @@ export function initWindows(store: Store): WinApi {
     closeIn(win, () => {
       win.dataset.anim = "0";
       store.update((s) => {
-        patchWin(s, id, { open: false, focused: false });
+        patchWin(s, id, { status: "closed", focused: false });
         for (const w of Object.values(s.wins)) {
           if (w.id !== id) patchWin(s, w.id, { focused: false });
         }
