@@ -42,14 +42,27 @@ export type Metrics = {
   gap: number;
   gutter: number;
   menuDrop: number;
+  inset: number;
+  recoverNear: number;
+  capsuleGap: number;
+  capsulePad: number;
+  btnGap: number;
+  panelPad: number;
+  panelGap: number;
+  menuPad: number;
+  inputPad: number;
   topbarH: number;
   btn: number;
   navBtn: number;
   navBtnH: number;
+  navW: number;
   knob: number;
   scrollW: number;
   winRadius: number;
   menuW: number;
+  panelRadius: number;
+  menuItemH: number;
+  inputH: number;
   fontTitle: number;
   fontRow: number;
   fontDesc: number;
@@ -75,8 +88,8 @@ export type MetricDef = {
 
 export const METRICS: MetricDef[] = [
   { key: "winPad", label: "窗口内距", desc: "窗口边缘与栏/内容之间的外框留白", group: "间距", min: 0, max: 12, step: 1, def: 5 },
-  { key: "gap", label: "栏↔内容间距", desc: "栏与内容区之间的缝隙；贴边与派生关系以此为基准", group: "间距", min: 0, max: 12, step: 1, def: 5 },
-  { key: "gutter", label: "滚动留白", desc: "内容两侧留白；滚动指示/缩放钮在此侧带内", group: "间距", min: 12, max: 48, step: 1, def: 28 },
+  { key: "gap", label: "栏↔内容间距", desc: "栏与内容区之间的缝隙；贴边与派生关系以此为基准", group: "间距", min: 0, max: 12, step: 1, def: 8 },
+  { key: "gutter", label: "滚动留白", desc: "内容两侧留白；滚动指示/缩放钮在此侧带内", group: "间距", min: 12, max: 48, step: 1, def: 20 },
   { key: "menuDrop", label: "菜单下移", desc: "+ 菜单/搜索面板悬挂在控制栏下方的距离", group: "间距", min: 0, max: 24, step: 1, def: 8 },
   { key: "topbarH", label: "顶栏高", desc: "控制栏胶囊高度；导航宽 = 它 × 1.5", group: "控件", min: 20, max: 48, step: 1, def: 28 },
   { key: "btn", label: "顶栏圆钮", desc: "控制栏圆钮直径；拖动展开宽 = 它 × 3", group: "控件", min: 16, max: 32, step: 1, def: 22 },
@@ -93,6 +106,19 @@ export const METRICS: MetricDef[] = [
   { key: "fontNav", label: "导航小字", desc: "导航钮下方小字字号", group: "字号", min: 6, max: 12, step: 0.5, def: 8.5 },
   { key: "fontNum", label: "状态数字", desc: "状态栏时钟等数字字号", group: "字号", min: 7, max: 14, step: 1, def: 9 },
   { key: "fontStat", label: "大数字", desc: "状态面板大数字字号", group: "字号", min: 12, max: 28, step: 1, def: 18 },
+  { key: "navW", label: "导航宽", desc: "导航胶囊宽度（独立参数；42 = 顶栏高×1.5 是数值巧合而非约束）", group: "控件", min: 30, max: 64, step: 1, def: 42 },
+  { key: "inset", label: "屏幕贴边", desc: "状态栏/App 栏贴屏幕边缘的距离；最大化导航贴边同此", group: "间距", min: 0, max: 16, step: 1, def: 5 },
+  { key: "recoverNear", label: "recover 触发距离", desc: "鼠标距窗边该距离内才显示临时拖动（38 = 原 28+2×5 公式巧合，现独立）", group: "间距", min: 16, max: 72, step: 1, def: 38 },
+  { key: "capsuleGap", label: "胶囊按钮间距", desc: "胶囊壳内按钮之间的水平间距", group: "间距", min: 0, max: 8, step: 1, def: 2 },
+  { key: "capsulePad", label: "胶囊内边距", desc: "胶囊壳左右内边距", group: "间距", min: 0, max: 10, step: 1, def: 3 },
+  { key: "btnGap", label: "按钮纵向间距", desc: "导航/App 栏按钮之间的纵向间距", group: "间距", min: 0, max: 12, step: 1, def: 4 },
+  { key: "panelPad", label: "面板内边距", desc: "+ 菜单/搜索面板的内边距", group: "间距", min: 0, max: 20, step: 1, def: 8 },
+  { key: "panelGap", label: "面板项间距", desc: "菜单面板各项之间的间距", group: "间距", min: 0, max: 8, step: 1, def: 2 },
+  { key: "menuPad", label: "菜单项内距", desc: "菜单项左右内距；二级展开项缩进同此", group: "间距", min: 0, max: 24, step: 1, def: 10 },
+  { key: "inputPad", label: "输入框内距", desc: "搜索输入框左右内距", group: "间距", min: 0, max: 24, step: 1, def: 12 },
+  { key: "panelRadius", label: "面板圆角", desc: "+ 菜单/搜索面板圆角", group: "控件", min: 0, max: 24, step: 1, def: 14 },
+  { key: "menuItemH", label: "菜单项高", desc: "菜单项最小高度", group: "控件", min: 22, max: 44, step: 1, def: 30 },
+  { key: "inputH", label: "输入框高", desc: "搜索输入框高度", group: "控件", min: 24, max: 48, step: 1, def: 32 },
 ];
 
 export function defaultMetrics(): Metrics {
@@ -141,52 +167,26 @@ export type DerivDef = {
 };
 
 export const DERIV_TERMS: ParamDef[] = [
-  { key: "navWMul", label: "倍率", min: 1, max: 2.5, step: 0.05, def: 1.5, unit: "" },
-  { key: "navWAdd", label: "偏移", min: -10, max: 10, step: 1, def: 0, unit: "" },
-  { key: "insetMul", label: "倍率", min: 0, max: 2, step: 0.05, def: 1, unit: "" },
-  { key: "insetAdd", label: "偏移", min: -4, max: 12, step: 1, def: 0, unit: "" },
-  { key: "dragMul", label: "倍率", min: 2, max: 4.5, step: 0.1, def: 3, unit: "" },
-  { key: "dragAdd", label: "偏移", min: -6, max: 12, step: 1, def: 0, unit: "" },
-  { key: "nearGapMul", label: "间距倍率", min: 0, max: 4, step: 0.1, def: 2, unit: "" },
-  { key: "nearAdd", label: "偏移", min: -10, max: 20, step: 1, def: 0, unit: "" },
   { key: "marginComp", label: "补偿", min: 0, max: 4, step: 0.5, def: 1, unit: "" },
 ];
 
 const labelOf = (key: string): string =>
   METRICS.find((m) => m.key === key)?.label ?? key;
 
+/**
+ * 派生 = 几何必然的组合（拆开会破坏不变量），列出公式以示透明。
+ * 仅当公式中存在真实自由度时才提供可调项滑杆；无自由度的组合只展示公式与值。
+ * 已裁决拆出独立参数（数值巧合不是约束）：导航宽(顶栏高×1.5)、屏幕贴边(=间距)、
+ * recover 触发距离(滚动留白+间距×2)。
+ */
 export const DERIVS: DerivDef[] = [
-  {
-    key: "navW",
-    label: "导航宽",
-    cssVar: "--nav-w",
-    terms: ["navWMul", "navWAdd"],
-    compute: (m, t) => m.topbarH * t.navWMul + t.navWAdd,
-    formula: (m, t) => `${labelOf("topbarH")} × ${t.navWMul} + ${t.navWAdd}`,
-  },
-  {
-    key: "inset",
-    label: "系统栏贴边",
-    cssVar: "--inset",
-    terms: ["insetMul", "insetAdd"],
-    compute: (m, t) => m.gap * t.insetMul + t.insetAdd,
-    formula: (m, t) => `${labelOf("gap")} × ${t.insetMul} + ${t.insetAdd}`,
-  },
   {
     key: "dragOpen",
     label: "拖动展开宽",
     cssVar: "--drag-open",
-    terms: ["dragMul", "dragAdd"],
-    compute: (m, t) => m.btn * t.dragMul + t.dragAdd,
-    formula: (m, t) => `${labelOf("btn")} × ${t.dragMul} + ${t.dragAdd}`,
-  },
-  {
-    key: "recoverNear",
-    label: "recover 阈值",
-    cssVar: "--recover-near",
-    terms: ["nearGapMul", "nearAdd"],
-    compute: (m, t) => m.gutter + m.gap * t.nearGapMul + t.nearAdd,
-    formula: (m, t) => `${labelOf("gutter")} + ${labelOf("gap")} × ${t.nearGapMul} + ${t.nearAdd}`,
+    terms: [],
+    compute: (m) => m.btn * 3,
+    formula: (m) => `${labelOf("btn")} × 3`,
   },
   {
     key: "margin",

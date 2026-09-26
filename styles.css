@@ -167,9 +167,9 @@ svg {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--capsule-gap);
   height: var(--topbar-h);
-  padding: 0 3px;
+  padding: 0 var(--capsule-pad);
   border-radius: calc(var(--topbar-h) / 2);
   background: var(--frost-bg);
   border: 1px solid var(--line);
@@ -301,7 +301,7 @@ svg {
   min-height: var(--nav-w);
   border-radius: calc(var(--nav-w) / 2);
   flex-direction: column;
-  gap: 4px;
+  gap: var(--btn-gap);
   padding: 0;
   align-items: center;
 }
@@ -324,7 +324,7 @@ svg {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--btn-gap);
   padding: 0;
 }
 /* launcher 钉在胶囊尾部：only-launch 时胶囊被 min-height 撑高，
@@ -450,7 +450,7 @@ svg {
   left: var(--inset);
 }
 .window[data-mode="maximized"] .content-scroll {
-  padding-left: calc(var(--inset) * 2 + var(--nav-w));
+  padding-left: calc(var(--inset) + var(--nav-w) + var(--gap));
   padding-top: calc(var(--topbar-h) + var(--win-pad) + 12px);
   padding-right: var(--gutter);
 }
@@ -470,8 +470,8 @@ svg {
   left: var(--content-cx);
   transform: translateX(-50%);
   min-width: var(--menu-w);
-  padding: 8px;
-  border-radius: 14px;
+  padding: var(--panel-pad);
+  border-radius: var(--panel-radius);
   background: var(--frost-bg);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
@@ -486,12 +486,12 @@ svg {
 .menu-panel {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--panel-gap);
 }
 .menu-panel button {
   text-align: left;
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: var(--menu-item-h);
+  padding: 0 var(--menu-pad);
   border-radius: 8px;
   font-size: var(--font-ctl);
   font-weight: 600;
@@ -505,7 +505,7 @@ svg {
   display: flex !important;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: var(--panel-gap);
 }
 .mp-info strong { color: var(--ink); font-size: var(--font-ctl); }
 .mp-info span { color: var(--ink-3); font-size: var(--font-desc); font-weight: 400; }
@@ -514,18 +514,18 @@ svg {
 .mp-expand {
   display: none;
   flex-direction: column;
-  padding-left: 10px;
+  padding-left: var(--menu-pad);
 }
 .mp-expand.open { display: flex; }
 .mp-expand button { font-weight: 500; }
 
 .search-input {
   width: 100%;
-  height: 32px;
+  height: var(--input-h);
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
-  padding: 0 12px;
+  padding: 0 var(--input-pad);
   font-size: var(--font-ctl);
   outline: none;
   color: var(--ink);

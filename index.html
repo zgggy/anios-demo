@@ -14,8 +14,8 @@
   /* 几何/字号令牌默认值由 build.mjs 从 src/state.ts 生成（参数唯一定义源）；
      派生公式见 设置 → 尺寸 → 派生。 */
     --win-pad: 5px;
-  --gap: 5px;
-  --gutter: 28px;
+  --gap: 8px;
+  --gutter: 20px;
   --menu-drop: 8px;
   --topbar-h: 28px;
   --btn: 22px;
@@ -34,8 +34,18 @@
   --font-stat: 18px;
   --nav-w: 42px;
   --inset: 5px;
-  --drag-open: 66px;
   --recover-near: 38px;
+  --capsule-gap: 2px;
+  --capsule-pad: 3px;
+  --btn-gap: 4px;
+  --panel-pad: 8px;
+  --panel-gap: 2px;
+  --menu-pad: 10px;
+  --input-pad: 12px;
+  --panel-radius: 14px;
+  --menu-item-h: 30px;
+  --input-h: 32px;
+  --drag-open: 66px;
   --margin-comp: 1px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --anim-window: 360ms;
@@ -197,9 +207,9 @@ svg {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--capsule-gap);
   height: var(--topbar-h);
-  padding: 0 3px;
+  padding: 0 var(--capsule-pad);
   border-radius: calc(var(--topbar-h) / 2);
   background: var(--frost-bg);
   border: 1px solid var(--line);
@@ -331,7 +341,7 @@ svg {
   min-height: var(--nav-w);
   border-radius: calc(var(--nav-w) / 2);
   flex-direction: column;
-  gap: 4px;
+  gap: var(--btn-gap);
   padding: 0;
   align-items: center;
 }
@@ -354,7 +364,7 @@ svg {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--btn-gap);
   padding: 0;
 }
 /* launcher 钉在胶囊尾部：only-launch 时胶囊被 min-height 撑高，
@@ -480,7 +490,7 @@ svg {
   left: var(--inset);
 }
 .window[data-mode="maximized"] .content-scroll {
-  padding-left: calc(var(--inset) * 2 + var(--nav-w));
+  padding-left: calc(var(--inset) + var(--nav-w) + var(--gap));
   padding-top: calc(var(--topbar-h) + var(--win-pad) + 12px);
   padding-right: var(--gutter);
 }
@@ -500,8 +510,8 @@ svg {
   left: var(--content-cx);
   transform: translateX(-50%);
   min-width: var(--menu-w);
-  padding: 8px;
-  border-radius: 14px;
+  padding: var(--panel-pad);
+  border-radius: var(--panel-radius);
   background: var(--frost-bg);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
@@ -516,12 +526,12 @@ svg {
 .menu-panel {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--panel-gap);
 }
 .menu-panel button {
   text-align: left;
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: var(--menu-item-h);
+  padding: 0 var(--menu-pad);
   border-radius: 8px;
   font-size: var(--font-ctl);
   font-weight: 600;
@@ -535,7 +545,7 @@ svg {
   display: flex !important;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: var(--panel-gap);
 }
 .mp-info strong { color: var(--ink); font-size: var(--font-ctl); }
 .mp-info span { color: var(--ink-3); font-size: var(--font-desc); font-weight: 400; }
@@ -544,18 +554,18 @@ svg {
 .mp-expand {
   display: none;
   flex-direction: column;
-  padding-left: 10px;
+  padding-left: var(--menu-pad);
 }
 .mp-expand.open { display: flex; }
 .mp-expand button { font-weight: 500; }
 
 .search-input {
   width: 100%;
-  height: 32px;
+  height: var(--input-h);
   border-radius: 999px;
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
-  padding: 0 12px;
+  padding: 0 var(--input-pad);
   font-size: var(--font-ctl);
   outline: none;
   color: var(--ink);
@@ -1136,8 +1146,8 @@ svg {
   // src/state.ts
   var METRICS = [
     { key: "winPad", label: "\u7A97\u53E3\u5185\u8DDD", desc: "\u7A97\u53E3\u8FB9\u7F18\u4E0E\u680F/\u5185\u5BB9\u4E4B\u95F4\u7684\u5916\u6846\u7559\u767D", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
-    { key: "gap", label: "\u680F\u2194\u5185\u5BB9\u95F4\u8DDD", desc: "\u680F\u4E0E\u5185\u5BB9\u533A\u4E4B\u95F4\u7684\u7F1D\u9699\uFF1B\u8D34\u8FB9\u4E0E\u6D3E\u751F\u5173\u7CFB\u4EE5\u6B64\u4E3A\u57FA\u51C6", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 5 },
-    { key: "gutter", label: "\u6EDA\u52A8\u7559\u767D", desc: "\u5185\u5BB9\u4E24\u4FA7\u7559\u767D\uFF1B\u6EDA\u52A8\u6307\u793A/\u7F29\u653E\u94AE\u5728\u6B64\u4FA7\u5E26\u5185", group: "\u95F4\u8DDD", min: 12, max: 48, step: 1, def: 28 },
+    { key: "gap", label: "\u680F\u2194\u5185\u5BB9\u95F4\u8DDD", desc: "\u680F\u4E0E\u5185\u5BB9\u533A\u4E4B\u95F4\u7684\u7F1D\u9699\uFF1B\u8D34\u8FB9\u4E0E\u6D3E\u751F\u5173\u7CFB\u4EE5\u6B64\u4E3A\u57FA\u51C6", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 8 },
+    { key: "gutter", label: "\u6EDA\u52A8\u7559\u767D", desc: "\u5185\u5BB9\u4E24\u4FA7\u7559\u767D\uFF1B\u6EDA\u52A8\u6307\u793A/\u7F29\u653E\u94AE\u5728\u6B64\u4FA7\u5E26\u5185", group: "\u95F4\u8DDD", min: 12, max: 48, step: 1, def: 20 },
     { key: "menuDrop", label: "\u83DC\u5355\u4E0B\u79FB", desc: "+ \u83DC\u5355/\u641C\u7D22\u9762\u677F\u60AC\u6302\u5728\u63A7\u5236\u680F\u4E0B\u65B9\u7684\u8DDD\u79BB", group: "\u95F4\u8DDD", min: 0, max: 24, step: 1, def: 8 },
     { key: "topbarH", label: "\u9876\u680F\u9AD8", desc: "\u63A7\u5236\u680F\u80F6\u56CA\u9AD8\u5EA6\uFF1B\u5BFC\u822A\u5BBD = \u5B83 \xD7 1.5", group: "\u63A7\u4EF6", min: 20, max: 48, step: 1, def: 28 },
     { key: "btn", label: "\u9876\u680F\u5706\u94AE", desc: "\u63A7\u5236\u680F\u5706\u94AE\u76F4\u5F84\uFF1B\u62D6\u52A8\u5C55\u5F00\u5BBD = \u5B83 \xD7 3", group: "\u63A7\u4EF6", min: 16, max: 32, step: 1, def: 22 },
@@ -1153,7 +1163,20 @@ svg {
     { key: "fontCtl", label: "\u83DC\u5355/\u94AE", desc: "\u83DC\u5355\u9879\u3001\u6309\u94AE\u3001\u8F93\u5165\u6846\u5B57\u53F7", group: "\u5B57\u53F7", min: 10, max: 16, step: 0.5, def: 12.5 },
     { key: "fontNav", label: "\u5BFC\u822A\u5C0F\u5B57", desc: "\u5BFC\u822A\u94AE\u4E0B\u65B9\u5C0F\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 6, max: 12, step: 0.5, def: 8.5 },
     { key: "fontNum", label: "\u72B6\u6001\u6570\u5B57", desc: "\u72B6\u6001\u680F\u65F6\u949F\u7B49\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 7, max: 14, step: 1, def: 9 },
-    { key: "fontStat", label: "\u5927\u6570\u5B57", desc: "\u72B6\u6001\u9762\u677F\u5927\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 12, max: 28, step: 1, def: 18 }
+    { key: "fontStat", label: "\u5927\u6570\u5B57", desc: "\u72B6\u6001\u9762\u677F\u5927\u6570\u5B57\u5B57\u53F7", group: "\u5B57\u53F7", min: 12, max: 28, step: 1, def: 18 },
+    { key: "navW", label: "\u5BFC\u822A\u5BBD", desc: "\u5BFC\u822A\u80F6\u56CA\u5BBD\u5EA6\uFF08\u72EC\u7ACB\u53C2\u6570\uFF1B42 = \u9876\u680F\u9AD8\xD71.5 \u662F\u6570\u503C\u5DE7\u5408\u800C\u975E\u7EA6\u675F\uFF09", group: "\u63A7\u4EF6", min: 30, max: 64, step: 1, def: 42 },
+    { key: "inset", label: "\u5C4F\u5E55\u8D34\u8FB9", desc: "\u72B6\u6001\u680F/App \u680F\u8D34\u5C4F\u5E55\u8FB9\u7F18\u7684\u8DDD\u79BB\uFF1B\u6700\u5927\u5316\u5BFC\u822A\u8D34\u8FB9\u540C\u6B64", group: "\u95F4\u8DDD", min: 0, max: 16, step: 1, def: 5 },
+    { key: "recoverNear", label: "recover \u89E6\u53D1\u8DDD\u79BB", desc: "\u9F20\u6807\u8DDD\u7A97\u8FB9\u8BE5\u8DDD\u79BB\u5185\u624D\u663E\u793A\u4E34\u65F6\u62D6\u52A8\uFF0838 = \u539F 28+2\xD75 \u516C\u5F0F\u5DE7\u5408\uFF0C\u73B0\u72EC\u7ACB\uFF09", group: "\u95F4\u8DDD", min: 16, max: 72, step: 1, def: 38 },
+    { key: "capsuleGap", label: "\u80F6\u56CA\u6309\u94AE\u95F4\u8DDD", desc: "\u80F6\u56CA\u58F3\u5185\u6309\u94AE\u4E4B\u95F4\u7684\u6C34\u5E73\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 8, step: 1, def: 2 },
+    { key: "capsulePad", label: "\u80F6\u56CA\u5185\u8FB9\u8DDD", desc: "\u80F6\u56CA\u58F3\u5DE6\u53F3\u5185\u8FB9\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 10, step: 1, def: 3 },
+    { key: "btnGap", label: "\u6309\u94AE\u7EB5\u5411\u95F4\u8DDD", desc: "\u5BFC\u822A/App \u680F\u6309\u94AE\u4E4B\u95F4\u7684\u7EB5\u5411\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 4 },
+    { key: "panelPad", label: "\u9762\u677F\u5185\u8FB9\u8DDD", desc: "+ \u83DC\u5355/\u641C\u7D22\u9762\u677F\u7684\u5185\u8FB9\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 20, step: 1, def: 8 },
+    { key: "panelGap", label: "\u9762\u677F\u9879\u95F4\u8DDD", desc: "\u83DC\u5355\u9762\u677F\u5404\u9879\u4E4B\u95F4\u7684\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 8, step: 1, def: 2 },
+    { key: "menuPad", label: "\u83DC\u5355\u9879\u5185\u8DDD", desc: "\u83DC\u5355\u9879\u5DE6\u53F3\u5185\u8DDD\uFF1B\u4E8C\u7EA7\u5C55\u5F00\u9879\u7F29\u8FDB\u540C\u6B64", group: "\u95F4\u8DDD", min: 0, max: 24, step: 1, def: 10 },
+    { key: "inputPad", label: "\u8F93\u5165\u6846\u5185\u8DDD", desc: "\u641C\u7D22\u8F93\u5165\u6846\u5DE6\u53F3\u5185\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 24, step: 1, def: 12 },
+    { key: "panelRadius", label: "\u9762\u677F\u5706\u89D2", desc: "+ \u83DC\u5355/\u641C\u7D22\u9762\u677F\u5706\u89D2", group: "\u63A7\u4EF6", min: 0, max: 24, step: 1, def: 14 },
+    { key: "menuItemH", label: "\u83DC\u5355\u9879\u9AD8", desc: "\u83DC\u5355\u9879\u6700\u5C0F\u9AD8\u5EA6", group: "\u63A7\u4EF6", min: 22, max: 44, step: 1, def: 30 },
+    { key: "inputH", label: "\u8F93\u5165\u6846\u9AD8", desc: "\u641C\u7D22\u8F93\u5165\u6846\u9AD8\u5EA6", group: "\u63A7\u4EF6", min: 24, max: 48, step: 1, def: 32 }
   ];
   function defaultMetrics() {
     const m = {};
@@ -1170,49 +1193,17 @@ svg {
     { key: "animMenu", label: "\u83DC\u5355", min: 80, max: 800, step: 20, def: 200, unit: "ms" }
   ];
   var DERIV_TERMS = [
-    { key: "navWMul", label: "\u500D\u7387", min: 1, max: 2.5, step: 0.05, def: 1.5, unit: "" },
-    { key: "navWAdd", label: "\u504F\u79FB", min: -10, max: 10, step: 1, def: 0, unit: "" },
-    { key: "insetMul", label: "\u500D\u7387", min: 0, max: 2, step: 0.05, def: 1, unit: "" },
-    { key: "insetAdd", label: "\u504F\u79FB", min: -4, max: 12, step: 1, def: 0, unit: "" },
-    { key: "dragMul", label: "\u500D\u7387", min: 2, max: 4.5, step: 0.1, def: 3, unit: "" },
-    { key: "dragAdd", label: "\u504F\u79FB", min: -6, max: 12, step: 1, def: 0, unit: "" },
-    { key: "nearGapMul", label: "\u95F4\u8DDD\u500D\u7387", min: 0, max: 4, step: 0.1, def: 2, unit: "" },
-    { key: "nearAdd", label: "\u504F\u79FB", min: -10, max: 20, step: 1, def: 0, unit: "" },
     { key: "marginComp", label: "\u8865\u507F", min: 0, max: 4, step: 0.5, def: 1, unit: "" }
   ];
   var labelOf = (key) => METRICS.find((m) => m.key === key)?.label ?? key;
   var DERIVS = [
     {
-      key: "navW",
-      label: "\u5BFC\u822A\u5BBD",
-      cssVar: "--nav-w",
-      terms: ["navWMul", "navWAdd"],
-      compute: (m, t) => m.topbarH * t.navWMul + t.navWAdd,
-      formula: (m, t) => `${labelOf("topbarH")} \xD7 ${t.navWMul} + ${t.navWAdd}`
-    },
-    {
-      key: "inset",
-      label: "\u7CFB\u7EDF\u680F\u8D34\u8FB9",
-      cssVar: "--inset",
-      terms: ["insetMul", "insetAdd"],
-      compute: (m, t) => m.gap * t.insetMul + t.insetAdd,
-      formula: (m, t) => `${labelOf("gap")} \xD7 ${t.insetMul} + ${t.insetAdd}`
-    },
-    {
       key: "dragOpen",
       label: "\u62D6\u52A8\u5C55\u5F00\u5BBD",
       cssVar: "--drag-open",
-      terms: ["dragMul", "dragAdd"],
-      compute: (m, t) => m.btn * t.dragMul + t.dragAdd,
-      formula: (m, t) => `${labelOf("btn")} \xD7 ${t.dragMul} + ${t.dragAdd}`
-    },
-    {
-      key: "recoverNear",
-      label: "recover \u9608\u503C",
-      cssVar: "--recover-near",
-      terms: ["nearGapMul", "nearAdd"],
-      compute: (m, t) => m.gutter + m.gap * t.nearGapMul + t.nearAdd,
-      formula: (m, t) => `${labelOf("gutter")} + ${labelOf("gap")} \xD7 ${t.nearGapMul} + ${t.nearAdd}`
+      terms: [],
+      compute: (m) => m.btn * 3,
+      formula: (m) => `${labelOf("btn")} \xD7 3`
     },
     {
       key: "margin",

@@ -23,7 +23,7 @@ commits: see git history
    - 教训：scale FLIP 会让内部排版瞬间跳成终态再被视觉拉回（内容先「变成放大后的样子」再随盒子恢复正常）。
 3. **四层架构（单向数据流）**：state（纯 TS 唯一数据源）→ render（构造器 + 属性补丁）→ interact（只 dispatch；手势快速路径例外，拖动中直写 DOM、结束 commit）→ anim（只读插值，不写语义状态）。
 4. **对齐变量必须跟随尺寸变化**：`--content-cx/cy` 是像素值而窗口几何是百分比，任何 resize（浏览器窗口、滚动条、预设）都要重对齐（ResizeObserver + resize/load），否则栏与内容失准直到下次点击。
-5. **几何令牌是运行时参数**：全部间距/尺寸/字号令牌由 `state.metrics`（METRICS 表 = 唯一定义源）驱动，设置 → 尺寸面板调参；JS 派生常量经 `pxVar()` 读令牌。每个参数滑杆带默认值旗标与「设为默认」按钮（POST /api/save-def → 写回 src/state.ts 的 def；CSS 默认值由 build.mjs 从 state 生成，单一来源）。派生值（nav-w / inset / drag-open / recover-near / margin-comp）公式透明：`值 = 公式(基础度量, 可调项)`，公式中的倍率/偏移/补偿即「+- 项」，本身是滑杆（DERIV_TERMS）。
+5. **几何令牌是运行时参数**：全部间距/尺寸/字号令牌由 `state.metrics`（METRICS 表 = 唯一定义源）驱动，设置 → 尺寸面板调参；JS 派生常量经 `pxVar()` 读令牌。每个参数滑杆带默认值旗标与「设为默认」按钮（POST /api/save-def → 写回 src/state.ts 的 def；CSS 默认值由 build.mjs 从 state 生成，单一来源）。派生只保留几何必然的组合（drag-open = 圆钮×3；同心圆 margin = (边−钮)/2−补偿，补偿为滑杆）；数值巧合类关联（导航宽=顶栏高×1.5、贴边=间距、recover 阈值=gutter+2×gap）裁决为独立参数（METRICS），最大化内容让位 = 贴边+导航宽+间距 的几何组合在 CSS calc 中表达。
 
 ## Structure
 
