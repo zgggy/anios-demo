@@ -242,6 +242,7 @@ svg {
 .drag-zone {
   position: relative;
   z-index: 1; /* 展开两翼压在 drag-pad 之上：悬停判定面 = 整个展开胶囊（契约见下） */
+  overflow: hidden; /* 子按钮永不越界命中：收合残留宽度不得盖住邻居 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -282,11 +283,13 @@ svg {
   width: 0;
   opacity: 0;
   overflow: hidden;
+  pointer-events: none; /* 收合态不拦截命中：宽度冻结残留也不得盖住邻居按钮 */
   transition: width 220ms var(--ease), opacity 160ms ease;
 }
 .drag-zone:hover .win-ctl {
   width: var(--btn);
   opacity: 1;
+  pointer-events: auto;
 }
 
 .led {
