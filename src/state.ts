@@ -261,6 +261,7 @@ export function focusedWin(s: State): WinState | null {
   return null;
 }
 
+/** 可见窗口中任一最大化 ⇒ App 栏只显示启动台（已收起/关闭的窗口不计） */
 export function anyMaximized(s: State): boolean {
-  return Object.values(s.wins).some((w) => w.mode === "maximized");
+  return Object.values(s.wins).some((w) => w.open && w.mode === "maximized");
 }

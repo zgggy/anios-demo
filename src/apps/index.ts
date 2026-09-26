@@ -2,21 +2,32 @@
  * 应用注册表：系统给控件与模式，应用只填内容。
  * 新增应用 = 加一个 AppDef（内容 + 可选 bind），chrome 由 render.windowShell 统一生成。
  */
-import type { Geom } from "../state";
+import type { Geom, Store } from "../state";
 import type { IconName, NavItem } from "../render";
-import type { Store } from "../state";
 import { settingsApp } from "./settings";
 import { phoneApp } from "./phone";
-import { launcherApp } from "./launcher";
+import { clockApp } from "./clock";
+import { filesApp } from "./files";
+import { makeLauncherApp } from "./launcher";
+
+/** 应用可调用的系统动作（按 appId，应用不接触窗口内部） */
+export type AppActions = {
+  openApp: (appId: string) => void;
+  minimizeApp: (appId: string) => void;
+};
 
 export type AppDef = {
   id: string; // data-app / App 栏 data-app-id
   title: string;
+  /** 启动台里的应用简介 */
+  blurb?: string;
   icon: IconName;
   geom: Geom; // 初始浮动几何（% of viewport）
   z: number;
   open: boolean; // 初始是否打开
   focused?: boolean;
+  /** 快速启动（用户固定）：App 栏常驻；未固定者仅在打开时出现在「已打开」区 */
+  pinned?: boolean;
   nav: NavItem[];
   /** 应用内容 = content-scroll 内部 HTML */
   content: string;
@@ -24,13 +35,15 @@ export type AppDef = {
   searchOpen?: boolean;
   editItems?: string[];
   /** 应用自带的内容行为（交互层：只 dispatch，不改 chrome） */
-  bind?: (root: HTMLElement, store: Store) => void;
+  bind?: (root: HTMLElement, store: Store, actions: AppActions) => void;
 };
 
 export function winIdOf(appId: string): string {
   return `win-${appId}`;
 }
 
-export const APPS: AppDef[] = [settingsApp, phoneApp, launcherApp];
+const baseApps: AppDef[] = [settingsApp, phoneApp, clockApp, filesApp];
 
-export { settingsApp, phoneApp, launcherApp };
+export const APPS: AppDef[] = [...baseApps, makeLauncherApp(baseApps)];
+
+export { settingsApp, phoneApp, clockApp, filesApp };

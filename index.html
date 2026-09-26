@@ -835,6 +835,24 @@ svg {
   -webkit-backdrop-filter: var(--frost-blur);
 }
 .app-item.open:not(.active) { color: var(--ink); }
+/* 后台不显示：未固定的 app 收起后从 App 栏隐去（启动台里仍可打开） */
+.app-item.gone { display: none; }
+
+/* 启动台应用网格（注册表真实应用，点击打开） */
+.app-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.app-row:hover { background: var(--hover); }
+.app-row .a-ic {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.app-row .a-ic svg { width: 18px; height: 18px; }
 /* maximized: hide other apps + capsule shell; launcher = single-element nav */
 .sys-appbar.only-launch .app-item:not([data-app-id="launcher"]) {
   display: none;
@@ -1258,7 +1276,7 @@ svg {
     return null;
   }
   function anyMaximized(s) {
-    return Object.values(s.wins).some((w) => w.mode === "maximized");
+    return Object.values(s.wins).some((w) => w.open && w.mode === "maximized");
   }
 
   // src/render.ts
@@ -1450,9 +1468,9 @@ svg {
     };
   }
   function align(win) {
-    const content4 = $(".content", win);
-    if (!content4) return;
-    const { cx, cy } = layoutCenter(content4);
+    const content5 = $(".content", win);
+    if (!content5) return;
+    const { cx, cy } = layoutCenter(content5);
     win.style.setProperty("--content-cx", `${cx}px`);
     win.style.setProperty("--content-cy", `${cy}px`);
   }
@@ -5765,30 +5783,30 @@ svg {
     };
   }
   function captureShell(win) {
-    const content4 = $(".content", win);
-    const scroller = $(".content-scroll", content4);
+    const content5 = $(".content", win);
+    const scroller = $(".content-scroll", content5);
     return {
-      content: content4.getBoundingClientRect(),
+      content: content5.getBoundingClientRect(),
       nav: $("[data-nav]", win)?.getBoundingClientRect(),
       topbar: $("[data-topbar]", win)?.getBoundingClientRect(),
-      radius: getComputedStyle(content4).borderRadius,
+      radius: getComputedStyle(content5).borderRadius,
       pad: scroller ? padOf(scroller) : {}
     };
   }
   function playShell(win, first) {
-    const content4 = $(".content", win);
-    if (!content4) return;
+    const content5 = $(".content", win);
+    if (!content5) return;
     const navbar = $("[data-nav]", win);
     const topbar = $("[data-topbar]", win);
-    const scroller = $(".content-scroll", content4);
+    const scroller = $(".content-scroll", content5);
     const d = durSec("--anim-window");
     align(win);
-    const lC = content4.getBoundingClientRect();
+    const lC = content5.getBoundingClientRect();
     const lN = navbar?.getBoundingClientRect();
     const lT = topbar?.getBoundingClientRect();
     const wr = win.getBoundingClientRect();
     gsapWithCSS.fromTo(
-      content4,
+      content5,
       {
         left: first.content.left - wr.left,
         top: first.content.top - wr.top,
@@ -5805,12 +5823,12 @@ svg {
         height: lC.height,
         right: "auto",
         bottom: "auto",
-        borderRadius: getComputedStyle(content4).borderRadius,
+        borderRadius: getComputedStyle(content5).borderRadius,
         duration: d,
         ease: EASE,
         overwrite: true,
         onComplete: () => {
-          gsapWithCSS.set(content4, {
+          gsapWithCSS.set(content5, {
             clearProps: "left,top,width,height,right,bottom,borderRadius"
           });
           win.dataset.flipping = "0";
@@ -6088,7 +6106,9 @@ svg {
   var settingsApp = {
     id: "settings",
     title: "\u8BBE\u7F6E",
+    blurb: "\u7CFB\u7EDF\u4E0E\u4E2A\u6027\u5316",
     icon: "gear",
+    pinned: true,
     geom: { left: 14, top: 10, width: 58, height: 72 },
     z: 22,
     open: true,
@@ -6225,7 +6245,9 @@ svg {
   var phoneApp = {
     id: "phone",
     title: "\u7535\u8BDD",
+    blurb: "\u62E8\u53F7\u4E0E\u8054\u7CFB\u4EBA",
     icon: "phone",
+    pinned: true,
     geom: { left: 48, top: 18, width: 40, height: 58 },
     z: 21,
     open: true,
@@ -6255,50 +6277,161 @@ svg {
     }
   };
 
-  // src/apps/launcher.ts
+  // src/apps/clock.ts
   var content3 = `
+<section class="set-pane" data-pane="alarm">
+  <header class="set-head"><h1>\u95F9\u949F</h1></header>
+  <div class="dial-display" data-clock="seconds">00:00:00</div>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">07:30</div><div class="row-s">\u5DE5\u4F5C\u65E5 \xB7 \u95F9\u949F</div></div><div class="st-big">\u5F00</div></div>
+    <div class="set-row"><div><div class="row-t">09:00</div><div class="row-s">\u5468\u672B \xB7 \u95F9\u949F</div></div><div class="st-big">\u5173</div></div>
+    <div class="set-row"><div><div class="row-t">22:45</div><div class="row-s">\u6BCF\u5929 \xB7 \u5C31\u5BDD</div></div><div class="st-big">\u5F00</div></div>
+  </div>
+</section>
+<section class="set-pane" data-pane="world" hidden>
+  <header class="set-head"><h1>\u4E16\u754C\u65F6\u949F</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u5317\u4EAC</div><div class="row-s">UTC+8 \xB7 \u672C\u5730</div></div><div class="st-big" data-clock="hm">00:00</div></div>
+    <div class="set-row"><div><div class="row-t">\u65E7\u91D1\u5C71</div><div class="row-s">UTC\u22128</div></div><div class="st-big">08:00</div></div>
+    <div class="set-row"><div><div class="row-t">\u4F26\u6566</div><div class="row-s">UTC+0</div></div><div class="st-big">16:00</div></div>
+  </div>
+</section>`;
+  var clockApp = {
+    id: "clock",
+    title: "\u65F6\u949F",
+    blurb: "\u95F9\u949F\u4E0E\u4E16\u754C\u65F6\u949F",
+    icon: "clock",
+    geom: { left: 30, top: 22, width: 34, height: 46 },
+    z: 20,
+    open: false,
+    pinned: false,
+    nav: [
+      { section: "alarm", icon: "clock", label: "\u95F9\u949F" },
+      { section: "world", icon: "net", label: "\u4E16\u754C" }
+    ],
+    content: content3,
+    searchPlaceholder: "\u641C\u7D22\u95F9\u949F\u4E0E\u57CE\u5E02\u2026",
+    editItems: ["\u5168\u9009", "\u5220\u9664\u95F9\u949F"],
+    bind(root) {
+      const tick = () => {
+        const d = /* @__PURE__ */ new Date();
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        const ss = String(d.getSeconds()).padStart(2, "0");
+        $$("[data-clock]", root).forEach((el) => {
+          el.textContent = el.dataset.clock === "seconds" ? `${hh}:${mm}:${ss}` : `${hh}:${mm}`;
+        });
+      };
+      tick();
+      window.setInterval(tick, 1e3);
+    }
+  };
+
+  // src/apps/files.ts
+  var content4 = `
+<section class="set-pane" data-pane="recent">
+  <header class="set-head"><h1>\u6700\u8FD1</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u9700\u6C42\u6587\u6863.md</div><div class="row-s">\u4ECA\u5929 14:20 \xB7 \u6587\u7A3F</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u622A\u56FE 2026-09-26.png</div><div class="row-s">\u4ECA\u5929 11:05 \xB7 \u56FE\u7247</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u8BBE\u8BA1\u7A3F.fig</div><div class="row-s">\u6628\u5929 \xB7 \u8BBE\u8BA1</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u5468\u62A5.docx</div><div class="row-s">9\u670824\u65E5 \xB7 \u6587\u7A3F</div></div></div>
+  </div>
+</section>
+<section class="set-pane" data-pane="downloads" hidden>
+  <header class="set-head"><h1>\u4E0B\u8F7D</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">anios-1.0.zip</div><div class="row-s">\u6628\u5929 \xB7 4.2 MB</div></div></div>
+    <div class="set-row"><div><div class="row-t">wallpaper-pack.zip</div><div class="row-s">9\u670820\u65E5 \xB7 18 MB</div></div></div>
+  </div>
+</section>`;
+  var filesApp = {
+    id: "files",
+    title: "\u6587\u4EF6",
+    blurb: "\u6700\u8FD1\u4E0E\u4E0B\u8F7D",
+    icon: "file",
+    geom: { left: 40, top: 16, width: 36, height: 52 },
+    z: 20,
+    open: false,
+    pinned: false,
+    nav: [
+      { section: "recent", icon: "file", label: "\u6700\u8FD1" },
+      { section: "downloads", icon: "bolt", label: "\u4E0B\u8F7D" }
+    ],
+    content: content4,
+    searchPlaceholder: "\u641C\u7D22\u6587\u4EF6\u2026",
+    editItems: ["\u5168\u9009", "\u6E05\u9664\u6700\u8FD1"]
+  };
+
+  // src/apps/launcher.ts
+  function makeLauncherApp(apps) {
+    const content5 = `
 <section class="set-pane" data-pane="apps">
   <header class="set-head"><h1>\u542F\u52A8\u53F0</h1><p>\u5E94\u7528 \xB7 \u6587\u4EF6 \xB7 \u94FE\u63A5 \xB7 \u64CD\u4F5C</p></header>
   <div class="set-group">
-    <div class="set-row"><div><div class="row-t">\u8BBE\u7F6E</div><div class="row-s">\u7CFB\u7EDF\u4E0E\u4E2A\u6027\u5316</div></div></div>
-    <div class="set-row"><div><div class="row-t">\u7535\u8BDD</div><div class="row-s">\u62E8\u53F7\u4E0E\u8054\u7CFB\u4EBA</div></div></div>
+    ${apps.map(
+      (a) => `<button type="button" class="set-row app-row" data-launch="${a.id}">
+          <span class="a-ic">${icon(a.icon)}</span>
+          <div><div class="row-t">${a.title}</div><div class="row-s">${a.blurb ?? ""}</div></div>
+        </button>`
+    ).join("")}
   </div>
 </section>
 <section class="set-pane" data-pane="files" hidden>
   <header class="set-head"><h1>\u6587\u4EF6</h1></header>
-  <div class="set-group"><div class="set-row"><div class="row-t">\u6700\u8FD1\u6587\u4EF6</div></div></div>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u6700\u8FD1\u6587\u4EF6</div><div class="row-s">\u9700\u6C42\u6587\u6863.md \xB7 \u622A\u56FE.png</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u4E0B\u8F7D</div><div class="row-s">anios-1.0.zip</div></div></div>
+  </div>
 </section>
 <section class="set-pane" data-pane="links" hidden>
   <header class="set-head"><h1>\u94FE\u63A5</h1></header>
-  <div class="set-group"><div class="set-row"><div class="row-t">\u6700\u8FD1\u94FE\u63A5</div></div></div>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u6700\u8FD1\u94FE\u63A5</div><div class="row-s">anios \u8BBE\u8BA1\u89C4\u8303</div></div></div>
+    <div class="set-row"><div><div class="row-t">\u6536\u85CF</div><div class="row-s">GSAP \u6587\u6863</div></div></div>
+  </div>
 </section>
 <section class="set-pane" data-pane="acts" hidden>
   <header class="set-head"><h1>\u64CD\u4F5C</h1></header>
-  <div class="set-group"><div class="set-row"><div class="row-t">\u5FEB\u6377\u64CD\u4F5C</div></div></div>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">\u5FEB\u6377\u64CD\u4F5C</div><div class="row-s">\u52FF\u6270 \xB7 \u84DD\u7259 \xB7 \u622A\u5C4F</div></div></div>
+  </div>
 </section>`;
-  var launcherApp = {
-    id: "launcher",
-    title: "\u542F\u52A8\u53F0",
-    icon: "grid",
-    geom: { left: 22, top: 16, width: 56, height: 58 },
-    z: 20,
-    open: false,
-    nav: [
-      { section: "apps", icon: "apps", label: "\u5E94\u7528" },
-      { section: "files", icon: "file", label: "\u6587\u4EF6" },
-      { section: "links", icon: "link", label: "\u94FE\u63A5" },
-      { section: "acts", icon: "bolt", label: "\u64CD\u4F5C" }
-    ],
-    content: content3,
-    searchPlaceholder: "\u641C\u7D22\u5E94\u7528\u3001\u6587\u4EF6\u3001\u94FE\u63A5\u3001\u64CD\u4F5C\u2026",
-    searchOpen: true
-  };
+    return {
+      id: "launcher",
+      title: "\u542F\u52A8\u53F0",
+      blurb: "\u5E94\u7528 \xB7 \u6587\u4EF6 \xB7 \u94FE\u63A5 \xB7 \u64CD\u4F5C",
+      icon: "grid",
+      geom: { left: 22, top: 16, width: 56, height: 58 },
+      z: 20,
+      open: false,
+      nav: [
+        { section: "apps", icon: "apps", label: "\u5E94\u7528" },
+        { section: "files", icon: "file", label: "\u6587\u4EF6" },
+        { section: "links", icon: "link", label: "\u94FE\u63A5" },
+        { section: "acts", icon: "bolt", label: "\u64CD\u4F5C" }
+      ],
+      content: content5,
+      searchPlaceholder: "\u641C\u7D22\u5E94\u7528\u3001\u6587\u4EF6\u3001\u94FE\u63A5\u3001\u64CD\u4F5C\u2026",
+      searchOpen: true,
+      bind(root, _store, actions) {
+        $$("[data-launch]", root).forEach((el) => {
+          on(el, "click", () => {
+            const appId = el.getAttribute("data-launch");
+            actions.openApp(appId);
+            actions.minimizeApp("launcher");
+          });
+        });
+      }
+    };
+  }
 
   // src/apps/index.ts
   function winIdOf(appId) {
     return `win-${appId}`;
   }
-  var APPS = [settingsApp, phoneApp, launcherApp];
+  var baseApps = [settingsApp, phoneApp, clockApp, filesApp];
+  var APPS = [...baseApps, makeLauncherApp(baseApps)];
 
   // src/host.ts
   function bindScrollIndicator(root) {
@@ -6537,7 +6670,15 @@ svg {
         patchWinEl(w, ws);
       }
     });
-    const appIcon = (win) => $(`.app-item[data-app-id="${win.dataset.app}"]`);
+    const appIcon = (win) => {
+      const own = $(`.app-item[data-app-id="${win.dataset.app}"]`);
+      if (own && own.offsetParent !== null) return own;
+      return $('.app-item[data-app-id="launcher"]');
+    };
+    const actions = {
+      openApp: (appId) => open(winIdOf(appId)),
+      minimizeApp: (appId) => minimize(winIdOf(appId))
+    };
     function focus(id) {
       store.update((s) => {
         const stack = Object.values(s.wins).sort((a, b) => a.z - b.z).filter((w) => w.id !== id);
@@ -6644,18 +6785,18 @@ svg {
         })
       );
       const cre = $("[data-resize]", win);
-      const content4 = $(".content", win);
-      if (cre && content4) {
+      const content5 = $(".content", win);
+      if (cre && content5) {
         let creOn = false;
-        on(content4, "pointermove", (e) => {
+        on(content5, "pointermove", (e) => {
           const ev = e;
-          const r = content4.getBoundingClientRect();
+          const r = content5.getBoundingClientRect();
           const ok = win.classList.contains("is-focused") && ev.clientX > r.right - 120 && ev.clientY > r.bottom - 120;
           if (ok === creOn) return;
           creOn = ok;
           cre.classList.toggle("is-on", ok);
         });
-        on(content4, "pointerleave", () => {
+        on(content5, "pointerleave", () => {
           creOn = false;
           cre.classList.remove("is-on");
         });
@@ -6680,7 +6821,7 @@ svg {
       }
       bindNavPanes(win);
       bindScrollIndicator(win);
-      a.bind?.(win, store);
+      a.bind?.(win, store, actions);
       align(win);
     }
     function startMove(win, e) {
@@ -6920,10 +7061,10 @@ svg {
         hideAll();
         return;
       }
-      const content4 = $(".content", win);
+      const content5 = $(".content", win);
       const zone = $(".top-bar [data-drag-zone]", win);
       const rec = $("[data-recover]", win);
-      if (!content4 || !rec) return;
+      if (!content5 || !rec) return;
       const vr = viewport.getBoundingClientRect();
       const zr = zone?.getBoundingClientRect();
       const chromeVisible = !!zr && zr.left >= vr.left - 1 && zr.top >= vr.top - 1 && zr.right <= vr.right + 1 && zr.bottom <= vr.bottom + 1;
@@ -6931,7 +7072,7 @@ svg {
         hideAll();
         return;
       }
-      const wr = content4.getBoundingClientRect();
+      const wr = content5.getBoundingClientRect();
       const mx = e.clientX;
       const my = e.clientY;
       const gap = pxVar("--gap", 5);
@@ -7039,7 +7180,7 @@ svg {
     viewport.insertAdjacentHTML("beforeend", statusBarHTML());
     const root = $(".sys-status");
     const capsule = $(".status-capsule", root);
-    const content4 = $(".status-content", root);
+    const content5 = $(".status-content", root);
     const openBtn = $("[data-status-toggle]", root);
     const time = $("[data-time]", root);
     const arc = $("[data-battery] .bat-arc", root);
@@ -7066,7 +7207,7 @@ svg {
     bat(72);
     const setOpen = (open) => {
       root.classList.toggle("is-open", open);
-      if (content4) content4.hidden = !open;
+      if (content5) content5.hidden = !open;
       openBtn?.setAttribute("aria-expanded", open ? "true" : "false");
       capsule?.classList.toggle("is-open", open);
     };
@@ -7105,7 +7246,12 @@ svg {
       bar.classList.toggle("only-launch", anyMaximized(s));
       for (const btn of $$(".app-item", bar)) {
         const appId = btn.getAttribute("data-app-id") || "";
+        const def = APPS.find((a) => a.id === appId);
         const ws = s.wins[winIdOf(appId)];
+        const launcher = appId === "launcher";
+        const visible = launcher || !!def?.pinned || !!ws?.open;
+        btn.classList.toggle("gone", !visible);
+        btn.style.order = String(launcher ? 3 : def?.pinned ? 2 : 1);
         btn.classList.toggle("open", !!ws?.open);
         btn.classList.toggle("active", !!ws?.open && ws.focused);
       }

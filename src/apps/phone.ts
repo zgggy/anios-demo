@@ -52,7 +52,9 @@ const content = `
 export const phoneApp: AppDef = {
   id: "phone",
   title: "电话",
+  blurb: "拨号与联系人",
   icon: "phone",
+  pinned: true,
   geom: { left: 48, top: 18, width: 40, height: 58 },
   z: 21,
   open: true,

@@ -795,6 +795,24 @@ svg {
   -webkit-backdrop-filter: var(--frost-blur);
 }
 .app-item.open:not(.active) { color: var(--ink); }
+/* 后台不显示：未固定的 app 收起后从 App 栏隐去（启动台里仍可打开） */
+.app-item.gone { display: none; }
+
+/* 启动台应用网格（注册表真实应用，点击打开） */
+.app-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.app-row:hover { background: var(--hover); }
+.app-row .a-ic {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.app-row .a-ic svg { width: 18px; height: 18px; }
 /* maximized: hide other apps + capsule shell; launcher = single-element nav */
 .sys-appbar.only-launch .app-item:not([data-app-id="launcher"]) {
   display: none;

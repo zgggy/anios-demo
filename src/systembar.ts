@@ -94,13 +94,19 @@ export function initAppBar(store: Store, api: WinApi): void {
   viewport.insertAdjacentHTML("beforeend", appBarHTML(items));
   const bar = $<HTMLElement>(".sys-appbar")!;
 
-  // 订阅 store：开/焦点/最大化 → 按钮状态
+  // 订阅 store：可见性/分区/开/焦点/最大化 → 按钮状态
+  // 自下而上（order 3→1）：启动台(恒最下) → 快速启动(注册表 pinned) → 已打开(未固定的开窗 app)
   const sync = () => {
     const s = store.get();
     bar.classList.toggle("only-launch", anyMaximized(s));
     for (const btn of $$(".app-item", bar)) {
       const appId = btn.getAttribute("data-app-id") || "";
+      const def = APPS.find((a) => a.id === appId);
       const ws = s.wins[winIdOf(appId)];
+      const launcher = appId === "launcher";
+      const visible = launcher || !!def?.pinned || !!ws?.open;
+      btn.classList.toggle("gone", !visible);
+      btn.style.order = String(launcher ? 3 : def?.pinned ? 2 : 1);
       btn.classList.toggle("open", !!ws?.open);
       btn.classList.toggle("active", !!ws?.open && ws.focused);
     }

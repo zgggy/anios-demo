@@ -15,7 +15,7 @@ import {
 } from "./state";
 import { patchWinEl, windowShellHTML, align } from "./render";
 import { captureShell, playShell, minimizeTo, openFrom, closeIn } from "./anim";
-import { APPS, winIdOf, type AppDef } from "./apps";
+import { APPS, winIdOf, type AppDef, type AppActions } from "./apps";
 import { bindScrollIndicator } from "./host";
 
 export type WinApi = {
@@ -110,8 +110,17 @@ export function initWindows(store: Store): WinApi {
     }
   });
 
-  const appIcon = (win: HTMLElement): HTMLElement | null =>
-    $<HTMLElement>(`.app-item[data-app-id="${win.dataset.app}"]`);
+  const appIcon = (win: HTMLElement): HTMLElement | null => {
+    const own = $<HTMLElement>(`.app-item[data-app-id="${win.dataset.app}"]`);
+    // 未固定的 app 收起后没有钮：起飞点回落到启动台
+    if (own && own.offsetParent !== null) return own;
+    return $<HTMLElement>('.app-item[data-app-id="launcher"]');
+  };
+
+  const actions: AppActions = {
+    openApp: (appId) => open(winIdOf(appId)),
+    minimizeApp: (appId) => minimize(winIdOf(appId)),
+  };
 
   function focus(id: string): void {
     store.update((s) => {
@@ -283,7 +292,7 @@ export function initWindows(store: Store): WinApi {
     // 导航切页：先出后入的上下滚动，不重叠
     bindNavPanes(win);
     bindScrollIndicator(win);
-    a.bind?.(win, store);
+    a.bind?.(win, store, actions);
     align(win);
   }
 

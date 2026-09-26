@@ -58,7 +58,8 @@ src/
 - Lifecycle animations (minimize/open/close) never tween opacity — any ancestor `opacity < 1` forms a backdrop root and the frosted panel turns into clear glass instantly; disappearance = scale + hidden.
 - Z-order: floating = content over chrome (shadows off content); maximized & any `data-flipping` transition = chrome over content (restore slides bars out from inside). System bars (z=100) always topmost — window z renormalizes to compact stack ranks on focus (never accumulates past the system layer).
 - App bar: launcher pinned to the capsule tail — its position is identical in only-launch (maximized) and full states (capsule `min-height` slack goes to the head, not under the launcher).
-- App bar: launchpad bottom → pinned → open; any maximized window ⇒ only launchpad.
+- App bar: launcher (bottom, always) → pinned (registry `pinned`) → opened (unpinned open apps only; background hidden). Any *visible* maximized window ⇒ only launchpad (minimized/closed don't count). Unpinned app icons fly back to the launcher button when their own slot is gone.
+- Launcher app pane lists real registry apps (icon/name/blurb) and clicking opens that app + minimizes the launcher.
 - Mobile &lt;720px: no control bar, nav bottom + labels, apps maximized only.
 
 ## Out of Scope
