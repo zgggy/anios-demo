@@ -4,15 +4,8 @@
  */
 import { $, $$, on, durMs } from "./dom";
 import { Store, State, patchWin, focusedWin, type Geom } from "./state";
-import { patchWinEl, windowShellHTML } from "./render";
-import {
-  align,
-  captureShell,
-  playShell,
-  minimizeTo,
-  openFrom,
-  closeIn,
-} from "./anim";
+import { patchWinEl, windowShellHTML, align } from "./render";
+import { captureShell, playShell, minimizeTo, openFrom, closeIn } from "./anim";
 import { APPS, winIdOf, type AppDef } from "./apps";
 import { bindScrollIndicator } from "./host";
 
@@ -99,7 +92,9 @@ export function initWindows(store: Store): WinApi {
     if (dragWin) return; // 手势快速路径期间不覆盖几何
     for (const ws of Object.values(s.wins)) {
       const w = el(ws.id);
-      if (w) patchWinEl(w, ws);
+      // 补间中的窗口跳过：FLIP 正以当前基点做插值，中途改几何/对齐会抖
+      if (!w || w.dataset.flipping === "1") continue;
+      patchWinEl(w, ws);
     }
   });
 
@@ -119,8 +114,6 @@ export function initWindows(store: Store): WinApi {
       if (w.id === id) continue;
       $$("[data-resize].is-on", w).forEach((b) => b.classList.remove("is-on"));
     }
-    const win = el(id);
-    if (win) align(win);
   }
 
   function blurAll(): void {
@@ -145,7 +138,6 @@ export function initWindows(store: Store): WinApi {
     openFrom(win, appIcon(win), () => {
       win.dataset.anim = "0";
       store.update((s) => patchWin(s, id, { open: true }));
-      align(win);
     });
   }
 
@@ -179,17 +171,18 @@ export function initWindows(store: Store): WinApi {
     });
   }
 
-  /** 最大化/还原：capture → dispatch（patch 落几何/模式）→ 补间（动画只读） */
+  /** 最大化/还原：capture → dispatch（patch 落几何/模式/对齐）→ 补间（动画只读） */
   function toggleMaximize(id: string): void {
     const win = el(id);
     if (!win || win.dataset.flipping === "1") return;
     focus(id);
     const first = captureShell(win);
-    win.dataset.flipping = "1";
+    // 先 dispatch：patch 在同一任务内落模式/几何并刷新派生对齐（FLIP 终点依赖它）
     store.update((s) => {
       const w = s.wins[id];
       patchWin(s, id, { mode: w.mode === "maximized" ? "floating" : "maximized" });
     });
+    win.dataset.flipping = "1"; // 此后补丁跳过本窗，防止动画中被其它更新抖动
     playShell(win, first);
   }
 
@@ -199,10 +192,10 @@ export function initWindows(store: Store): WinApi {
     const win = el(winIdOf(a.id));
     if (!win) continue;
 
-    // 点内容区/真实胶囊 → 焦点
+    // 点内容区/真实胶囊/浮层 → 焦点
     on(win, "pointerdown", (e) => {
       const t = e.target as Element;
-      if (t.closest(".content, .top-bar, .nav-bar, .recover")) focus(win.id);
+      if (t.closest(".content, .top-bar, .nav-bar, .recover, .menu-panel, .search-panel")) focus(win.id);
     }, true);
 
     // 拖动钮：>3px 算拖，否则算点；双击最大化
@@ -339,7 +332,6 @@ export function initWindows(store: Store): WinApi {
       };
       store.update((s) => patchWin(s, win.id, { geom }));
     }
-    align(win);
   });
 
   // 点视口空白 → 全部失焦（系统栏/视口钮不夺焦）

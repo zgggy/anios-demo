@@ -6,6 +6,7 @@
  */
 import gsap from "gsap";
 import { $, durMs } from "./dom";
+import { align } from "./render";
 
 const EASE = "power3.inOut";
 
@@ -18,25 +19,6 @@ export function prefersReducedMotion(): boolean {
 export function durSec(token = "--anim-window"): number {
   if (prefersReducedMotion()) return 0.00001;
   return Math.max(0.12, durMs(token) / 1000);
-}
-
-/** 布局中心（offsetParent 坐标，不含 transform —— 动画中禁止 getBoundingClientRect 写变量） */
-export function layoutCenter(el: HTMLElement): { cx: number; cy: number } {
-  return {
-    cx: el.offsetLeft + el.offsetWidth / 2,
-    cy: el.offsetTop + el.offsetHeight / 2,
-  };
-}
-
-/** 对齐：控制栏中心 = 内容中心 X，导航中心 = 内容中心 Y（写入 CSS 变量） */
-export function align(win: HTMLElement): void {
-  const content = $<HTMLElement>(".content", win);
-  const topbar = $<HTMLElement>("[data-topbar]", win);
-  const navbar = $<HTMLElement>("[data-nav]", win);
-  if (!content || !topbar) return;
-  const { cx, cy } = layoutCenter(content);
-  topbar.style.setProperty("--content-cx", `${cx}px`);
-  navbar?.style.setProperty("--content-cy", `${cy}px`);
 }
 
 export type ShellFirst = {
@@ -80,6 +62,10 @@ export function playShell(win: HTMLElement, first: ShellFirst): void {
   const topbar = $<HTMLElement>("[data-topbar]", win);
   const scroller = $<HTMLElement>(".content-scroll", content);
   const d = durSec("--anim-window");
+
+  // 测量前置条件：派生对齐变量必须反映「切换后」的内容盒，
+  // 否则壳 FLIP 的终点是陈旧基点，动画结束一刷新就会跳。
+  align(win);
 
   const lC = content.getBoundingClientRect();
   const lN = navbar?.getBoundingClientRect();

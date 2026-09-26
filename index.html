@@ -44,6 +44,9 @@
   --chrome-z: 20;
   --content-z: 21;
   --chrome-z-max: 22;
+  /* 窗口内浮层（+ 菜单 / 搜索面板）：必须是 window 直挂子级——
+     .top-bar 的 transform+z-index 是堆叠上下文，children 的 z-index 会被囚禁在其层级内 */
+  --float-z: 23;
 }
 
 [data-theme="dark"] {
@@ -464,8 +467,10 @@ svg {
 .menu-panel,
 .search-panel {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
+  /* 挂在控制栏下（窗口坐标）：win-pad + topbar-h + 8px */
+  top: calc(var(--win-pad) + var(--topbar-h) + 8px);
+  /* 与控制栏水平居中对齐（锚同一派生变量） */
+  left: var(--content-cx);
   transform: translateX(-50%);
   min-width: 220px;
   padding: 8px;
@@ -475,7 +480,7 @@ svg {
   box-shadow: var(--shadow);
   backdrop-filter: var(--frost-blur);
   -webkit-backdrop-filter: var(--frost-blur);
-  z-index: 40;
+  z-index: var(--float-z);
   pointer-events: auto;
 }
 .menu-panel[hidden],
@@ -1148,10 +1153,6 @@ svg {
     return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
     <div class="top-bar" data-topbar>
       ${topCapsuleHTML()}
-      <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
-        <input class="search-input" placeholder="${o.searchPlaceholder}" />
-      </div>
-      ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
     </div>
     <div class="nav-bar" data-nav>
       <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
@@ -1161,6 +1162,10 @@ svg {
       <button type="button" class="resize-knob" data-resize aria-label="\u7F29\u653E"></button>
       <div class="content-scroll">${o.content}</div>
     </div>
+    <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
+      <input class="search-input" placeholder="${o.searchPlaceholder}" />
+    </div>
+    ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
     <div class="recover" data-recover hidden data-orient="h">
       ${dragZoneHTML("data-recover-zone")}
     </div>
@@ -1256,6 +1261,19 @@ svg {
     </div>
   </div>`;
   }
+  function layoutCenter(el) {
+    return {
+      cx: el.offsetLeft + el.offsetWidth / 2,
+      cy: el.offsetTop + el.offsetHeight / 2
+    };
+  }
+  function align(win) {
+    const content4 = $(".content", win);
+    if (!content4) return;
+    const { cx, cy } = layoutCenter(content4);
+    win.style.setProperty("--content-cx", `${cx}px`);
+    win.style.setProperty("--content-cy", `${cy}px`);
+  }
   function patchWinEl(el, ws) {
     el.classList.toggle("is-focused", ws.focused);
     el.setAttribute("data-mode", ws.mode);
@@ -1268,6 +1286,7 @@ svg {
     el.style.height = `${ws.geom.height}%`;
     void el.offsetHeight;
     el.style.transition = t;
+    align(el);
   }
 
   // node_modules/gsap/gsap-core.js
@@ -5555,21 +5574,6 @@ svg {
     if (prefersReducedMotion()) return 1e-5;
     return Math.max(0.12, durMs(token) / 1e3);
   }
-  function layoutCenter(el) {
-    return {
-      cx: el.offsetLeft + el.offsetWidth / 2,
-      cy: el.offsetTop + el.offsetHeight / 2
-    };
-  }
-  function align(win) {
-    const content4 = $(".content", win);
-    const topbar = $("[data-topbar]", win);
-    const navbar = $("[data-nav]", win);
-    if (!content4 || !topbar) return;
-    const { cx, cy } = layoutCenter(content4);
-    topbar.style.setProperty("--content-cx", `${cx}px`);
-    navbar?.style.setProperty("--content-cy", `${cy}px`);
-  }
   function padOf(el) {
     const s = getComputedStyle(el);
     return {
@@ -5596,6 +5600,7 @@ svg {
     const topbar = $("[data-topbar]", win);
     const scroller = $(".content-scroll", content4);
     const d = durSec("--anim-window");
+    align(win);
     const lC = content4.getBoundingClientRect();
     const lN = navbar?.getBoundingClientRect();
     const lT = topbar?.getBoundingClientRect();
@@ -6247,7 +6252,8 @@ svg {
       if (dragWin) return;
       for (const ws of Object.values(s.wins)) {
         const w = el(ws.id);
-        if (w) patchWinEl(w, ws);
+        if (!w || w.dataset.flipping === "1") continue;
+        patchWinEl(w, ws);
       }
     });
     const appIcon = (win) => $(`.app-item[data-app-id="${win.dataset.app}"]`);
@@ -6263,8 +6269,6 @@ svg {
         if (w.id === id) continue;
         $$("[data-resize].is-on", w).forEach((b) => b.classList.remove("is-on"));
       }
-      const win = el(id);
-      if (win) align(win);
     }
     function blurAll() {
       store.update((s) => {
@@ -6286,7 +6290,6 @@ svg {
       openFrom(win, appIcon(win), () => {
         win.dataset.anim = "0";
         store.update((s) => patchWin(s, id, { open: true }));
-        align(win);
       });
     }
     function minimize(id) {
@@ -6322,11 +6325,11 @@ svg {
       if (!win || win.dataset.flipping === "1") return;
       focus(id);
       const first = captureShell(win);
-      win.dataset.flipping = "1";
       store.update((s) => {
         const w = s.wins[id];
         patchWin(s, id, { mode: w.mode === "maximized" ? "floating" : "maximized" });
       });
+      win.dataset.flipping = "1";
       playShell(win, first);
     }
     for (const a of APPS) {
@@ -6334,7 +6337,7 @@ svg {
       if (!win) continue;
       on(win, "pointerdown", (e) => {
         const t = e.target;
-        if (t.closest(".content, .top-bar, .nav-bar, .recover")) focus(win.id);
+        if (t.closest(".content, .top-bar, .nav-bar, .recover, .menu-panel, .search-panel")) focus(win.id);
       }, true);
       const zone = $(".top-bar [data-drag-zone]", win);
       if (zone) {
@@ -6455,7 +6458,6 @@ svg {
         };
         store.update((s) => patchWin(s, win.id, { geom }));
       }
-      align(win);
     });
     on(viewport, "pointerdown", (e) => {
       const t = e.target;

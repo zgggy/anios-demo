@@ -3,6 +3,7 @@
  * 复用 = 带类型参数导入（windowShell({...})），禁止复制粘贴标记；
  * chrome 的 DOM 结构只在本文件存在一次。
  */
+import { $ } from "./dom";
 import type { Geom, WinState } from "./state";
 
 /* ── 图标：24×24 viewBox、stroke-width 1.7、currentColor、圆头圆接 ── */
@@ -111,16 +112,12 @@ export type WindowShellOpts = {
   editItems?: string[];
 };
 
-/** 窗口单元 = top-bar + nav-bar + content + recover */
+/** 窗口单元 = top-bar + nav-bar + content + 浮层（菜单/搜索）+ recover */
 export function windowShellHTML(o: WindowShellOpts): string {
   const g = o.geom;
   return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
     <div class="top-bar" data-topbar>
       ${topCapsuleHTML()}
-      <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
-        <input class="search-input" placeholder="${o.searchPlaceholder}" />
-      </div>
-      ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
     </div>
     <div class="nav-bar" data-nav>
       <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
@@ -130,6 +127,10 @@ export function windowShellHTML(o: WindowShellOpts): string {
       <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
       <div class="content-scroll">${o.content}</div>
     </div>
+    <div class="search-panel" data-search-panel ${o.searchOpen ? "" : "hidden"}>
+      <input class="search-input" placeholder="${o.searchPlaceholder}" />
+    </div>
+    ${menuPanelHTML({ title: o.title, editItems: o.editItems })}
     <div class="recover" data-recover hidden data-orient="h">
       ${dragZoneHTML("data-recover-zone")}
     </div>
@@ -237,9 +238,31 @@ export function appBarHTML(items: AppBarItem[]): string {
 
 /* ── 属性补丁：把 WinState 落到 DOM（结构渲染低频、属性补丁高频） ── */
 
+/** 布局中心（offsetParent 坐标，不含 transform —— 动画中禁止 getBoundingClientRect 写变量） */
+export function layoutCenter(el: HTMLElement): { cx: number; cy: number } {
+  return {
+    cx: el.offsetLeft + el.offsetWidth / 2,
+    cy: el.offsetTop + el.offsetHeight / 2,
+  };
+}
+
+/**
+ * 派生布局补丁：控制栏中心 = 内容中心 X，导航中心 = 内容中心 Y。
+ * 变量写在窗口上（top-bar/nav-bar/浮层继承同一锚点）。
+ * 不变量：凡几何/模式从状态写入，同一任务内必须刷新本变量——
+ * 否则以 --content-cx/cy 为基点的 FLIP 会把陈旧位置当终点，动画结束一刷新就跳。
+ */
+export function align(win: HTMLElement): void {
+  const content = $<HTMLElement>(".content", win);
+  if (!content) return;
+  const { cx, cy } = layoutCenter(content);
+  win.style.setProperty("--content-cx", `${cx}px`);
+  win.style.setProperty("--content-cy", `${cy}px`);
+}
+
 /**
  * 开合可见性由 anim 的生命周期补间负责（收起/打开/关闭是「先过渡、结束 commit」），
- * 这里只补丁语义属性：焦点、模式、几何、层级。
+ * 这里只补丁语义属性：焦点、模式、几何、层级；并同步派生对齐。
  */
 export function patchWinEl(el: HTMLElement, ws: WinState): void {
   el.classList.toggle("is-focused", ws.focused);
@@ -254,4 +277,5 @@ export function patchWinEl(el: HTMLElement, ws: WinState): void {
   el.style.height = `${ws.geom.height}%`;
   void el.offsetHeight;
   el.style.transition = t;
+  align(el);
 }

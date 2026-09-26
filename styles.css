@@ -37,6 +37,9 @@
   --chrome-z: 20;
   --content-z: 21;
   --chrome-z-max: 22;
+  /* 窗口内浮层（+ 菜单 / 搜索面板）：必须是 window 直挂子级——
+     .top-bar 的 transform+z-index 是堆叠上下文，children 的 z-index 会被囚禁在其层级内 */
+  --float-z: 23;
 }
 
 [data-theme="dark"] {
@@ -457,8 +460,10 @@ svg {
 .menu-panel,
 .search-panel {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
+  /* 挂在控制栏下（窗口坐标）：win-pad + topbar-h + 8px */
+  top: calc(var(--win-pad) + var(--topbar-h) + 8px);
+  /* 与控制栏水平居中对齐（锚同一派生变量） */
+  left: var(--content-cx);
   transform: translateX(-50%);
   min-width: 220px;
   padding: 8px;
@@ -468,7 +473,7 @@ svg {
   box-shadow: var(--shadow);
   backdrop-filter: var(--frost-blur);
   -webkit-backdrop-filter: var(--frost-blur);
-  z-index: 40;
+  z-index: var(--float-z);
   pointer-events: auto;
 }
 .menu-panel[hidden],
