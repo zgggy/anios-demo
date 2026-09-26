@@ -11,25 +11,20 @@
    Capsule / icon-btn / drag-zone / nav-btn defined ONCE. */
 
 :root {
-  /* 几何令牌 = 运行时参数（设置 → 尺寸面板可调）；此处为默认值，
-     须与 src/state.ts METRICS 的 def 同步。派生关系保持公式化：
-     nav-w = topbar-h × 1.5 · inset = gap · 拖动展开 = btn × 3 */
+  /* 几何/字号令牌默认值由 build.mjs 从 src/state.ts 生成（参数唯一定义源）；
+     派生公式见 设置 → 尺寸 → 派生。 */
+    --win-pad: 5px;
+  --gap: 5px;
+  --gutter: 28px;
+  --menu-drop: 8px;
   --topbar-h: 28px;
-  --nav-w: calc(var(--topbar-h) * 1.5);
+  --btn: 22px;
   --nav-btn: 30px;
   --nav-btn-h: 46px;
-  --btn: 22px;
-  --win-pad: 5px;
-  --gap: 5px;
-  /* 系统栏贴边 + 最大化导航贴边/内容让位 = 导航↔内容间距（统一小间距） */
-  --inset: var(--gap);
-  --gutter: 28px;
-  --win-radius: 16px;
   --knob: 12px;
   --scroll-w: 6px;
-  --menu-drop: 8px;
+  --win-radius: 16px;
   --menu-w: 220px;
-  /* 字号（主 UI，规格 §7.5 六角色 + 大数字） */
   --font-title: 22px;
   --font-row: 13.5px;
   --font-desc: 11.5px;
@@ -37,6 +32,11 @@
   --font-nav: 8.5px;
   --font-num: 9px;
   --font-stat: 18px;
+  --nav-w: 42px;
+  --inset: 5px;
+  --drag-open: 66px;
+  --recover-near: 38px;
+  --margin-comp: 1px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --anim-window: 360ms;
   --anim-pane: 200ms;
@@ -225,8 +225,8 @@ svg {
 
 .top-capsule > .icon-btn,
 .top-capsule > .drag-zone {
-  margin-top: calc((var(--topbar-h) - var(--btn)) / 2 - 1px);
-  margin-bottom: calc((var(--topbar-h) - var(--btn)) / 2 - 1px);
+  margin-top: calc((var(--topbar-h) - var(--btn)) / 2 - var(--margin-comp));
+  margin-bottom: calc((var(--topbar-h) - var(--btn)) / 2 - var(--margin-comp));
 }
 
 .drag-zone {
@@ -243,9 +243,9 @@ svg {
   transition: width 220ms var(--ease), margin 220ms var(--ease), background 140ms ease;
 }
 .drag-zone:hover {
-  width: calc(var(--btn) * 3);
-  margin-left: calc(var(--btn) * -1);
-  margin-right: calc(var(--btn) * -1);
+  width: var(--drag-open);
+  margin-left: calc((var(--btn) - var(--drag-open)) / 2);
+  margin-right: calc((var(--btn) - var(--drag-open)) / 2);
   background: var(--hover);
 }
 .drag-zone:active { cursor: grabbing; }
@@ -341,11 +341,11 @@ svg {
 }
 .nav-capsule > .nav-btn:first-child,
 .nav-capsule > .app-stack > .nav-btn:first-child {
-  margin-top: calc((var(--nav-w) - var(--nav-btn)) / 2 - 1px);
+  margin-top: calc((var(--nav-w) - var(--nav-btn)) / 2 - var(--margin-comp));
 }
 .nav-capsule > .nav-btn:last-child,
 .nav-capsule > .app-stack > .nav-btn:last-child {
-  margin-bottom: calc((var(--nav-w) - var(--nav-btn)) / 2 - 1px);
+  margin-bottom: calc((var(--nav-w) - var(--nav-btn)) / 2 - var(--margin-comp));
 }
 .nav-capsule > .nav-btn + .nav-btn {
   margin-top: 4px;
@@ -358,10 +358,10 @@ svg {
   padding: 0;
 }
 .app-stack > .nav-btn:first-child {
-  margin-top: calc((var(--nav-w) - var(--nav-btn)) / 2 - 1px);
+  margin-top: calc((var(--nav-w) - var(--nav-btn)) / 2 - var(--margin-comp));
 }
 .app-stack > .nav-btn:last-child {
-  margin-bottom: calc((var(--nav-w) - var(--nav-btn)) / 2 - 1px);
+  margin-bottom: calc((var(--nav-w) - var(--nav-btn)) / 2 - var(--margin-comp));
 }
 
 /* window nav: hover grows button DOWN only */
@@ -875,6 +875,62 @@ svg {
   font-variant-numeric: tabular-nums;
 }
 
+/* 参数滑杆：默认值旗标 + 设为默认按钮（写回 src/state.ts 的 def） */
+.slider-field { position: relative; flex: 1; display: flex; align-items: center; }
+.def-flag {
+  position: absolute;
+  top: 1px;
+  left: calc(8px + var(--p, 0) * (100% - 16px));
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--ink-3);
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.def-flag::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 3px;
+  width: 1px;
+  height: 7px;
+  background: var(--ink-3);
+}
+.def-save {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+.def-save:hover { background: var(--hover); color: var(--ink); }
+.def-save.saved { color: var(--green); }
+.def-save.failed { color: var(--red); }
+.def-save svg { width: 12px; height: 12px; }
+.deriv-f {
+  font-size: var(--font-desc);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.deriv-v {
+  font-size: var(--font-desc);
+  color: var(--ink-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.term-l {
+  font-size: var(--font-desc);
+  color: var(--ink-3);
+  width: 52px;
+  flex-shrink: 0;
+}
+
 .dots { display: flex; gap: 8px; }
 .cd {
   width: 18px;
@@ -1102,6 +1158,80 @@ svg {
   function metricVar(key) {
     return "--" + key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
   }
+  var ANIMS = [
+    { key: "animGlobal", label: "\u5168\u5C40", min: 100, max: 2e3, step: 50, def: 360, unit: "ms" },
+    { key: "animWindow", label: "\u7A97\u53E3", min: 100, max: 2e3, step: 50, def: 360, unit: "ms" },
+    { key: "animPane", label: "\u5207\u6362", min: 80, max: 800, step: 20, def: 200, unit: "ms" },
+    { key: "animMenu", label: "\u83DC\u5355", min: 80, max: 800, step: 20, def: 200, unit: "ms" }
+  ];
+  var DERIV_TERMS = [
+    { key: "navWMul", label: "\u500D\u7387", min: 1, max: 2.5, step: 0.05, def: 1.5, unit: "" },
+    { key: "navWAdd", label: "\u504F\u79FB", min: -10, max: 10, step: 1, def: 0, unit: "" },
+    { key: "insetMul", label: "\u500D\u7387", min: 0, max: 2, step: 0.05, def: 1, unit: "" },
+    { key: "insetAdd", label: "\u504F\u79FB", min: -4, max: 12, step: 1, def: 0, unit: "" },
+    { key: "dragMul", label: "\u500D\u7387", min: 2, max: 4.5, step: 0.1, def: 3, unit: "" },
+    { key: "dragAdd", label: "\u504F\u79FB", min: -6, max: 12, step: 1, def: 0, unit: "" },
+    { key: "nearGapMul", label: "\u95F4\u8DDD\u500D\u7387", min: 0, max: 4, step: 0.1, def: 2, unit: "" },
+    { key: "nearAdd", label: "\u504F\u79FB", min: -10, max: 20, step: 1, def: 0, unit: "" },
+    { key: "marginComp", label: "\u8865\u507F", min: 0, max: 4, step: 0.5, def: 1, unit: "" }
+  ];
+  var labelOf = (key) => METRICS.find((m) => m.key === key)?.label ?? key;
+  var DERIVS = [
+    {
+      key: "navW",
+      label: "\u5BFC\u822A\u5BBD",
+      cssVar: "--nav-w",
+      terms: ["navWMul", "navWAdd"],
+      compute: (m, t) => m.topbarH * t.navWMul + t.navWAdd,
+      formula: (m, t) => `${labelOf("topbarH")} \xD7 ${t.navWMul} + ${t.navWAdd}`
+    },
+    {
+      key: "inset",
+      label: "\u7CFB\u7EDF\u680F\u8D34\u8FB9",
+      cssVar: "--inset",
+      terms: ["insetMul", "insetAdd"],
+      compute: (m, t) => m.gap * t.insetMul + t.insetAdd,
+      formula: (m, t) => `${labelOf("gap")} \xD7 ${t.insetMul} + ${t.insetAdd}`
+    },
+    {
+      key: "dragOpen",
+      label: "\u62D6\u52A8\u5C55\u5F00\u5BBD",
+      cssVar: "--drag-open",
+      terms: ["dragMul", "dragAdd"],
+      compute: (m, t) => m.btn * t.dragMul + t.dragAdd,
+      formula: (m, t) => `${labelOf("btn")} \xD7 ${t.dragMul} + ${t.dragAdd}`
+    },
+    {
+      key: "recoverNear",
+      label: "recover \u9608\u503C",
+      cssVar: "--recover-near",
+      terms: ["nearGapMul", "nearAdd"],
+      compute: (m, t) => m.gutter + m.gap * t.nearGapMul + t.nearAdd,
+      formula: (m, t) => `${labelOf("gutter")} + ${labelOf("gap")} \xD7 ${t.nearGapMul} + ${t.nearAdd}`
+    },
+    {
+      key: "margin",
+      label: "\u540C\u5FC3\u5706\u8865\u5DEE",
+      cssVar: "--margin-comp",
+      terms: ["marginComp"],
+      compute: (_m, t) => t.marginComp,
+      formula: (_m, t) => `(\u77ED\u8FB9 \u2212 \u94AE\u5F84) / 2 \u2212 ${t.marginComp}`
+    }
+  ];
+  function defaultDerivTerms() {
+    const t = {};
+    for (const d of DERIV_TERMS) t[d.key] = d.def;
+    return t;
+  }
+  function findParam(key) {
+    const m = METRICS.find((x) => x.key === key);
+    if (m) return { min: m.min, max: m.max, step: m.step, def: m.def, unit: "px" };
+    const a = ANIMS.find((x) => x.key === key);
+    if (a) return { min: a.min, max: a.max, step: a.step, def: a.def, unit: a.unit };
+    const d = DERIV_TERMS.find((x) => x.key === key);
+    if (d) return { min: d.min, max: d.max, step: d.step, def: d.def, unit: d.unit };
+    return null;
+  }
   function createStore(init4) {
     let state = init4;
     const subs = /* @__PURE__ */ new Set();
@@ -1158,7 +1288,8 @@ svg {
     link: '<path d="M8 8a3 3 0 1 0 0 6c2 0 2.5-1.5 4-3s2-3 4-3a3 3 0 1 1 0 6c-2 0-2.5-1.5-4-3s-2-3-4-3z"/>',
     bolt: '<path d="M13 3L6 14h5l-1 7 8-12h-5l0-6z"/>',
     apps: '<path d="M12 3l9 9-9 9-9-9z"/>',
-    backspace: '<path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/>'
+    backspace: '<path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/>',
+    save: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v4h6V5"/><path d="M9 19v-5h6v5"/>'
   };
   function icon(name) {
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
@@ -5813,6 +5944,42 @@ svg {
   }
 
   // src/apps/settings.ts
+  function paramRow(d, kind, unit, termLabel) {
+    const p = (d.def - d.min) / (d.max - d.min);
+    return `<div class="slider-row">
+    ${termLabel ? `<span class="term-l">${termLabel}</span>` : ""}
+    <div class="slider-field">
+      <input class="slider" type="range" data-${kind}="${d.key}" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.def}" />
+      <i class="def-flag" style="--p: ${p.toFixed(3)}" title="\u9ED8\u8BA4 ${d.def}${unit}"></i>
+    </div>
+    <span class="slider-val" data-${kind}-val="${d.key}">${d.def}${unit}</span>
+    <button type="button" class="def-save" data-save="${d.key}" title="\u8BBE\u4E3A\u9ED8\u8BA4\uFF08\u5199\u5165 src/state.ts\uFF09">${icon("save")}</button>
+  </div>`;
+  }
+  var metricsPane = `
+<section class="set-pane" data-pane="metrics" hidden>
+  <header class="set-head"><h1>\u5C3A\u5BF8</h1><p>\u95F4\u8DDD \xB7 \u63A7\u4EF6 \xB7 \u5B57\u53F7 \xB7 \u6D3E\u751F</p></header>
+  ${["\u95F4\u8DDD", "\u63A7\u4EF6", "\u5B57\u53F7"].map(
+    (g) => `<div class="set-group">
+        <div class="set-group-title">${g}</div>
+        ${METRICS.filter((m) => m.group === g).map((m) => paramRow(m, "metric", "px")).join("")}
+      </div>`
+  ).join("")}
+  <div class="set-group">
+    <div class="set-group-title">\u6D3E\u751F</div>
+    ${DERIVS.map((d) => {
+    const t = defaultDerivTerms();
+    return `<div class="set-row col">
+        <div class="deriv-head">
+          <div class="row-t">${d.label}</div>
+          <div class="deriv-f" data-deriv-f="${d.key}">${d.formula(defaultMetrics(), t)}</div>
+          <div class="deriv-v" data-deriv-val="${d.key}">${d.compute(defaultMetrics(), t)}px</div>
+        </div>
+        ${d.terms.map((tk) => paramRow(DERIV_TERMS.find((x) => x.key === tk), "term", "", DERIV_TERMS.find((x) => x.key === tk).label)).join("")}
+      </div>`;
+  }).join("")}
+  </div>
+</section>`;
   var content = `
 <section class="set-pane" data-pane="home">
   <header class="set-head"><h1>\u4E3B\u9875</h1><p>\u7CFB\u7EDF\u4E0E\u4E2A\u6027\u5316</p></header>
@@ -5838,10 +6005,7 @@ svg {
     <div class="set-group-title">\u52A8\u753B</div>
     <div class="set-row col">
       <div class="row-t">\u5168\u5C40 / \u7A97\u53E3 / \u5207\u6362 / \u83DC\u5355</div>
-      <div class="slider-row"><input class="slider" id="animGlobal" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animGlobalVal">360ms</span></div>
-      <div class="slider-row"><input class="slider" id="animWindow" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animWindowVal">360ms</span></div>
-      <div class="slider-row"><input class="slider" id="animPane" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animPaneVal">200ms</span></div>
-      <div class="slider-row"><input class="slider" id="animMenu" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animMenuVal">200ms</span></div>
+      ${ANIMS.map((a) => paramRow(a, "anim", "ms")).join("")}
     </div>
     <div class="set-row">
       <div class="row-t">\u6EDA\u52A8\u6307\u793A</div>
@@ -5875,7 +6039,10 @@ svg {
   <header class="set-head"><h1>\u58F0\u97F3</h1></header>
   <div class="set-group">
     <div class="set-row col"><div class="row-t">\u8F93\u51FA\u97F3\u91CF</div>
-      <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="62" /><span class="slider-val">62%</span></div>
+      <div class="slider-row">
+        <div class="slider-field"><input class="slider" type="range" min="0" max="100" value="62" /></div>
+        <span class="slider-val">62%</span>
+      </div>
     </div>
   </div>
 </section>
@@ -5883,28 +6050,39 @@ svg {
   <header class="set-head"><h1>\u663E\u793A</h1></header>
   <div class="set-group">
     <div class="set-row col"><div class="row-t">\u4EAE\u5EA6</div>
-      <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="78" /><span class="slider-val">78%</span></div>
+      <div class="slider-row">
+        <div class="slider-field"><input class="slider" type="range" min="0" max="100" value="78" /></div>
+        <span class="slider-val">78%</span>
+      </div>
     </div>
   </div>
 </section>`;
-  var metricsPane = `
-<section class="set-pane" data-pane="metrics" hidden>
-  <header class="set-head"><h1>\u5C3A\u5BF8</h1><p>\u95F4\u8DDD \xB7 \u63A7\u4EF6 \xB7 \u5B57\u53F7</p></header>
-  ${["\u95F4\u8DDD", "\u63A7\u4EF6", "\u5B57\u53F7"].map(
-    (g) => `<div class="set-group">
-        <div class="set-group-title">${g}</div>
-        ${METRICS.filter((m) => m.group === g).map(
-      (m) => `<div class="set-row col">
-              <div class="row-t">${m.label}</div>
-              <div class="slider-row">
-                <input class="slider" type="range" data-metric="${m.key}" min="${m.min}" max="${m.max}" step="${m.step}" value="${m.def}" />
-                <span class="slider-val" data-metric-val="${m.key}">${m.def}px</span>
-              </div>
-            </div>`
-    ).join("")}
-      </div>`
-  ).join("")}
-</section>`;
+  async function saveDefault(key, value, btn) {
+    try {
+      const res = await fetch("/api/save-def", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key, value })
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const d = findParam(key);
+      const input = $(
+        `[data-metric="${key}"],[data-anim="${key}"],[data-term="${key}"]`
+      );
+      const flag = input?.closest(".slider-field")?.querySelector(".def-flag");
+      if (d && flag) {
+        const p = (value - d.min) / (d.max - d.min);
+        flag.style.setProperty("--p", p.toFixed(3));
+        flag.title = `\u9ED8\u8BA4 ${value}${d.unit}`;
+      }
+      btn.classList.remove("failed");
+      btn.classList.add("saved");
+    } catch {
+      btn.classList.remove("saved");
+      btn.classList.add("failed");
+    }
+    window.setTimeout(() => btn.classList.remove("saved", "failed"), 1200);
+  }
   var settingsApp = {
     id: "settings",
     title: "\u8BBE\u7F6E",
@@ -5938,10 +6116,9 @@ svg {
           if (c) store.update((s) => s.settings.accent = c);
         });
       });
-      const bindDur = (id, key) => {
-        const el = $(`#${id}`, root);
-        if (!el) return;
+      $$("[data-anim]", root).forEach((el) => {
         on(el, "input", () => {
+          const key = el.getAttribute("data-anim");
           const v = Number(el.value);
           store.update((s) => {
             s.settings[key] = v;
@@ -5952,11 +6129,7 @@ svg {
             }
           });
         });
-      };
-      bindDur("animGlobal", "animGlobal");
-      bindDur("animWindow", "animWindow");
-      bindDur("animPane", "animPane");
-      bindDur("animMenu", "animMenu");
+      });
       $$("[data-scroll-mode]", root).forEach((b) => {
         on(b, "click", () => {
           const m = b.getAttribute("data-scroll-mode");
@@ -5976,6 +6149,25 @@ svg {
           store.update((s) => {
             s.settings.metrics = { ...s.settings.metrics, [key]: v };
           });
+        });
+      });
+      $$("[data-term]", root).forEach((el) => {
+        on(el, "input", () => {
+          const key = el.getAttribute("data-term");
+          const v = Number(el.value);
+          store.update((s) => {
+            s.settings.derivTerms = { ...s.settings.derivTerms, [key]: v };
+          });
+        });
+      });
+      $$("[data-save]", root).forEach((btn) => {
+        on(btn, "click", () => {
+          const key = btn.getAttribute("data-save");
+          const input = $(
+            `[data-metric="${key}"],[data-anim="${key}"],[data-term="${key}"]`,
+            root
+          );
+          if (input) void saveDefault(key, Number(input.value), btn);
         });
       });
     }
@@ -6237,7 +6429,7 @@ svg {
     }
     for (const s of $$(".slider")) {
       const el = s;
-      if (el.hasAttribute("data-metric")) continue;
+      if (el.dataset.metric || el.dataset.anim || el.dataset.term) continue;
       const sync = () => {
         const lab = el.closest(".slider-row")?.querySelector(".slider-val");
         if (lab && !lab.id) lab.textContent = `${Math.round(Number(el.value))}%`;
@@ -6286,18 +6478,20 @@ svg {
         z: a.z
       };
     }
+    const animDef = (key) => ANIMS.find((a) => a.key === key).def;
     return {
       wins,
       settings: {
         theme: "light",
         accent: "#3b82f6",
-        animGlobal: 360,
-        animWindow: 360,
-        animPane: 200,
-        animMenu: 200,
+        animGlobal: animDef("animGlobal"),
+        animWindow: animDef("animWindow"),
+        animPane: animDef("animPane"),
+        animMenu: animDef("animMenu"),
         scrollMode: "percent",
         net: "wifi",
-        metrics: defaultMetrics()
+        metrics: defaultMetrics(),
+        derivTerms: defaultDerivTerms()
       }
     };
   }
@@ -6741,7 +6935,7 @@ svg {
       const mx = e.clientX;
       const my = e.clientY;
       const gap = pxVar("--gap", 5);
-      const near = pxVar("--gutter", 28) + 2 * gap;
+      const near = pxVar("--recover-near", 38);
       const dist = {
         left: Math.abs(mx - wr.left),
         right: Math.abs(mx - wr.right),
@@ -6949,23 +7143,27 @@ svg {
       syncGroup("button[data-theme]", "data-theme", st.theme);
       syncGroup("[data-net-mode]", "data-net-mode", st.net);
       syncGroup("[data-scroll-mode]", "data-scroll-mode", st.scrollMode);
-      const syncSlider = (id, v) => {
-        const el = $(`#${id}`);
-        if (el && Number(el.value) !== v) el.value = String(v);
-        const l = $(`#${id}Val`);
-        if (l) l.textContent = `${v}ms`;
+      const echo = (kind, key, v, unit) => {
+        const input = $(`[data-${kind}="${key}"]`);
+        if (input && Number(input.value) !== v) input.value = String(v);
+        const lab = $(`[data-${kind}-val="${key}"]`);
+        if (lab) lab.textContent = `${v}${unit}`;
       };
-      syncSlider("animGlobal", st.animGlobal);
-      syncSlider("animWindow", st.animWindow);
-      syncSlider("animPane", st.animPane);
-      syncSlider("animMenu", st.animMenu);
+      for (const a of ANIMS) echo("anim", a.key, st[a.key], a.unit);
       for (const m of METRICS) {
         const v = st.metrics[m.key];
         root.style.setProperty(metricVar(m.key), `${v}px`);
-        const input = $(`[data-metric="${m.key}"]`);
-        if (input && Number(input.value) !== v) input.value = String(v);
-        const lab = $(`[data-metric-val="${m.key}"]`);
-        if (lab) lab.textContent = `${v}px`;
+        echo("metric", m.key, v, "px");
+      }
+      const terms = { ...defaultDerivTerms(), ...st.derivTerms };
+      for (const t of DERIV_TERMS) echo("term", t.key, terms[t.key], "");
+      for (const d of DERIVS) {
+        const v = d.compute(st.metrics, terms);
+        root.style.setProperty(d.cssVar, `${v}px`);
+        const f = $(`[data-deriv-f="${d.key}"]`);
+        if (f) f.textContent = d.formula(st.metrics, terms);
+        const vv = $(`[data-deriv-val="${d.key}"]`);
+        if (vv) vv.textContent = `${v}px`;
       }
       for (const w of $$(".window")) {
         if (w.dataset.flipping !== "1") align(w);

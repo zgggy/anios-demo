@@ -56,9 +56,9 @@ export function initRecover(store: Store, api: WinApi): void {
     const wr = content.getBoundingClientRect();
     const mx = e.clientX;
     const my = e.clientY;
-    // 几何度量运行时可调：贴边间距 = gap，显示阈值 = gutter + 2×gap
+    // 几何度量运行时可调：贴边间距 = gap，阈值 = 派生值 --recover-near
     const gap = pxVar("--gap", 5);
-    const near = pxVar("--gutter", 28) + 2 * gap;
+    const near = pxVar("--recover-near", 38);
     const dist: Record<Edge, number> = {
       left: Math.abs(mx - wr.left),
       right: Math.abs(mx - wr.right),

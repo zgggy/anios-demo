@@ -4,6 +4,15 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 execSync("node node_modules/typescript/bin/tsc -p tsconfig.json", { stdio: "inherit" });
 
+// 几何/字号令牌默认值从 state.ts 生成（参数唯一定义源），替换 styles.css 的 /* METRIC_DEFAULTS */
+const { METRICS, DERIVS, metricVar, defaultMetrics, defaultDerivTerms } = await import("./dist/state.js");
+const d0 = defaultMetrics();
+const t0 = defaultDerivTerms();
+const defaultsBlock = [
+  ...METRICS.map((m) => `  ${metricVar(m.key)}: ${m.def}px;`),
+  ...DERIVS.map((d) => `  ${d.cssVar}: ${d.compute(d0, t0)}px;`),
+].join("\n");
+
 await build({
   entryPoints: ["src/main.ts"],
   bundle: true,
@@ -23,7 +32,7 @@ await build({
 // single-file app: inline CSS + JS + wallpapers
 // NOTE: must use function replacer — String.replace treats $$ as "$"
 const html = readFileSync("index.template.html", "utf8");
-let css = readFileSync("styles.css", "utf8");
+let css = readFileSync("styles.css", "utf8").replace("/* METRIC_DEFAULTS */", defaultsBlock);
 const js = readFileSync("dist/bundle.iife.js", "utf8");
 const light = readFileSync("assets/wallpaper-light.jpg").toString("base64");
 const dark = readFileSync("assets/wallpaper-dark.jpg").toString("base64");

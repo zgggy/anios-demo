@@ -3,7 +3,16 @@
  * 手势快速路径例外：拖动/缩放中直写 DOM，结束 commit 成状态（百分比几何）。
  */
 import { $, $$, on, durMs } from "./dom";
-import { Store, State, patchWin, focusedWin, defaultMetrics, type Geom } from "./state";
+import {
+  Store,
+  State,
+  patchWin,
+  focusedWin,
+  defaultMetrics,
+  defaultDerivTerms,
+  ANIMS,
+  type Geom,
+} from "./state";
 import { patchWinEl, windowShellHTML, align } from "./render";
 import { captureShell, playShell, minimizeTo, openFrom, closeIn } from "./anim";
 import { APPS, winIdOf, type AppDef } from "./apps";
@@ -36,18 +45,20 @@ export function initialState(apps: AppDef[]): State {
       z: a.z,
     };
   }
+  const animDef = (key: string): number => ANIMS.find((a) => a.key === key)!.def;
   return {
     wins,
     settings: {
       theme: "light",
       accent: "#3b82f6",
-      animGlobal: 360,
-      animWindow: 360,
-      animPane: 200,
-      animMenu: 200,
+      animGlobal: animDef("animGlobal"),
+      animWindow: animDef("animWindow"),
+      animPane: animDef("animPane"),
+      animMenu: animDef("animMenu"),
       scrollMode: "percent",
       net: "wifi",
       metrics: defaultMetrics(),
+      derivTerms: defaultDerivTerms(),
     },
   };
 }

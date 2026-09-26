@@ -1,7 +1,69 @@
-/** 设置应用：内容 + 内容行为（主题/强调色/动画/滚动指示/网络类型/几何尺寸） */
+/**
+ * 设置应用：内容 + 内容行为。
+ * 所有参数滑杆由 state.ts 的参数表生成（METRICS / ANIMS / DERIV_TERMS），
+ * 每个滑杆带默认值旗标与「设为默认」按钮（写回 src/state.ts 的 def）。
+ */
 import { $, $$, on } from "../dom";
-import { METRICS, type MetricKey, type Store } from "../state";
+import {
+  METRICS,
+  ANIMS,
+  DERIVS,
+  DERIV_TERMS,
+  findParam,
+  defaultMetrics,
+  defaultDerivTerms,
+  type MetricKey,
+  type AnimKey,
+  type Store,
+} from "../state";
+import { icon } from "../render";
 import type { AppDef } from "./index";
+
+type Kind = "metric" | "anim" | "term";
+type RowDef = { key: string; label: string; min: number; max: number; step: number; def: number };
+
+/** 参数滑杆行：默认值旗标（--p = 默认位置）+ 数值回显 + 设为默认按钮 */
+function paramRow(d: RowDef, kind: Kind, unit: string, termLabel?: string): string {
+  const p = (d.def - d.min) / (d.max - d.min);
+  return `<div class="slider-row">
+    ${termLabel ? `<span class="term-l">${termLabel}</span>` : ""}
+    <div class="slider-field">
+      <input class="slider" type="range" data-${kind}="${d.key}" min="${d.min}" max="${d.max}" step="${d.step}" value="${d.def}" />
+      <i class="def-flag" style="--p: ${p.toFixed(3)}" title="默认 ${d.def}${unit}"></i>
+    </div>
+    <span class="slider-val" data-${kind}-val="${d.key}">${d.def}${unit}</span>
+    <button type="button" class="def-save" data-save="${d.key}" title="设为默认（写入 src/state.ts）">${icon("save")}</button>
+  </div>`;
+}
+
+const metricsPane = `
+<section class="set-pane" data-pane="metrics" hidden>
+  <header class="set-head"><h1>尺寸</h1><p>间距 · 控件 · 字号 · 派生</p></header>
+  ${(["间距", "控件", "字号"] as const)
+    .map(
+      (g) => `<div class="set-group">
+        <div class="set-group-title">${g}</div>
+        ${METRICS.filter((m) => m.group === g).map((m) => paramRow(m, "metric", "px")).join("")}
+      </div>`,
+    )
+    .join("")}
+  <div class="set-group">
+    <div class="set-group-title">派生</div>
+    ${DERIVS.map((d) => {
+      const t = defaultDerivTerms();
+      return `<div class="set-row col">
+        <div class="deriv-head">
+          <div class="row-t">${d.label}</div>
+          <div class="deriv-f" data-deriv-f="${d.key}">${d.formula(defaultMetrics(), t)}</div>
+          <div class="deriv-v" data-deriv-val="${d.key}">${d.compute(defaultMetrics(), t)}px</div>
+        </div>
+        ${d.terms
+          .map((tk) => paramRow(DERIV_TERMS.find((x) => x.key === tk)!, "term", "", DERIV_TERMS.find((x) => x.key === tk)!.label))
+          .join("")}
+      </div>`;
+    }).join("")}
+  </div>
+</section>`;
 
 const content = `
 <section class="set-pane" data-pane="home">
@@ -28,10 +90,7 @@ const content = `
     <div class="set-group-title">动画</div>
     <div class="set-row col">
       <div class="row-t">全局 / 窗口 / 切换 / 菜单</div>
-      <div class="slider-row"><input class="slider" id="animGlobal" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animGlobalVal">360ms</span></div>
-      <div class="slider-row"><input class="slider" id="animWindow" type="range" min="100" max="2000" step="50" value="360" /><span class="slider-val" id="animWindowVal">360ms</span></div>
-      <div class="slider-row"><input class="slider" id="animPane" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animPaneVal">200ms</span></div>
-      <div class="slider-row"><input class="slider" id="animMenu" type="range" min="80" max="800" step="20" value="200" /><span class="slider-val" id="animMenuVal">200ms</span></div>
+      ${ANIMS.map((a) => paramRow(a, "anim", "ms")).join("")}
     </div>
     <div class="set-row">
       <div class="row-t">滚动指示</div>
@@ -65,7 +124,10 @@ const content = `
   <header class="set-head"><h1>声音</h1></header>
   <div class="set-group">
     <div class="set-row col"><div class="row-t">输出音量</div>
-      <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="62" /><span class="slider-val">62%</span></div>
+      <div class="slider-row">
+        <div class="slider-field"><input class="slider" type="range" min="0" max="100" value="62" /></div>
+        <span class="slider-val">62%</span>
+      </div>
     </div>
   </div>
 </section>
@@ -73,34 +135,41 @@ const content = `
   <header class="set-head"><h1>显示</h1></header>
   <div class="set-group">
     <div class="set-row col"><div class="row-t">亮度</div>
-      <div class="slider-row"><input class="slider" type="range" min="0" max="100" value="78" /><span class="slider-val">78%</span></div>
+      <div class="slider-row">
+        <div class="slider-field"><input class="slider" type="range" min="0" max="100" value="78" /></div>
+        <span class="slider-val">78%</span>
+      </div>
     </div>
   </div>
 </section>`;
 
-/** 尺寸面板：滑杆表由 METRICS 生成——参数定义只存在于 state.ts 一处 */
-const metricsPane = `
-<section class="set-pane" data-pane="metrics" hidden>
-  <header class="set-head"><h1>尺寸</h1><p>间距 · 控件 · 字号</p></header>
-  ${(["间距", "控件", "字号"] as const)
-    .map(
-      (g) => `<div class="set-group">
-        <div class="set-group-title">${g}</div>
-        ${METRICS.filter((m) => m.group === g)
-          .map(
-            (m) => `<div class="set-row col">
-              <div class="row-t">${m.label}</div>
-              <div class="slider-row">
-                <input class="slider" type="range" data-metric="${m.key}" min="${m.min}" max="${m.max}" step="${m.step}" value="${m.def}" />
-                <span class="slider-val" data-metric-val="${m.key}">${m.def}px</span>
-              </div>
-            </div>`,
-          )
-          .join("")}
-      </div>`,
-    )
-    .join("")}
-</section>`;
+/** 设为默认：把当前值写回 src/state.ts 对应参数的 def（dev 服务端点） */
+async function saveDefault(key: string, value: number, btn: HTMLElement): Promise<void> {
+  try {
+    const res = await fetch("/api/save-def", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ key, value }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    const d = findParam(key);
+    const input = $<HTMLInputElement>(
+      `[data-metric="${key}"],[data-anim="${key}"],[data-term="${key}"]`,
+    );
+    const flag = input?.closest(".slider-field")?.querySelector<HTMLElement>(".def-flag");
+    if (d && flag) {
+      const p = (value - d.min) / (d.max - d.min);
+      flag.style.setProperty("--p", p.toFixed(3));
+      flag.title = `默认 ${value}${d.unit}`;
+    }
+    btn.classList.remove("failed");
+    btn.classList.add("saved");
+  } catch {
+    btn.classList.remove("saved");
+    btn.classList.add("failed");
+  }
+  window.setTimeout(() => btn.classList.remove("saved", "failed"), 1200);
+}
 
 export const settingsApp: AppDef = {
   id: "settings",
@@ -137,12 +206,11 @@ export const settingsApp: AppDef = {
         if (c) store.update((s) => (s.settings.accent = c));
       });
     });
-    // 动画时长（全局 = 同时设置三个）
-    const bindDur = (id: string, key: "animGlobal" | "animWindow" | "animPane" | "animMenu") => {
-      const el = $<HTMLInputElement>(`#${id}`, root);
-      if (!el) return;
+    // 动画时长（全局 = 同时设置四个）
+    $$("[data-anim]", root).forEach((el) => {
       on(el, "input", () => {
-        const v = Number(el.value);
+        const key = el.getAttribute("data-anim") as AnimKey;
+        const v = Number((el as HTMLInputElement).value);
         store.update((s) => {
           s.settings[key] = v;
           if (key === "animGlobal") {
@@ -152,11 +220,7 @@ export const settingsApp: AppDef = {
           }
         });
       });
-    };
-    bindDur("animGlobal", "animGlobal");
-    bindDur("animWindow", "animWindow");
-    bindDur("animPane", "animPane");
-    bindDur("animMenu", "animMenu");
+    });
     // 滚动指示
     $$("[data-scroll-mode]", root).forEach((b) => {
       on(b, "click", () => {
@@ -171,7 +235,7 @@ export const settingsApp: AppDef = {
         store.update((s) => (s.settings.net = m));
       });
     });
-    // 几何度量：间距/控件/字号 → CSS 令牌
+    // 几何度量 → CSS 令牌
     $$("[data-metric]", root).forEach((el) => {
       on(el, "input", () => {
         const key = el.getAttribute("data-metric") as MetricKey;
@@ -179,6 +243,27 @@ export const settingsApp: AppDef = {
         store.update((s) => {
           s.settings.metrics = { ...s.settings.metrics, [key]: v };
         });
+      });
+    });
+    // 派生公式的可调项（倍率/偏移/补偿）
+    $$("[data-term]", root).forEach((el) => {
+      on(el, "input", () => {
+        const key = el.getAttribute("data-term")!;
+        const v = Number((el as HTMLInputElement).value);
+        store.update((s) => {
+          s.settings.derivTerms = { ...s.settings.derivTerms, [key]: v };
+        });
+      });
+    });
+    // 设为默认：写回源文件
+    $$("[data-save]", root).forEach((btn) => {
+      on(btn, "click", () => {
+        const key = btn.getAttribute("data-save")!;
+        const input = $<HTMLInputElement>(
+          `[data-metric="${key}"],[data-anim="${key}"],[data-term="${key}"]`,
+          root,
+        );
+        if (input) void saveDefault(key, Number(input.value), btn);
       });
     });
   },

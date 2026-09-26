@@ -28,6 +28,8 @@ export type Settings = {
   scrollMode: "percent" | "position";
   net: "wifi" | "cell";
   metrics: Metrics;
+  /** 派生公式的可调项（倍率/偏移/补偿） */
+  derivTerms: Record<string, number>;
 };
 
 /* ── 几何度量：间距/尺寸/字号的运行时参数（设置可调） ──
@@ -100,6 +102,117 @@ export function defaultMetrics(): Metrics {
 /** 参数键 → CSS 变量名：winPad → --win-pad */
 export function metricVar(key: MetricKey): string {
   return "--" + key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
+}
+
+/* ── 动画时长参数（设置 → 主页） ── */
+
+export type AnimKey = "animGlobal" | "animWindow" | "animPane" | "animMenu";
+
+export type ParamDef = {
+  key: string;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  def: number;
+  unit: "" | "px" | "ms";
+};
+
+export const ANIMS: ParamDef[] = [
+  { key: "animGlobal", label: "全局", min: 100, max: 2000, step: 50, def: 360, unit: "ms" },
+  { key: "animWindow", label: "窗口", min: 100, max: 2000, step: 50, def: 360, unit: "ms" },
+  { key: "animPane", label: "切换", min: 80, max: 800, step: 20, def: 200, unit: "ms" },
+  { key: "animMenu", label: "菜单", min: 80, max: 800, step: 20, def: 200, unit: "ms" },
+];
+
+/* ── 派生参数：值 = 公式(基础度量, 可调项)；可调项（倍率/偏移/补偿）即公式中的 +- 项，做成滑杆 ── */
+
+export type DerivDef = {
+  key: string;
+  label: string;
+  cssVar: string;
+  /** 公式用到的可调项（滑杆） */
+  terms: string[];
+  compute: (m: Metrics, t: Record<string, number>) => number;
+  /** 展示公式（代入当前可调项取值） */
+  formula: (m: Metrics, t: Record<string, number>) => string;
+};
+
+export const DERIV_TERMS: ParamDef[] = [
+  { key: "navWMul", label: "倍率", min: 1, max: 2.5, step: 0.05, def: 1.5, unit: "" },
+  { key: "navWAdd", label: "偏移", min: -10, max: 10, step: 1, def: 0, unit: "" },
+  { key: "insetMul", label: "倍率", min: 0, max: 2, step: 0.05, def: 1, unit: "" },
+  { key: "insetAdd", label: "偏移", min: -4, max: 12, step: 1, def: 0, unit: "" },
+  { key: "dragMul", label: "倍率", min: 2, max: 4.5, step: 0.1, def: 3, unit: "" },
+  { key: "dragAdd", label: "偏移", min: -6, max: 12, step: 1, def: 0, unit: "" },
+  { key: "nearGapMul", label: "间距倍率", min: 0, max: 4, step: 0.1, def: 2, unit: "" },
+  { key: "nearAdd", label: "偏移", min: -10, max: 20, step: 1, def: 0, unit: "" },
+  { key: "marginComp", label: "补偿", min: 0, max: 4, step: 0.5, def: 1, unit: "" },
+];
+
+const labelOf = (key: string): string =>
+  METRICS.find((m) => m.key === key)?.label ?? key;
+
+export const DERIVS: DerivDef[] = [
+  {
+    key: "navW",
+    label: "导航宽",
+    cssVar: "--nav-w",
+    terms: ["navWMul", "navWAdd"],
+    compute: (m, t) => m.topbarH * t.navWMul + t.navWAdd,
+    formula: (m, t) => `${labelOf("topbarH")} × ${t.navWMul} + ${t.navWAdd}`,
+  },
+  {
+    key: "inset",
+    label: "系统栏贴边",
+    cssVar: "--inset",
+    terms: ["insetMul", "insetAdd"],
+    compute: (m, t) => m.gap * t.insetMul + t.insetAdd,
+    formula: (m, t) => `${labelOf("gap")} × ${t.insetMul} + ${t.insetAdd}`,
+  },
+  {
+    key: "dragOpen",
+    label: "拖动展开宽",
+    cssVar: "--drag-open",
+    terms: ["dragMul", "dragAdd"],
+    compute: (m, t) => m.btn * t.dragMul + t.dragAdd,
+    formula: (m, t) => `${labelOf("btn")} × ${t.dragMul} + ${t.dragAdd}`,
+  },
+  {
+    key: "recoverNear",
+    label: "recover 阈值",
+    cssVar: "--recover-near",
+    terms: ["nearGapMul", "nearAdd"],
+    compute: (m, t) => m.gutter + m.gap * t.nearGapMul + t.nearAdd,
+    formula: (m, t) => `${labelOf("gutter")} + ${labelOf("gap")} × ${t.nearGapMul} + ${t.nearAdd}`,
+  },
+  {
+    key: "margin",
+    label: "同心圆补差",
+    cssVar: "--margin-comp",
+    terms: ["marginComp"],
+    compute: (_m, t) => t.marginComp,
+    formula: (_m, t) => `(短边 − 钮径) / 2 − ${t.marginComp}`,
+  },
+];
+
+export function defaultDerivTerms(): Record<string, number> {
+  const t: Record<string, number> = {};
+  for (const d of DERIV_TERMS) t[d.key] = d.def;
+  return t;
+}
+
+/** 全部参数定义查找（设为默认按钮 / 回显用）：metric | anim | deriv-term */
+export function findParam(
+  key: string,
+): { min: number; max: number; step: number; def: number; unit: "" | "px" | "ms" } | null {
+  const m = METRICS.find((x) => x.key === key);
+  if (m) return { min: m.min, max: m.max, step: m.step, def: m.def, unit: "px" };
+  const a = ANIMS.find((x) => x.key === key);
+  if (a) return { min: a.min, max: a.max, step: a.step, def: a.def, unit: a.unit };
+  const d = DERIV_TERMS.find((x) => x.key === key);
+  if (d) return { min: d.min, max: d.max, step: d.step, def: d.def, unit: d.unit };
+  return null;
 }
 
 export type State = {

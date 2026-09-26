@@ -3,7 +3,16 @@
  * App 栏状态订阅 store（开/焦点/最大化），不用 MutationObserver。
  */
 import { $, $$, on } from "./dom";
-import { Store, anyMaximized, METRICS, metricVar } from "./state";
+import {
+  Store,
+  anyMaximized,
+  METRICS,
+  ANIMS,
+  DERIVS,
+  DERIV_TERMS,
+  defaultDerivTerms,
+  metricVar,
+} from "./state";
 import { statusBarHTML, appBarHTML, align, type AppBarItem } from "./render";
 import { APPS, winIdOf } from "./apps";
 import type { WinApi } from "./windows";
@@ -134,25 +143,29 @@ export function bindSettingsPatch(store: Store): void {
     syncGroup("button[data-theme]", "data-theme", st.theme);
     syncGroup("[data-net-mode]", "data-net-mode", st.net);
     syncGroup("[data-scroll-mode]", "data-scroll-mode", st.scrollMode);
-    // 滑杆与标签回显
-    const syncSlider = (id: string, v: number) => {
-      const el = $<HTMLInputElement>(`#${id}`);
-      if (el && Number(el.value) !== v) el.value = String(v);
-      const l = $(`#${id}Val`);
-      if (l) l.textContent = `${v}ms`;
+    // 滑杆回显（时长 / 度量 / 派生项）
+    const echo = (kind: "metric" | "anim" | "term", key: string, v: number, unit: string) => {
+      const input = $<HTMLInputElement>(`[data-${kind}="${key}"]`);
+      if (input && Number(input.value) !== v) input.value = String(v);
+      const lab = $(`[data-${kind}-val="${key}"]`);
+      if (lab) lab.textContent = `${v}${unit}`;
     };
-    syncSlider("animGlobal", st.animGlobal);
-    syncSlider("animWindow", st.animWindow);
-    syncSlider("animPane", st.animPane);
-    syncSlider("animMenu", st.animMenu);
-    // 几何度量 → CSS 令牌 + 滑杆回显
+    for (const a of ANIMS) echo("anim", a.key, st[a.key as "animWindow"], a.unit);
     for (const m of METRICS) {
       const v = st.metrics[m.key];
       root.style.setProperty(metricVar(m.key), `${v}px`);
-      const input = $<HTMLInputElement>(`[data-metric="${m.key}"]`);
-      if (input && Number(input.value) !== v) input.value = String(v);
-      const lab = $(`[data-metric-val="${m.key}"]`);
-      if (lab) lab.textContent = `${v}px`;
+      echo("metric", m.key, v, "px");
+    }
+    // 派生参数：公式 → CSS 令牌；公式文本与值实时代入可调项
+    const terms = { ...defaultDerivTerms(), ...st.derivTerms };
+    for (const t of DERIV_TERMS) echo("term", t.key, terms[t.key], "");
+    for (const d of DERIVS) {
+      const v = d.compute(st.metrics, terms);
+      root.style.setProperty(d.cssVar, `${v}px`);
+      const f = $(`[data-deriv-f="${d.key}"]`);
+      if (f) f.textContent = d.formula(st.metrics, terms);
+      const vv = $(`[data-deriv-val="${d.key}"]`);
+      if (vv) vv.textContent = `${v}px`;
     }
     // 度量变化会移动内容盒 → 同任务刷新派生对齐（补间中的窗口除外）
     for (const w of $$(".window")) {

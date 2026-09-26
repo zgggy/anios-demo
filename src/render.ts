@@ -31,6 +31,7 @@ export const ICON = {
   bolt: '<path d="M13 3L6 14h5l-1 7 8-12h-5l0-6z"/>',
   apps: '<path d="M12 3l9 9-9 9-9-9z"/>',
   backspace: '<path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/>',
+  save: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v4h6V5"/><path d="M9 19v-5h6v5"/>',
 } as const;
 
 export type IconName = keyof typeof ICON;
