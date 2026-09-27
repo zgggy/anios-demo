@@ -737,6 +737,7 @@ svg {
 .notice-stack::-webkit-scrollbar { display: none; }
 .notice-banner {
   position: relative;
+  overflow: hidden; /* 高度塌缩阶段裁剪内容：否则文字悬在原地闪现后消失 */
   width: min(300px, 40vw);
   padding: 10px 12px 12px;
   border-radius: 14px;

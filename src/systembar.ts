@@ -107,6 +107,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
   const fresh = new Set<number>();  // 新通知（带进度条展示）
   const hidden = new Set<number>(); // 已收起/已处理（不出现在横幅栈）
   const els = new Map<number, HTMLElement>();
+  const exiting = new WeakSet<HTMLElement>(); // 退场中：创建兜底不得归位
   let zSeq = 0;
 
   const visibleIds = () =>
@@ -134,6 +135,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
     const el = els.get(id);
     if (!el) return;
     els.delete(id);
+    exiting.add(el);
     const h = el.getBoundingClientRect().height;
     gsap.to(el, {
       y: -(h + 12),
@@ -158,6 +160,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
     const el = els.get(id);
     if (!el) return;
     els.delete(id);
+    exiting.add(el);
     const r = el.getBoundingClientRect();
     // fixed 逃逸：横幅处于可滚动栈内，左滑若被容器裁剪会瞬间消失
     gsap.set(el, { position: "fixed", top: r.top, left: r.left, width: r.width, zIndex: 300 });
@@ -214,13 +217,23 @@ export function initStatusBar(store: Store, api: WinApi): void {
       el.style.zIndex = String(++zSeq + 10); // 后出现者图层更高
       els.set(n.id, el);
       stack.prepend(el);
-      gsap.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
       el.addEventListener("click", (e) => {
         if ((e.target as Element).closest(".nb-clear")) return;
         if (n.app) api.open(winIdOf(n.app));
         collapseUp(n.id);
       });
       on(el.querySelector(".nb-clear"), "click", () => clearNotice(n.id));
+      // 兜底：渲染冻结时滑入补间零进展，横幅会卡在 -140% 起点（与邻居重叠）——
+      // 仅在零进展时直接就位；正常动画（有进展）不打扰
+      const slideIn = gsap.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
+      if (document.hidden) slideIn.progress(1); // 隐藏时直接就位，避免悬在起点与邻居重叠
+      window.setTimeout(() => {
+        if (exiting.has(el)) return; // 已在退场：交给退场动画/兜底
+        if (slideIn.progress() < 1 && !exiting.has(el)) {
+          slideIn.kill();
+          gsap.set(el, { yPercent: 0, clearProps: "transform" });
+        }
+      }, 800);
       if (withProgress) startProgress(n.id, el);
     }
     for (const el of [...stack.children] as HTMLElement[]) {

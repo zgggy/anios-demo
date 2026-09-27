@@ -777,6 +777,7 @@ svg {
 .notice-stack::-webkit-scrollbar { display: none; }
 .notice-banner {
   position: relative;
+  overflow: hidden; /* 高度塌缩阶段裁剪内容：否则文字悬在原地闪现后消失 */
   width: min(300px, 40vw);
   padding: 10px 12px 12px;
   border-radius: 14px;
@@ -8141,6 +8142,7 @@ svg {
     const fresh = /* @__PURE__ */ new Set();
     const hidden = /* @__PURE__ */ new Set();
     const els = /* @__PURE__ */ new Map();
+    const exiting = /* @__PURE__ */ new WeakSet();
     let zSeq = 0;
     const visibleIds = () => store.get().notices.filter((n) => centerOpen ? !hidden.has(n.id) : fresh.has(n.id) && !hidden.has(n.id));
     const makeBanner = (n, withProgress) => {
@@ -8161,6 +8163,7 @@ svg {
       const el = els.get(id);
       if (!el) return;
       els.delete(id);
+      exiting.add(el);
       const h = el.getBoundingClientRect().height;
       gsapWithCSS.to(el, {
         y: -(h + 12),
@@ -8185,6 +8188,7 @@ svg {
       const el = els.get(id);
       if (!el) return;
       els.delete(id);
+      exiting.add(el);
       const r = el.getBoundingClientRect();
       gsapWithCSS.set(el, { position: "fixed", top: r.top, left: r.left, width: r.width, zIndex: 300 });
       gsapWithCSS.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
@@ -8234,13 +8238,21 @@ svg {
         el.style.zIndex = String(++zSeq + 10);
         els.set(n.id, el);
         stack.prepend(el);
-        gsapWithCSS.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
         el.addEventListener("click", (e) => {
           if (e.target.closest(".nb-clear")) return;
           if (n.app) api.open(winIdOf(n.app));
           collapseUp(n.id);
         });
         on(el.querySelector(".nb-clear"), "click", () => clearNotice(n.id));
+        const slideIn = gsapWithCSS.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
+        if (document.hidden) slideIn.progress(1);
+        window.setTimeout(() => {
+          if (exiting.has(el)) return;
+          if (slideIn.progress() < 1 && !exiting.has(el)) {
+            slideIn.kill();
+            gsapWithCSS.set(el, { yPercent: 0, clearProps: "transform" });
+          }
+        }, 800);
         if (withProgress) startProgress(n.id, el);
       }
       for (const el of [...stack.children]) {
