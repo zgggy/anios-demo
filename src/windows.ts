@@ -192,11 +192,21 @@ export function initWindows(store: Store): WinApi {
     win.hidden = false;
     if (pol.stealFocus) focus(id);
     syncScrim();
-    openFrom(win, appIcon(win), () => {
-      win.dataset.anim = "0";
+    const commitOpen = () => {
       store.update((s) => patchWin(s, id, { status: "open" }));
       syncScrim();
+    };
+    openFrom(win, appIcon(win), () => {
+      win.dataset.anim = "0";
+      commitOpen();
     });
+    // 看门狗：渲染冻结导致补间挂起时，定时器强制收尾（幂等）
+    window.setTimeout(() => {
+      if (win.dataset.anim === "1") {
+        win.dataset.anim = "0";
+        commitOpen();
+      }
+    }, durMs("--anim-window") + 400);
     // 对话框：焦点圈入框内；临时窗：到时自动退场
     if (pol.scrim) {
       window.setTimeout(() => $<HTMLElement>(".content button, .content input", win)?.focus(), 0);
@@ -212,30 +222,50 @@ export function initWindows(store: Store): WinApi {
     const win = el(id);
     if (!win || win.dataset.anim === "1") return;
     win.dataset.anim = "1";
-    minimizeTo(win, appIcon(win), () => {
-      win.dataset.anim = "0";
+    const commitMin = () => {
       store.update((s) => {
         patchWin(s, id, { status: "minimized", focused: false });
         for (const w of Object.values(s.wins)) {
           if (w.id !== id) patchWin(s, w.id, { focused: false });
         }
       });
+    };
+    minimizeTo(win, appIcon(win), () => {
+      win.dataset.anim = "0";
+      commitMin();
     });
+    // 看门狗：渲染冻结导致补间挂起时，定时器强制收尾（幂等）
+    window.setTimeout(() => {
+      if (win.dataset.anim !== "1") return;
+      win.hidden = true;
+      win.dataset.anim = "0";
+      commitMin();
+    }, durMs("--anim-window") + 400);
   }
 
   function close(id: string): void {
     const win = el(id);
     if (!win || win.dataset.anim === "1") return;
     win.dataset.anim = "1";
-    closeIn(win, () => {
-      win.dataset.anim = "0";
+    const commitClosed = () => {
       store.update((s) => {
         patchWin(s, id, { status: "closed", focused: false });
         for (const w of Object.values(s.wins)) {
           if (w.id !== id) patchWin(s, w.id, { focused: false });
         }
       });
+    };
+    closeIn(win, () => {
+      win.dataset.anim = "0";
+      commitClosed();
     });
+    // 看门狗：渲染冻结导致补间挂起时，定时器强制收尾（幂等）
+    window.setTimeout(() => {
+      if (win.dataset.anim !== "1") return;
+      win.hidden = true;
+      win.dataset.anim = "0";
+      commitClosed();
+    }, durMs("--anim-window") + 400);
   }
 
   /** 最大化/还原：capture → dispatch（patch 落几何/模式/对齐）→ 补间（动画只读） */
@@ -250,6 +280,13 @@ export function initWindows(store: Store): WinApi {
       patchWin(s, id, { mode: w.mode === "maximized" ? "floating" : "maximized" });
     });
     win.dataset.flipping = "1"; // 此后补丁跳过本窗，防止动画中被其它更新抖动
+    // 看门狗：渲染冻结导致补间挂起时，定时器强制清守卫（幂等）
+    window.setTimeout(() => {
+      if (win.dataset.flipping === "1") {
+        win.dataset.flipping = "0";
+        align(win);
+      }
+    }, durMs("--anim-window") + 400);
     playShell(win, first);
   }
 

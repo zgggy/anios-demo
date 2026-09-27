@@ -1076,11 +1076,15 @@ svg {
 .creed-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 4px; }
 
 /* 浏览器应用：工具栏 + 地址栏 + 页面视图 */
-.window[data-app="browser"] .content-scroll {
+.window[data-app="browser"]:not([data-mode="maximized"]) .content-scroll {
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+/* 放大时遵循规范：顶栏与导航栏折入内容区，内容留出空间 */
+.window[data-app="browser"][data-mode="maximized"] .content-scroll {
+  padding: calc(var(--topbar-h) + var(--win-pad) + 12px) var(--gutter) 18px calc(var(--inset) * 2 + var(--nav-w));
 }
 .browser { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--page); }
 .br-toolbar {

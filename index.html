@@ -1116,11 +1116,15 @@ svg {
 .creed-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 4px; }
 
 /* 浏览器应用：工具栏 + 地址栏 + 页面视图 */
-.window[data-app="browser"] .content-scroll {
+.window[data-app="browser"]:not([data-mode="maximized"]) .content-scroll {
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+/* 放大时遵循规范：顶栏与导航栏折入内容区，内容留出空间 */
+.window[data-app="browser"][data-mode="maximized"] .content-scroll {
+  padding: calc(var(--topbar-h) + var(--win-pad) + 12px) var(--gutter) 18px calc(var(--inset) * 2 + var(--nav-w));
 }
 .browser { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--page); }
 .br-toolbar {
@@ -7860,11 +7864,20 @@ svg {
       win.hidden = false;
       if (pol.stealFocus) focus(id);
       syncScrim();
-      openFrom(win, appIcon(win), () => {
-        win.dataset.anim = "0";
+      const commitOpen = () => {
         store.update((s) => patchWin(s, id, { status: "open" }));
         syncScrim();
+      };
+      openFrom(win, appIcon(win), () => {
+        win.dataset.anim = "0";
+        commitOpen();
       });
+      window.setTimeout(() => {
+        if (win.dataset.anim === "1") {
+          win.dataset.anim = "0";
+          commitOpen();
+        }
+      }, durMs("--anim-window") + 400);
       if (pol.scrim) {
         window.setTimeout(() => $(".content button, .content input", win)?.focus(), 0);
       }
@@ -7878,29 +7891,47 @@ svg {
       const win = el(id);
       if (!win || win.dataset.anim === "1") return;
       win.dataset.anim = "1";
-      minimizeTo(win, appIcon(win), () => {
-        win.dataset.anim = "0";
+      const commitMin = () => {
         store.update((s) => {
           patchWin(s, id, { status: "minimized", focused: false });
           for (const w of Object.values(s.wins)) {
             if (w.id !== id) patchWin(s, w.id, { focused: false });
           }
         });
+      };
+      minimizeTo(win, appIcon(win), () => {
+        win.dataset.anim = "0";
+        commitMin();
       });
+      window.setTimeout(() => {
+        if (win.dataset.anim !== "1") return;
+        win.hidden = true;
+        win.dataset.anim = "0";
+        commitMin();
+      }, durMs("--anim-window") + 400);
     }
     function close(id) {
       const win = el(id);
       if (!win || win.dataset.anim === "1") return;
       win.dataset.anim = "1";
-      closeIn(win, () => {
-        win.dataset.anim = "0";
+      const commitClosed = () => {
         store.update((s) => {
           patchWin(s, id, { status: "closed", focused: false });
           for (const w of Object.values(s.wins)) {
             if (w.id !== id) patchWin(s, w.id, { focused: false });
           }
         });
+      };
+      closeIn(win, () => {
+        win.dataset.anim = "0";
+        commitClosed();
       });
+      window.setTimeout(() => {
+        if (win.dataset.anim !== "1") return;
+        win.hidden = true;
+        win.dataset.anim = "0";
+        commitClosed();
+      }, durMs("--anim-window") + 400);
     }
     function toggleMaximize(id) {
       const win = el(id);
@@ -7912,6 +7943,12 @@ svg {
         patchWin(s, id, { mode: w.mode === "maximized" ? "floating" : "maximized" });
       });
       win.dataset.flipping = "1";
+      window.setTimeout(() => {
+        if (win.dataset.flipping === "1") {
+          win.dataset.flipping = "0";
+          align(win);
+        }
+      }, durMs("--anim-window") + 400);
       playShell(win, first);
     }
     for (const a of APPS) {
