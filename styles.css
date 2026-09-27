@@ -733,12 +733,13 @@ svg {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--gap); /* 顶部间距 = 横幅间距（padding-top 承担） */
   flex: 0 1 auto;
   min-height: 0;
+  max-height: 100%; /* 钳到 wrap（wrap 高 = 视口高，JS 设定） */
   overflow-y: auto; /* 超出视口底部即在栈内滚动 */
   overflow-x: hidden;
-  padding: 2px;
+  padding: var(--gap) 2px;
   scrollbar-width: none;
   position: relative;
 }
@@ -782,7 +783,7 @@ svg {
   background: var(--accent);
   border-radius: 2px;
 }
-.nb-title { font-size: var(--font-row); font-weight: 600; padding-right: 50px; }
+.nb-title { font-size: var(--font-row); color: var(--ink); padding-right: 50px; }
 .nb-body { font-size: var(--font-desc); color: var(--ink-3); margin-top: 2px; }
 .nb-clear {
   position: absolute;
@@ -805,8 +806,7 @@ svg {
   display: flex;
   justify-content: center;
   gap: 8px;
-  width: min(300px, 40vw);
-  margin-top: 8px;
+  width: 100%;
   flex-shrink: 0;
   pointer-events: auto;
 }
@@ -1153,6 +1153,54 @@ svg {
 .br-err { text-align: center; padding: 40px 16px; }
 .br-err-t { font-size: var(--font-row); font-weight: 600; }
 .br-err-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 6px; margin-bottom: 14px; }
+
+/* 标签页：切换 / 新增 / 关闭 */
+.br-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px 8px 0;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.br-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px;
+  min-width: 0;
+  padding: 5px 8px;
+  border-radius: 8px 8px 0 0;
+  background: var(--soft);
+  font-size: var(--font-desc);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.br-tab.on { background: var(--page); color: var(--ink); }
+.br-tab-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.br-tab-x {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.br-tab-x:hover { background: var(--hover); color: var(--ink); }
+.br-tab-x svg { width: 8px; height: 8px; }
+.br-add {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+.br-add:hover { background: var(--hover); color: var(--ink); }
+.br-add svg { width: 10px; height: 10px; }
 
 /* ══════════ 窗口类型学 ══════════ */
 .modal-scrim {

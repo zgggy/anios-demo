@@ -1,12 +1,19 @@
-/** 浏览器应用：地址栏 + 起始页/内页导航（内置站点，点击收藏即前往） */
+/** 浏览器应用：浏览（标签页 + 地址栏）/ 书签 / 历史——内容区不重复顶栏功能 */
 import { $$, on } from "../dom";
 import { icon } from "../render";
 import type { AppDef } from "./index";
 
+const SITES: Record<string, string> = {
+  "anios://start": "起始页",
+  "anios://docs": "设计规范",
+  "anios://news": "每日设计",
+  "anios://about": "关于 anios",
+};
+
 const content = `
-<div class="browser">
+<section class="set-pane" data-pane="browse">
+  <div class="br-tabs" data-br-tabs></div>
   <div class="br-toolbar">
-    <button type="button" class="br-nav" data-br-back aria-label="后退">${icon("back")}</button>
     <div class="br-address">
       <span class="br-lock">${icon("file")}</span>
       <input type="text" data-br-url value="anios://start" spellcheck="false" />
@@ -28,9 +35,6 @@ const content = `
         </button>
         <button type="button" class="br-fav" data-go="anios://about">
           <span class="a-ic">${icon("star")}</span><span class="br-fav-name">关于 anios</span>
-        </button>
-        <button type="button" class="br-fav" data-go="anios://clock">
-          <span class="a-ic">${icon("clock")}</span><span class="br-fav-name">时钟</span>
         </button>
       </div>
     </section>
@@ -66,60 +70,149 @@ const content = `
       </div>
     </section>
   </div>
-</div>`;
+</section>
+<section class="set-pane" data-pane="bookmarks" hidden>
+  <header class="set-head"><h1>书签</h1></header>
+  <div class="set-group" data-br-bookmarks></div>
+</section>
+<section class="set-pane" data-pane="history" hidden>
+  <header class="set-head"><h1>历史</h1></header>
+  <div class="set-group" data-br-history></div>
+</section>`;
 
 export const browserApp: AppDef = {
   id: "browser",
   title: "浏览器",
   icon: "net",
   geom: { left: 18, top: 12, width: 54, height: 64 },
-  minSize: { w: 420, h: 300 },
+  minSize: { w: 420, h: 320 },
   z: 20,
   open: false,
   pinned: false,
-  nav: [],
+  nav: [
+    { section: "browse", icon: "net", label: "浏览" },
+    { section: "bookmarks", icon: "star", label: "书签" },
+    { section: "history", icon: "clock", label: "历史" },
+  ],
   content,
   searchPlaceholder: "搜索或输入网址",
   bind(root) {
-    const addr = root.querySelector<HTMLInputElement>("[data-br-url]");
-    const view = root.querySelector<HTMLElement>("[data-br-view]");
-    const known = ["start", "docs", "news", "about"];
-    const hist: string[] = ["anios://start"];
-    let hi = 0;
+    type BrTab = { id: number; title: string; url: string };
+    let tabs: BrTab[] = [{ id: 1, title: "起始页", url: "anios://start" }];
+    let activeId = 1;
+    let seq = 2;
+    const history: Array<{ url: string; title: string }> = [];
 
+    const addr = root.querySelector<HTMLInputElement>("[data-br-url]");
+    const tabsEl = root.querySelector<HTMLElement>("[data-br-tabs]")!;
+    const bookmarksEl = root.querySelector<HTMLElement>("[data-br-bookmarks]")!;
+    const historyEl = root.querySelector<HTMLElement>("[data-br-history]")!;
+
+    const titleOf = (url: string): string => SITES[url] ?? url;
     const show = (url: string) => {
       const page = url.replace("anios://", "") || "start";
-      const knownPage = known.includes(page);
       $$("[data-br-page]", root).forEach((p) => {
-        (p as HTMLElement).hidden = (p as HTMLElement).dataset.brPage !== (knownPage ? page : "error");
+        (p as HTMLElement).hidden = (p as HTMLElement).dataset.brPage !== page;
       });
       const errUrl = root.querySelector("[data-br-err-url]");
-      if (errUrl && !knownPage) errUrl.textContent = url;
+      if (errUrl && page === "error") errUrl.textContent = url;
       if (addr) addr.value = url;
+      const view = root.querySelector<HTMLElement>("[data-br-view]");
       if (view) view.scrollTop = 0;
     };
     const navigate = (url: string) => {
-      hist.splice(hi + 1);
-      hist.push(url);
-      hi = hist.length - 1;
+      const t = tabs.find((x) => x.id === activeId);
+      if (t) {
+        t.url = url;
+        t.title = titleOf(url);
+      }
+      if (!history.some((h) => h.url === url)) history.unshift({ url, title: titleOf(url) });
       show(url);
+      renderTabs();
     };
 
-    // 收藏与地址栏
+    const renderTabs = () => {
+      tabsEl.innerHTML = tabs
+        .map(
+          (t) => `<div class="br-tab${t.id === activeId ? " on" : ""}" data-tab="${t.id}">
+            <span class="br-tab-t">${t.title}</span>
+            ${tabs.length > 1 ? `<button type="button" class="br-tab-x" data-tab-x="${t.id}" aria-label="关闭标签页">${icon("x")}</button>` : ""}
+          </div>`,
+        )
+        .join("") + `<button type="button" class="br-add" data-tab-add aria-label="新建标签页">${icon("plus")}</button>`;
+    };
+
+    // 标签：切换 / 关闭 / 新增
+    on(tabsEl, "click", (e) => {
+      const t = e.target as Element;
+      const x = t.closest("[data-tab-x]");
+      if (x) {
+        e.stopPropagation();
+        const id = Number(x.getAttribute("data-tab-x"));
+        if (tabs.length > 1) {
+          tabs = tabs.filter((x2) => x2.id !== id);
+          if (activeId === id) activeId = tabs[0].id;
+          show(tabs.find((x2) => x2.id === activeId)!.url);
+        }
+        renderTabs();
+        return;
+      }
+      const tab = t.closest("[data-tab]");
+      if (tab) {
+        activeId = Number(tab.getAttribute("data-tab"));
+        show(tabs.find((x) => x.id === activeId)!.url);
+        renderTabs();
+        return;
+      }
+      if (t.closest("[data-tab-add]")) {
+        tabs.push({ id: seq++, title: "起始页", url: "anios://start" });
+        activeId = tabs[tabs.length - 1].id;
+        show("anios://start");
+        renderTabs();
+      }
+    });
+
+    // 书签 / 历史列表
+    const renderLists = () => {
+      bookmarksEl.innerHTML = Object.entries(SITES)
+        .filter(([url]) => url !== "anios://start")
+        .map(
+          ([url, title]) =>
+            `<div class="set-row"><div><div class="row-t">${title}</div><div class="row-s">${url}</div></div></div>`,
+        )
+        .join("");
+      historyEl.innerHTML = history.length
+        ? history
+            .map(
+              (h) =>
+                `<div class="set-row"><div><div class="row-t">${h.title}</div><div class="row-s">${h.url}</div></div></div>`,
+            )
+            .join("")
+        : '<div class="set-empty">暂无历史</div>';
+    };
+    renderLists();
+
+    // 收藏点击 → 前往
     $$("[data-go]", root).forEach((el) => {
       on(el, "click", () => navigate(el.getAttribute("data-go")!));
     });
+    // 地址栏回车 → 导航（未知地址进错误页）
     on(addr, "keydown", (e) => {
-      if ((e as KeyboardEvent).key === "Enter") navigate((addr as HTMLInputElement).value.trim() || "anios://start");
-    });
-    // 工具栏
-    on(root.querySelector("[data-br-back]"), "click", () => {
-      if (hi > 0) {
-        hi -= 1;
-        show(hist[hi]);
+      if ((e as KeyboardEvent).key === "Enter") {
+        const url = (addr as HTMLInputElement).value.trim() || "anios://start";
+        navigate(SITES[url] ? url : url);
       }
     });
-    on(root.querySelector("[data-br-reload]"), "click", () => show(hist[hi]));
-
+    // 历史页打开时刷新列表
+    on(root.querySelector(".nav-btn[data-section='history']"), "click", () => {
+      historyEl.innerHTML = history.length
+        ? history
+            .map(
+              (h) =>
+                `<div class="set-row"><div><div class="row-t">${h.title}</div><div class="row-s">${h.url}</div></div></div>`,
+            )
+            .join("")
+        : '<div class="set-empty">暂无历史</div>';
+    });
   },
 };

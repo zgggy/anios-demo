@@ -773,12 +773,13 @@ svg {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--gap); /* 顶部间距 = 横幅间距（padding-top 承担） */
   flex: 0 1 auto;
   min-height: 0;
+  max-height: 100%; /* 钳到 wrap（wrap 高 = 视口高，JS 设定） */
   overflow-y: auto; /* 超出视口底部即在栈内滚动 */
   overflow-x: hidden;
-  padding: 2px;
+  padding: var(--gap) 2px;
   scrollbar-width: none;
   position: relative;
 }
@@ -822,7 +823,7 @@ svg {
   background: var(--accent);
   border-radius: 2px;
 }
-.nb-title { font-size: var(--font-row); font-weight: 600; padding-right: 50px; }
+.nb-title { font-size: var(--font-row); color: var(--ink); padding-right: 50px; }
 .nb-body { font-size: var(--font-desc); color: var(--ink-3); margin-top: 2px; }
 .nb-clear {
   position: absolute;
@@ -845,8 +846,7 @@ svg {
   display: flex;
   justify-content: center;
   gap: 8px;
-  width: min(300px, 40vw);
-  margin-top: 8px;
+  width: 100%;
   flex-shrink: 0;
   pointer-events: auto;
 }
@@ -1193,6 +1193,54 @@ svg {
 .br-err { text-align: center; padding: 40px 16px; }
 .br-err-t { font-size: var(--font-row); font-weight: 600; }
 .br-err-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 6px; margin-bottom: 14px; }
+
+/* 标签页：切换 / 新增 / 关闭 */
+.br-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 4px 8px 0;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.br-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px;
+  min-width: 0;
+  padding: 5px 8px;
+  border-radius: 8px 8px 0 0;
+  background: var(--soft);
+  font-size: var(--font-desc);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.br-tab.on { background: var(--page); color: var(--ink); }
+.br-tab-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.br-tab-x {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.br-tab-x:hover { background: var(--hover); color: var(--ink); }
+.br-tab-x svg { width: 8px; height: 8px; }
+.br-add {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+.br-add:hover { background: var(--hover); color: var(--ink); }
+.br-add svg { width: 10px; height: 10px; }
 
 /* ══════════ 窗口类型学 ══════════ */
 .modal-scrim {
@@ -2067,10 +2115,11 @@ svg {
       </div>
     </div>
     <div class="notice-stack-wrap" data-notice-wrap>
-      <div class="notice-stack content-scroll" data-notice-stack></div>
-      <div class="notice-actions" data-notice-actions hidden>
-        <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
-        <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
+      <div class="notice-stack content-scroll" data-notice-stack>
+        <div class="notice-actions" data-notice-actions hidden>
+          <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
+          <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
+        </div>
       </div>
       <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
     </div>
@@ -7051,10 +7100,16 @@ svg {
   };
 
   // src/apps/browser.ts
+  var SITES = {
+    "anios://start": "\u8D77\u59CB\u9875",
+    "anios://docs": "\u8BBE\u8BA1\u89C4\u8303",
+    "anios://news": "\u6BCF\u65E5\u8BBE\u8BA1",
+    "anios://about": "\u5173\u4E8E anios"
+  };
   var content5 = `
-<div class="browser">
+<section class="set-pane" data-pane="browse">
+  <div class="br-tabs" data-br-tabs></div>
   <div class="br-toolbar">
-    <button type="button" class="br-nav" data-br-back aria-label="\u540E\u9000">${icon("back")}</button>
     <div class="br-address">
       <span class="br-lock">${icon("file")}</span>
       <input type="text" data-br-url value="anios://start" spellcheck="false" />
@@ -7076,9 +7131,6 @@ svg {
         </button>
         <button type="button" class="br-fav" data-go="anios://about">
           <span class="a-ic">${icon("star")}</span><span class="br-fav-name">\u5173\u4E8E anios</span>
-        </button>
-        <button type="button" class="br-fav" data-go="anios://clock">
-          <span class="a-ic">${icon("clock")}</span><span class="br-fav-name">\u65F6\u949F</span>
         </button>
       </div>
     </section>
@@ -7114,55 +7166,121 @@ svg {
       </div>
     </section>
   </div>
-</div>`;
+</section>
+<section class="set-pane" data-pane="bookmarks" hidden>
+  <header class="set-head"><h1>\u4E66\u7B7E</h1></header>
+  <div class="set-group" data-br-bookmarks></div>
+</section>
+<section class="set-pane" data-pane="history" hidden>
+  <header class="set-head"><h1>\u5386\u53F2</h1></header>
+  <div class="set-group" data-br-history></div>
+</section>`;
   var browserApp = {
     id: "browser",
     title: "\u6D4F\u89C8\u5668",
     icon: "net",
     geom: { left: 18, top: 12, width: 54, height: 64 },
-    minSize: { w: 420, h: 300 },
+    minSize: { w: 420, h: 320 },
     z: 20,
     open: false,
     pinned: false,
-    nav: [],
+    nav: [
+      { section: "browse", icon: "net", label: "\u6D4F\u89C8" },
+      { section: "bookmarks", icon: "star", label: "\u4E66\u7B7E" },
+      { section: "history", icon: "clock", label: "\u5386\u53F2" }
+    ],
     content: content5,
     searchPlaceholder: "\u641C\u7D22\u6216\u8F93\u5165\u7F51\u5740",
     bind(root) {
+      let tabs = [{ id: 1, title: "\u8D77\u59CB\u9875", url: "anios://start" }];
+      let activeId = 1;
+      let seq = 2;
+      const history = [];
       const addr = root.querySelector("[data-br-url]");
-      const view = root.querySelector("[data-br-view]");
-      const known = ["start", "docs", "news", "about"];
-      const hist = ["anios://start"];
-      let hi = 0;
+      const tabsEl = root.querySelector("[data-br-tabs]");
+      const bookmarksEl = root.querySelector("[data-br-bookmarks]");
+      const historyEl = root.querySelector("[data-br-history]");
+      const titleOf = (url) => SITES[url] ?? url;
       const show = (url) => {
         const page = url.replace("anios://", "") || "start";
-        const knownPage = known.includes(page);
         $$("[data-br-page]", root).forEach((p) => {
-          p.hidden = p.dataset.brPage !== (knownPage ? page : "error");
+          p.hidden = p.dataset.brPage !== page;
         });
         const errUrl = root.querySelector("[data-br-err-url]");
-        if (errUrl && !knownPage) errUrl.textContent = url;
+        if (errUrl && page === "error") errUrl.textContent = url;
         if (addr) addr.value = url;
+        const view = root.querySelector("[data-br-view]");
         if (view) view.scrollTop = 0;
       };
       const navigate = (url) => {
-        hist.splice(hi + 1);
-        hist.push(url);
-        hi = hist.length - 1;
+        const t = tabs.find((x) => x.id === activeId);
+        if (t) {
+          t.url = url;
+          t.title = titleOf(url);
+        }
+        if (!history.some((h) => h.url === url)) history.unshift({ url, title: titleOf(url) });
         show(url);
+        renderTabs();
       };
+      const renderTabs = () => {
+        tabsEl.innerHTML = tabs.map(
+          (t) => `<div class="br-tab${t.id === activeId ? " on" : ""}" data-tab="${t.id}">
+            <span class="br-tab-t">${t.title}</span>
+            ${tabs.length > 1 ? `<button type="button" class="br-tab-x" data-tab-x="${t.id}" aria-label="\u5173\u95ED\u6807\u7B7E\u9875">${icon("x")}</button>` : ""}
+          </div>`
+        ).join("") + `<button type="button" class="br-add" data-tab-add aria-label="\u65B0\u5EFA\u6807\u7B7E\u9875">${icon("plus")}</button>`;
+      };
+      on(tabsEl, "click", (e) => {
+        const t = e.target;
+        const x = t.closest("[data-tab-x]");
+        if (x) {
+          e.stopPropagation();
+          const id = Number(x.getAttribute("data-tab-x"));
+          if (tabs.length > 1) {
+            tabs = tabs.filter((x2) => x2.id !== id);
+            if (activeId === id) activeId = tabs[0].id;
+            show(tabs.find((x2) => x2.id === activeId).url);
+          }
+          renderTabs();
+          return;
+        }
+        const tab = t.closest("[data-tab]");
+        if (tab) {
+          activeId = Number(tab.getAttribute("data-tab"));
+          show(tabs.find((x2) => x2.id === activeId).url);
+          renderTabs();
+          return;
+        }
+        if (t.closest("[data-tab-add]")) {
+          tabs.push({ id: seq++, title: "\u8D77\u59CB\u9875", url: "anios://start" });
+          activeId = tabs[tabs.length - 1].id;
+          show("anios://start");
+          renderTabs();
+        }
+      });
+      const renderLists = () => {
+        bookmarksEl.innerHTML = Object.entries(SITES).filter(([url]) => url !== "anios://start").map(
+          ([url, title]) => `<div class="set-row"><div><div class="row-t">${title}</div><div class="row-s">${url}</div></div></div>`
+        ).join("");
+        historyEl.innerHTML = history.length ? history.map(
+          (h) => `<div class="set-row"><div><div class="row-t">${h.title}</div><div class="row-s">${h.url}</div></div></div>`
+        ).join("") : '<div class="set-empty">\u6682\u65E0\u5386\u53F2</div>';
+      };
+      renderLists();
       $$("[data-go]", root).forEach((el) => {
         on(el, "click", () => navigate(el.getAttribute("data-go")));
       });
       on(addr, "keydown", (e) => {
-        if (e.key === "Enter") navigate(addr.value.trim() || "anios://start");
-      });
-      on(root.querySelector("[data-br-back]"), "click", () => {
-        if (hi > 0) {
-          hi -= 1;
-          show(hist[hi]);
+        if (e.key === "Enter") {
+          const url = addr.value.trim() || "anios://start";
+          navigate(SITES[url] ? url : url);
         }
       });
-      on(root.querySelector("[data-br-reload]"), "click", () => show(hist[hi]));
+      on(root.querySelector(".nav-btn[data-section='history']"), "click", () => {
+        historyEl.innerHTML = history.length ? history.map(
+          (h) => `<div class="set-row"><div><div class="row-t">${h.title}</div><div class="row-s">${h.url}</div></div></div>`
+        ).join("") : '<div class="set-empty">\u6682\u65E0\u5386\u53F2</div>';
+      });
     }
   };
 
