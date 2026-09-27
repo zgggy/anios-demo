@@ -191,6 +191,10 @@ export function initStatusBar(store: Store, api: WinApi): void {
 
   const renderStack = () => {
     if (!stack) return;
+    // 栈高按「屏幕（视口）实际高度」实时钳制：100vh 是浏览器窗口高，
+    // 而视口只有 78vh——用 vh 会让横幅向下溢出屏幕
+    const vpH = viewport.getBoundingClientRect().height;
+    stack.style.maxHeight = `${Math.max(160, vpH - 58)}px`; // 顶贴边 8 + 底部操作行余量
     const want = visibleIds();
     // 移除不再展示的
     for (const [id, el] of [...els]) {

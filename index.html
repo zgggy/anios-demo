@@ -783,6 +783,7 @@ svg {
 .notice-banner {
   position: relative;
   overflow: hidden; /* 高度塌缩阶段裁剪内容：否则文字悬在原地闪现后消失 */
+  flex-shrink: 0; /* 横幅保持自然高度：溢出由栈滚动消化，不被压缩 */
   width: min(300px, 40vw);
   padding: 10px 12px 12px;
   border-radius: 14px;
@@ -7247,9 +7248,7 @@ svg {
       window.clearTimeout(hideT);
       hideT = window.setTimeout(() => ind.classList.remove("on"), 600);
     };
-    on(scroller, "scroll", () => {
-      if (!raf) raf = requestAnimationFrame(paint);
-    }, { passive: true });
+    on(scroller, "scroll", () => paint(), { passive: true });
   }
   function bindResize(root) {
     const knob = $("[data-resize]", root);
@@ -8223,6 +8222,8 @@ svg {
     };
     const renderStack = () => {
       if (!stack) return;
+      const vpH = viewport.getBoundingClientRect().height;
+      stack.style.maxHeight = `${Math.max(160, vpH - 58)}px`;
       const want = visibleIds();
       for (const [id, el] of [...els]) {
         if (!want.some((n) => n.id === id)) {

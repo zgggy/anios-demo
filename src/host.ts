@@ -40,9 +40,9 @@ export function bindScrollIndicator(root: HTMLElement): void {
     window.clearTimeout(hideT);
     hideT = window.setTimeout(() => ind.classList.remove("on"), 600);
   };
-  on(scroller, "scroll", () => {
-    if (!raf) raf = requestAnimationFrame(paint);
-  }, { passive: true });
+  // 同步绘制（绘制廉价）：不经 rAF——渲染冻结的环境里 rAF 回调不执行，
+  // 节流反而让指示器永远失联
+  on(scroller, "scroll", () => paint(), { passive: true });
 }
 
 /** 临时面板的缩放钮（窗口级缩放在 windows.ts） */
