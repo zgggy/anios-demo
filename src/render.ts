@@ -287,10 +287,11 @@ export function statusBarHTML(): string {
         </div>
       </div>
     </div>
-    <div class="notice-stack" data-notice-stack></div>
-    <div class="notice-actions" data-notice-actions hidden>
-      <button type="button" class="notice-act" data-notice-clear-all>一键清除</button>
-      <button type="button" class="notice-act" data-notice-collapse-all>全部收起</button>
+    <div class="notice-stack" data-notice-stack>
+      <div class="notice-actions" data-notice-actions hidden>
+        <button type="button" class="notice-act" data-notice-clear-all>一键清除</button>
+        <button type="button" class="notice-act" data-notice-collapse-all>全部收起</button>
+      </div>
     </div>
   </div>`;
 }

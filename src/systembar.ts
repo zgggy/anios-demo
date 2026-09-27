@@ -128,6 +128,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
   const collapseUp = (id: number) => {
     if (hidden.has(id)) return;
     hidden.add(id);
+    fresh.delete(id); // 收起后不再是「新通知」
     const el = els.get(id);
     if (!el) return;
     els.delete(id);
@@ -142,6 +143,8 @@ export function initStatusBar(store: Store, api: WinApi): void {
         });
       },
     });
+    // 兜底：渲染冻结（rAF 停摆）时补间不推进，定时器保证元素终被移除
+    window.setTimeout(() => el.remove(), 500);
   };
 
   /** 清除：左滑出屏，通知从列表删除 */
@@ -152,6 +155,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
     els.delete(id);
     const r = el.getBoundingClientRect();
     gsap.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
+    window.setTimeout(() => el.remove(), 400); // 渲染冻结兜底
   };
 
   const startProgress = (id: number, el: HTMLElement) => {
@@ -195,6 +199,8 @@ export function initStatusBar(store: Store, api: WinApi): void {
     for (let i = want.length - 1; i >= 0; i--) {
       const n = want[i];
       if (els.has(n.id)) continue;
+      // 防御：同 id 的残留元素（退场动画未及移除）先清扫，杜绝重复横幅
+      stack.querySelectorAll(`[data-notice-id='${n.id}']`).forEach((d) => d.remove());
       const withProgress = fresh.has(n.id) && !centerOpen;
       const el = makeBanner(n, withProgress);
       el.dataset.noticeId = String(n.id);
@@ -222,14 +228,16 @@ export function initStatusBar(store: Store, api: WinApi): void {
     if (actionsRow) actionsRow.hidden = !centerOpen || want.length === 0;
   };
 
-  // 铃铛：通知栏开合 = 列表全部重新展示 / 全部收起
+  // 铃铛：通知栏开合 = 列表全部重新展示 / 逐个上滑收起
   on(bell, "click", (e) => {
     e.stopPropagation();
     setPanel(null);
     centerOpen = !centerOpen;
     if (centerOpen) hidden.clear();
+    else for (const id of [...els.keys()]) collapseUp(id);
     renderStack();
   });
+  // 底部操作：一键清除（全部左滑删除）· 全部收起（全部上滑回列表）
   on(actionsRow?.querySelector("[data-notice-clear-all]"), "click", () => {
     for (const id of [...els.keys()]) clearNotice(id);
     store.update((s) => {
@@ -240,8 +248,9 @@ export function initStatusBar(store: Store, api: WinApi): void {
     renderStack();
   });
   on(actionsRow?.querySelector("[data-notice-collapse-all]"), "click", () => {
+    for (const id of [...els.keys()]) collapseUp(id);
     centerOpen = false;
-    renderStack(); // 全部收起：上滑回列表
+    renderStack();
   });
 
   const known = new Set<number>(); // 见过的通知 id：首次见到入 fresh（带进度展示）

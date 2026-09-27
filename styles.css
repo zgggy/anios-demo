@@ -775,7 +775,12 @@ svg {
 }
 .nb-clear svg { width: 10px; height: 10px; }
 .notice-banner:hover .nb-clear { opacity: 1; }
-.notice-actions { display: flex; gap: 8px; }
+.notice-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.notice-actions[hidden] { display: none !important; }
 .notice-act {
   min-height: 26px;
   padding: 0 12px;

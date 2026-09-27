@@ -815,7 +815,12 @@ svg {
 }
 .nb-clear svg { width: 10px; height: 10px; }
 .notice-banner:hover .nb-clear { opacity: 1; }
-.notice-actions { display: flex; gap: 8px; }
+.notice-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.notice-actions[hidden] { display: none !important; }
 .notice-act {
   min-height: 26px;
   padding: 0 12px;
@@ -1952,10 +1957,11 @@ svg {
         </div>
       </div>
     </div>
-    <div class="notice-stack" data-notice-stack></div>
-    <div class="notice-actions" data-notice-actions hidden>
-      <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
-      <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
+    <div class="notice-stack" data-notice-stack>
+      <div class="notice-actions" data-notice-actions hidden>
+        <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
+        <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
+      </div>
     </div>
   </div>`;
   }
@@ -8138,6 +8144,7 @@ svg {
     const collapseUp = (id) => {
       if (hidden.has(id)) return;
       hidden.add(id);
+      fresh.delete(id);
       const el = els.get(id);
       if (!el) return;
       els.delete(id);
@@ -8155,6 +8162,7 @@ svg {
           });
         }
       });
+      window.setTimeout(() => el.remove(), 500);
     };
     const clearLeft = (id) => {
       hidden.delete(id);
@@ -8163,6 +8171,7 @@ svg {
       els.delete(id);
       const r = el.getBoundingClientRect();
       gsapWithCSS.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
+      window.setTimeout(() => el.remove(), 400);
     };
     const startProgress = (id, el) => {
       const bar = el.querySelector(".nb-bar");
@@ -8201,6 +8210,7 @@ svg {
       for (let i = want.length - 1; i >= 0; i--) {
         const n = want[i];
         if (els.has(n.id)) continue;
+        stack.querySelectorAll(`[data-notice-id='${n.id}']`).forEach((d) => d.remove());
         const withProgress = fresh.has(n.id) && !centerOpen;
         const el = makeBanner(n, withProgress);
         el.dataset.noticeId = String(n.id);
@@ -8231,6 +8241,7 @@ svg {
       setPanel(null);
       centerOpen = !centerOpen;
       if (centerOpen) hidden.clear();
+      else for (const id of [...els.keys()]) collapseUp(id);
       renderStack();
     });
     on(actionsRow?.querySelector("[data-notice-clear-all]"), "click", () => {
@@ -8243,6 +8254,7 @@ svg {
       renderStack();
     });
     on(actionsRow?.querySelector("[data-notice-collapse-all]"), "click", () => {
+      for (const id of [...els.keys()]) collapseUp(id);
       centerOpen = false;
       renderStack();
     });
