@@ -18,6 +18,8 @@ export type AppActions = {
   openApp: (appId: string) => void;
   minimizeApp: (appId: string) => void;
   closeApp: (appId: string) => void;
+  /** 请系统发一条通知（横幅 + 通知栏） */
+  notify: (title: string, body: string) => void;
 };
 
 export type AppDef = {

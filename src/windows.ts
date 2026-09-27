@@ -52,6 +52,7 @@ export function initialState(apps: AppDef[]): State {
     wins,
     settings: {
       theme: "light",
+      wallpaper: "emblem",
       accent: "#3b82f6",
       animGlobal: animDef("animGlobal"),
       animWindow: animDef("animWindow"),
@@ -62,6 +63,7 @@ export function initialState(apps: AppDef[]): State {
       metrics: defaultMetrics(),
       derivTerms: defaultDerivTerms(),
     },
+    notices: [],
   };
 }
 
@@ -143,6 +145,10 @@ export function initWindows(store: Store): WinApi {
     openApp: (appId) => open(winIdOf(appId)),
     minimizeApp: (appId) => minimize(winIdOf(appId)),
     closeApp: (appId) => close(winIdOf(appId)),
+    notify: (title, body) =>
+      store.update((s) => {
+        s.notices = [{ id: Date.now(), title, body, ts: Date.now() }, ...s.notices];
+      }),
   };
 
   function focus(id: string): void {

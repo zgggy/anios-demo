@@ -7,6 +7,7 @@ import {
   Store,
   anyMaximized,
   isRunning,
+  NoticeItem,
   policyOf,
   METRICS,
   ANIMS,
@@ -19,22 +20,28 @@ import { statusBarHTML, appBarHTML, align, type AppBarItem } from "./render";
 import { APPS, winIdOf } from "./apps";
 import type { WinApi } from "./windows";
 
-export function initStatusBar(store: Store): void {
+export function initStatusBar(store: Store, api: WinApi): void {
   const viewport = $<HTMLElement>("#viewport")!;
   viewport.insertAdjacentHTML("beforeend", statusBarHTML());
   const root = $<HTMLElement>(".sys-status")!;
   const capsule = $<HTMLElement>(".status-capsule", root);
-  const content = $<HTMLElement>(".status-content", root);
-  const openBtn = $<HTMLElement>("[data-status-toggle]", root);
   const time = $<HTMLElement>("[data-time]", root);
+  const panelClock = $<HTMLElement>("[data-panel-clock]", root);
   const arc = $<SVGCircleElement>("[data-battery] .bat-arc", root);
   const pct = $<HTMLElement>("[data-battery] .bat-pct", root);
+  const bell = $<HTMLElement>("[data-status-notify]", root);
+  const banner = $<HTMLElement>("[data-notice-banner]", root);
+  const nbTitle = $<HTMLElement>("[data-notice-banner] .nb-title", root);
+  const nbBody = $<HTMLElement>("[data-notice-banner] .nb-body", root);
+  const nbBar = $<HTMLElement>("[data-notice-banner] .nb-bar", root);
+  const noticeList = $<HTMLElement>("[data-notice-list]", root);
 
   // 时钟 / 电量：设备运行时数据，本地维护
   const tick = () => {
-    if (!time) return;
     const d = new Date();
-    time.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    if (time) time.textContent = hm;
+    if (panelClock) panelClock.textContent = hm;
     $$("[data-time-full]", root).forEach(
       (el) => (el.textContent = `今日 ${d.getMonth() + 1}月${d.getDate()}日`),
     );
@@ -53,36 +60,98 @@ export function initStatusBar(store: Store): void {
   };
   bat(72);
 
-  const setOpen = (open: boolean) => {
-    root.classList.toggle("is-open", open);
-    if (content) content.hidden = !open;
-    openBtn?.setAttribute("aria-expanded", open ? "true" : "false");
-    capsule?.classList.toggle("is-open", open);
+  // ── 面板：状态栏每钮一块临时面板，互斥，点外即收 ──
+  let openKey: string | null = null;
+  const setPanel = (key: string | null) => {
+    openKey = key;
+    $$(".status-content", root).forEach((p) => (p.hidden = p.dataset.statusPanel !== openKey));
+    $$("[data-status-open]", root).forEach((b) => {
+      const on = b.getAttribute("data-status-open") === openKey;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-expanded", on ? "true" : "false");
+    });
   };
-
-  on(openBtn, "click", (e) => {
-    e.stopPropagation();
-    setOpen(!root.classList.contains("is-open"));
+  $$("[data-status-open]", root).forEach((b) => {
+    on(b, "click", (e) => {
+      e.stopPropagation();
+      const key = b.getAttribute("data-status-open")!;
+      setPanel(openKey === key ? null : key);
+    });
+  });
+  on(document, "pointerdown", (e) => {
+    if ((e.target as Element).closest(".sys-status")) return;
+    setPanel(null);
   });
 
-  // 快捷操作：网络/主题走设置状态（网络类型在设置里也可切换）
-  $$("[data-quick]", root).forEach((btn) => {
-    on(btn, "click", () => {
-      const k = btn.getAttribute("data-quick");
-      if (k === "wifi" || k === "cell") {
-        store.update((s) => (s.settings.net = k));
-      }
-      if (k === "theme-light" || k === "theme-dark") {
-        store.update((s) => (s.settings.theme = k === "theme-dark" ? "dark" : "light"));
-      }
-      btn.classList.toggle("on");
+  // ── 面板底部跳转：关闭面板 → 打开 App → 切到对应页 ──
+  $$("[data-jump]", root).forEach((b) => {
+    on(b, "click", () => {
+      const [appId, section] = (b.getAttribute("data-jump") || "").split(":");
+      setPanel(null);
+      api.open(winIdOf(appId));
+      document
+        .querySelector(`#${winIdOf(appId)} .nav-btn[data-section='${section}']`)
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
   });
 
-  on(document, "pointerdown", (e) => {
-    if ((e.target as Element).closest(".sys-status")) return;
-    setOpen(false);
-  });
+  // ── 通知：横幅队列（滑入 → 进度满 → 滑出）+ 通知栏（栈）+ 铃铛显隐 ──
+  const bannerDur = 6000;
+  const queue: NoticeItem[] = [];
+  const shown = new Set<number>();
+  let bannerBusy = false;
+  let bannerTimer = 0;
+
+  const pumpBanner = () => {
+    if (bannerBusy || !banner) return;
+    const n = queue.shift();
+    if (!n) return;
+    bannerBusy = true;
+    if (nbTitle) nbTitle.textContent = n.title;
+    if (nbBody) nbBody.textContent = n.body;
+    if (nbBar) nbBar.style.width = "0%";
+    banner.hidden = false;
+    window.setTimeout(() => banner.classList.add("on"), 20);
+    let t = 0;
+    bannerTimer = window.setInterval(() => {
+      t += 100;
+      if (nbBar) nbBar.style.width = `${Math.min(100, (t / bannerDur) * 100)}%`;
+      if (t >= bannerDur) {
+        window.clearInterval(bannerTimer);
+        banner.classList.remove("on");
+        window.setTimeout(() => {
+          banner.hidden = true;
+          bannerBusy = false;
+          pumpBanner();
+        }, 260);
+      }
+    }, 100);
+  };
+
+  const syncNotices = () => {
+    const s = store.get();
+    if (bell) bell.hidden = s.notices.length === 0;
+    if (noticeList) {
+      noticeList.innerHTML = s.notices.length
+        ? s.notices
+            .map((n) => {
+              const d = new Date(n.ts);
+              const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+              return `<div class="set-row"><div><div class="row-t">${n.title}</div><div class="row-s">${n.body} · ${hm}</div></div></div>`;
+            })
+            .join("")
+        : '<div class="set-empty">暂无通知</div>';
+    }
+    for (const n of s.notices) {
+      if (!shown.has(n.id)) {
+        shown.add(n.id);
+        queue.push(n);
+      }
+    }
+    pumpBanner();
+  };
+  store.subscribe(syncNotices);
+  syncNotices();
 }
 
 export function initAppBar(store: Store, api: WinApi): void {
@@ -140,6 +209,7 @@ export function bindSettingsPatch(store: Store): void {
     const st = store.get().settings;
     const root = document.documentElement;
     root.setAttribute("data-theme", st.theme);
+    $(".wallpaper")?.setAttribute("data-pack", st.wallpaper);
     root.style.setProperty("--accent", st.accent);
     root.style.setProperty("--anim-window", `${st.animWindow}ms`);
     root.style.setProperty("--anim-pane", `${st.animPane}ms`);
@@ -153,6 +223,7 @@ export function bindSettingsPatch(store: Store): void {
       }
     };
     syncGroup("button[data-theme]", "data-theme", st.theme);
+    syncGroup("[data-wallpaper]", "data-wallpaper", st.wallpaper);
     syncGroup("[data-net-mode]", "data-net-mode", st.net);
     syncGroup("[data-scroll-mode]", "data-scroll-mode", st.scrollMode);
     // 滑杆回显（时长 / 度量 / 派生项）

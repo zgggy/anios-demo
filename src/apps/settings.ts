@@ -17,7 +17,7 @@ import {
   type Store,
 } from "../state";
 import { icon } from "../render";
-import type { AppDef } from "./index";
+import type { AppActions, AppDef } from "./index";
 
 type Kind = "metric" | "anim" | "term";
 type RowDef = { key: string; label: string; min: number; max: number; step: number; def: number };
@@ -94,6 +94,17 @@ const content = `
       </div>
     </div>
     <div class="set-row">
+      <div><div class="row-t">壁纸</div><div class="row-s">每组随主题换明暗</div></div>
+      <div class="wp-opts">
+        <button type="button" class="wp-opt" data-wallpaper="emblem" aria-pressed="true">
+          <i class="wp-thumb"></i><span class="wp-name">徽记</span>
+        </button>
+        <button type="button" class="wp-opt" data-wallpaper="glow">
+          <i class="wp-thumb"></i><span class="wp-name">流光</span>
+        </button>
+      </div>
+    </div>
+    <div class="set-row">
       <div><div class="row-t">强调色</div><div class="row-s">控件与高亮</div></div>
       <div class="dots">
         <button type="button" class="cd active" style="--c:#3b82f6"></button>
@@ -101,6 +112,13 @@ const content = `
         <button type="button" class="cd" style="--c:#10b981"></button>
         <button type="button" class="cd" style="--c:#f59e0b"></button>
       </div>
+    </div>
+  </div>
+  <div class="set-group">
+    <div class="set-group-title">通知</div>
+    <div class="set-row">
+      <div><div class="row-t">发送测试通知</div><div class="row-s">横幅从屏幕顶部滑入，存入通知栏</div></div>
+      <button type="button" class="btn-call" data-push-notice>增加</button>
     </div>
   </div>
   <div class="set-group">
@@ -135,6 +153,22 @@ const content = `
         <button type="button" data-net-mode="cell">5G</button>
       </div>
     </div>
+  </div>
+</section>
+<section class="set-pane" data-pane="battery" hidden>
+  <header class="set-head"><h1>电池</h1></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">这台设备</div><div class="row-s">预计 5 小时</div></div><div class="st-big">72%</div></div>
+    <div class="set-row"><div><div class="row-t">低电量模式</div><div class="row-s">降低亮度与后台活动</div></div><button type="button" class="quick-toggle" data-quick="dnd"></button></div>
+  </div>
+</section>
+<section class="set-pane" data-pane="usage" hidden>
+  <header class="set-head"><h1>使用时间</h1><p>今天 · 截到现在</p></header>
+  <div class="set-group">
+    <div class="set-row"><div><div class="row-t">屏幕使用时间</div></div><div class="st-big">5 小时</div></div>
+    <div class="set-row"><div><div class="row-t">社交</div><div class="row-s">2 小时 10 分</div></div></div>
+    <div class="set-row"><div><div class="row-t">学习</div><div class="row-s">1 小时 30 分</div></div></div>
+    <div class="set-row"><div><div class="row-t">其他</div><div class="row-s">1 小时 32 分</div></div></div>
   </div>
 </section>
 <section class="set-pane" data-pane="sound" hidden>
@@ -201,6 +235,8 @@ export const settingsApp: AppDef = {
   nav: [
     { section: "home", icon: "home", label: "主页" },
     { section: "network", icon: "net", label: "网络" },
+    { section: "battery", icon: "bolt", label: "电池" },
+    { section: "usage", icon: "clock", label: "使用时间" },
     { section: "sound", icon: "sound", label: "声音" },
     { section: "display", icon: "display", label: "显示" },
     { section: "metrics", icon: "grid", label: "尺寸" },
@@ -208,12 +244,19 @@ export const settingsApp: AppDef = {
   content: content + metricsPane,
   searchPlaceholder: "在设置中搜索…",
   editItems: ["撤销", "重做", "剪切", "拷贝"],
-  bind(root, store: Store) {
+  bind(root, store: Store, actions: AppActions) {
     // 主题
     $$("button[data-theme]", root).forEach((b) => {
       on(b, "click", () => {
         const m = b.getAttribute("data-theme") as "light" | "dark";
         store.update((s) => (s.settings.theme = m));
+      });
+    });
+    // 壁纸
+    $$("[data-wallpaper]", root).forEach((b) => {
+      on(b, "click", () => {
+        const m = b.getAttribute("data-wallpaper") as "emblem" | "glow";
+        store.update((s) => (s.settings.wallpaper = m));
       });
     });
     // 强调色
@@ -238,6 +281,19 @@ export const settingsApp: AppDef = {
             s.settings.animMenu = v;
           }
         });
+      });
+    });
+    // 通知：经 AppActions.notify 请系统发送
+    let ni = 0;
+    const notices = [
+      ["屏幕使用时间", "你今天的屏幕时间比昨天少 32 分钟。"],
+      ["低电量", "电量低于 20%，已切换低电量模式。"],
+      ["投屏", "客厅电视已开始镜像你的屏幕。"],
+    ];
+    $$("[data-push-notice]", root).forEach((b) => {
+      on(b, "click", () => {
+        const [t, body] = notices[ni++ % notices.length];
+        actions.notify(t, body);
       });
     });
     // 滚动指示

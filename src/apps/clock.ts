@@ -1,5 +1,6 @@
 /** 时钟应用：闹钟 + 世界时钟；大钟真实走时 */
 import { $$ } from "../dom";
+import { calendarHTML } from "../render";
 import type { AppDef } from "./index";
 
 const content = `
@@ -11,6 +12,10 @@ const content = `
     <div class="set-row"><div><div class="row-t">09:00</div><div class="row-s">周末 · 闹钟</div></div><div class="st-big">关</div></div>
     <div class="set-row"><div><div class="row-t">22:45</div><div class="row-s">每天 · 就寝</div></div><div class="st-big">开</div></div>
   </div>
+</section>
+<section class="set-pane" data-pane="calendar" hidden>
+  <header class="set-head"><h1>日历</h1></header>
+  <div data-calendar></div>
 </section>
 <section class="set-pane" data-pane="world" hidden>
   <header class="set-head"><h1>世界时钟</h1></header>
@@ -32,12 +37,15 @@ export const clockApp: AppDef = {
   pinned: false,
   nav: [
     { section: "alarm", icon: "clock", label: "闹钟" },
+    { section: "calendar", icon: "calendar", label: "日历" },
     { section: "world", icon: "net", label: "世界" },
   ],
   content,
   searchPlaceholder: "搜索闹钟与城市…",
   editItems: ["全选", "删除闹钟"],
   bind(root) {
+    const cal = root.querySelector("[data-calendar]");
+    if (cal) cal.innerHTML = calendarHTML();
     const tick = () => {
       const d = new Date();
       const hh = String(d.getHours()).padStart(2, "0");

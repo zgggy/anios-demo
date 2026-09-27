@@ -153,10 +153,17 @@ svg {
 .wallpaper {
   position: absolute;
   inset: 0;
+  /* 壁纸组 = 同图明暗两版（设置可切换）；默认「徽记」线稿组 */
   background: center/cover no-repeat url("assets/wallpaper-light.svg");
 }
 [data-theme="dark"] .wallpaper {
   background-image: url("assets/wallpaper-dark.svg");
+}
+.wallpaper[data-pack="glow"] {
+  background-image: url("assets/wallpaper-light.jpg");
+}
+[data-theme="dark"] .wallpaper[data-pack="glow"] {
+  background-image: url("assets/wallpaper-dark.jpg");
 }
 .vp-resize {
   position: absolute;
@@ -689,6 +696,99 @@ svg {
   height: 100%;
 }
 .status-content[hidden] { display: none !important; }
+.status-content { display: flex; flex-direction: column; }
+.status-content .content-scroll { flex: 1; min-height: 0; }
+
+/* 面板底栏：关闭面板并跳转到 App 的对应页 */
+.panel-foot {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.panel-jump {
+  flex: 1;
+  min-height: 28px;
+  border-radius: 8px;
+  background: var(--soft);
+  font-size: var(--font-desc);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.panel-jump:hover { background: var(--hover); color: var(--ink); }
+
+/* 通知横幅：从屏幕上侧外滑入，右上角进度条，满即退场入栈 */
+.notice-banner {
+  position: relative;
+  width: min(300px, 40vw);
+  flex-shrink: 0;
+  padding: 10px 12px 12px;
+  border-radius: 14px;
+  background: var(--frost-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--frost-blur);
+  -webkit-backdrop-filter: var(--frost-blur);
+  pointer-events: auto;
+  transform: translateY(-140%);
+  transition: transform 240ms var(--ease);
+}
+.notice-banner.on { transform: translateY(0); }
+.notice-banner[hidden] { display: none !important; }
+.nb-progress {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  width: 44px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--soft);
+  overflow: hidden;
+}
+.nb-bar {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: 2px;
+}
+.nb-title { font-size: var(--font-row); font-weight: 600; padding-right: 50px; }
+.nb-body { font-size: var(--font-desc); color: var(--ink-3); margin-top: 2px; }
+
+/* 日历（时间面板 / 时钟应用共用） */
+.cal { margin-top: 10px; }
+.cal-head {
+  font-size: var(--font-desc);
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+  text-align: center;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+.cal-dow { font-size: 9px; color: var(--ink-3); font-weight: 700; }
+.cal-day {
+  font-size: var(--font-desc);
+  padding: 3px 0;
+  border-radius: 6px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
+.cal-day.empty { visibility: hidden; }
+
+/* 空态（规范 §7.8） */
+.set-empty {
+  padding: 24px 8px;
+  text-align: center;
+  font-size: var(--font-desc);
+  color: var(--ink-3);
+}
 
 .st-time {
   font-size: var(--font-num);
@@ -747,10 +847,11 @@ svg {
   font-weight: 800;
   line-height: 1;
 }
+.net-bars { display: flex; gap: 2px; }
 .net-5g i {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
+  width: 4px;
+  height: 2px;
+  border-radius: 1px;
   background: currentColor;
 }
 [data-net="cell"] [data-network] > svg { display: none; }
@@ -1120,6 +1221,42 @@ svg {
 }
 .cd.active {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent);
+}
+
+/* 壁纸选择：缩略图预览随当前主题显示对应明暗版 */
+.wp-opts { display: flex; gap: 12px; }
+.wp-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.wp-thumb {
+  width: 72px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: center/cover no-repeat;
+}
+.wp-opt.active .wp-thumb {
+  box-shadow: 0 0 0 2px var(--page), 0 0 0 3.5px var(--accent);
+}
+.wp-name {
+  font-size: var(--font-desc);
+  color: var(--ink-3);
+}
+.wp-opt.active .wp-name { color: var(--ink); }
+.wp-opt[data-wallpaper="emblem"] .wp-thumb {
+  background-image: url("assets/wallpaper-light.svg");
+}
+[data-theme="dark"] .wp-opt[data-wallpaper="emblem"] .wp-thumb {
+  background-image: url("assets/wallpaper-dark.svg");
+}
+.wp-opt[data-wallpaper="glow"] .wp-thumb {
+  background-image: url("assets/wallpaper-light.jpg");
+}
+[data-theme="dark"] .wp-opt[data-wallpaper="glow"] .wp-thumb {
+  background-image: url("assets/wallpaper-dark.jpg");
 }
 
 .set-pane.leave-up { animation: leaveUp var(--anim-pane) ease-in forwards; }

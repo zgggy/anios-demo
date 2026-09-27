@@ -43,6 +43,8 @@ export type WinState = {
 
 export type Settings = {
   theme: "light" | "dark";
+  /** 壁纸组：每组自带明暗两版，随主题切换 */
+  wallpaper: "emblem" | "glow";
   accent: string;
   animGlobal: number; // ms — sets window/pane/menu together
   animWindow: number;
@@ -330,9 +332,18 @@ export function findParam(
   return null;
 }
 
+export type NoticeItem = {
+  id: number;
+  title: string;
+  body: string;
+  ts: number;
+};
+
 export type State = {
   wins: Record<string, WinState>;
   settings: Settings;
+  /** 通知：栈，最上新 */
+  notices: NoticeItem[];
 };
 
 export type Store = {

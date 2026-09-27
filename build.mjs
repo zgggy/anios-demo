@@ -29,16 +29,20 @@ await build({
   target: "es2022",
 });
 
-// single-file app: inline CSS + JS + wallpapers
+// single-file app: inline CSS + JS + wallpapers (壁纸 URL 在 CSS 中出现多次：背景 + 设置缩略图)
 // NOTE: must use function replacer — String.replace treats $$ as "$"
 const html = readFileSync("index.template.html", "utf8");
 let css = readFileSync("styles.css", "utf8").replace("/* METRIC_DEFAULTS */", defaultsBlock);
 const js = readFileSync("dist/bundle.iife.js", "utf8");
 const light = readFileSync("assets/wallpaper-light.svg").toString("base64");
 const dark = readFileSync("assets/wallpaper-dark.svg").toString("base64");
+const lightJpg = readFileSync("assets/wallpaper-light.jpg").toString("base64");
+const darkJpg = readFileSync("assets/wallpaper-dark.jpg").toString("base64");
 css = css
-  .replace('url("assets/wallpaper-light.svg")', () => `url("data:image/svg+xml;base64,${light}")`)
-  .replace('url("assets/wallpaper-dark.svg")', () => `url("data:image/svg+xml;base64,${dark}")`);
+  .replaceAll('url("assets/wallpaper-light.svg")', () => `url("data:image/svg+xml;base64,${light}")`)
+  .replaceAll('url("assets/wallpaper-dark.svg")', () => `url("data:image/svg+xml;base64,${dark}")`)
+  .replaceAll('url("assets/wallpaper-light.jpg")', () => `url("data:image/jpeg;base64,${lightJpg}")`)
+  .replaceAll('url("assets/wallpaper-dark.jpg")', () => `url("data:image/jpeg;base64,${darkJpg}")`);
 const single = html
   .replace("<!-- INJECT_CSS -->", () => `<style>\n${css}\n</style>`)
   .replace("<!-- INJECT_JS -->", () => `<script>\n${js}\n</script>`);

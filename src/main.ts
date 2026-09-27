@@ -18,7 +18,7 @@ function boot(): void {
     const api = initWindows(store);
     initMenus(api);
     initRecover(store, api);
-    initStatusBar(store);
+    initStatusBar(store, api);
     initAppBar(store, api);
     initHost(store, api);
     api.alignAll();

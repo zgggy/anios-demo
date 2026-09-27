@@ -32,6 +32,8 @@ export const ICON = {
   apps: '<path d="M12 3l9 9-9 9-9-9z"/>',
   backspace: '<path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/>',
   save: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v4h6V5"/><path d="M9 19v-5h6v5"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.8 2.5H4.2z"/><path d="M10 21.5a2.4 2.4 0 0 0 4 0"/>',
+  calendar: '<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 10h16M9 4v4M15 4v4"/>',
 } as const;
 
 export type IconName = keyof typeof ICON;
@@ -141,11 +143,27 @@ export function windowShellHTML(o: WindowShellOpts): string {
   </div>`;
 }
 
-/** 状态栏（左上）：胶囊三态 + 临时内容面板 */
+/** 当月日历（格子）：时间面板与时钟应用共用 */
+export function calendarHTML(d = new Date()): string {
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const cells: string[] = ["日", "一", "二", "三", "四", "五", "六"].map(
+    (w) => `<span class="cal-dow">${w}</span>`,
+  );
+  for (let i = 0; i < first; i++) cells.push('<span class="cal-day empty"></span>');
+  for (let day = 1; day <= days; day++) {
+    cells.push(`<span class="cal-day${day === d.getDate() ? " today" : ""}">${day}</span>`);
+  }
+  return `<div class="cal"><div class="cal-head">${y} 年 ${m + 1} 月</div><div class="cal-grid">${cells.join("")}</div></div>`;
+}
+
+/** 状态栏（左上）：胶囊 + 每钮一块临时面板 + 通知横幅 */
 export function statusBarHTML(): string {
   return `<div class="sys-status" data-net="wifi">
     <div class="capsule nav-capsule status-capsule">
-      <button type="button" class="nav-btn" data-battery aria-label="电量">
+      <button type="button" class="nav-btn" data-battery data-status-open="battery" aria-label="电量" aria-expanded="false">
         <span class="bat">
           <svg viewBox="0 0 36 36" aria-hidden="true">
             <circle class="bat-track" cx="18" cy="18" r="14" />
@@ -155,23 +173,78 @@ export function statusBarHTML(): string {
         </span>
         <span class="nav-text">电量</span>
       </button>
-      <button type="button" class="nav-btn" data-time-btn aria-label="时间">
+      <button type="button" class="nav-btn" data-time-btn data-status-open="time" aria-label="时间" aria-expanded="false">
         <span class="st-time" data-time>12:00</span>
         <span class="nav-text">时间</span>
       </button>
-      <button type="button" class="nav-btn" data-network aria-label="网络">
+      <button type="button" class="nav-btn" data-network data-status-open="network" aria-label="网络" aria-expanded="false">
         ${icon("wifi")}
         <span class="net-5g">5G<i></i><i></i><i></i><i></i></span>
         <span class="nav-text">网络</span>
       </button>
-      <button type="button" class="nav-btn" data-status-toggle aria-label="状态与快捷操作" aria-expanded="false">
+      <button type="button" class="nav-btn" data-status-notify data-status-open="notify" aria-label="通知" aria-expanded="false" hidden>
+        ${icon("bell")}
+        <span class="nav-text">通知</span>
+      </button>
+      <button type="button" class="nav-btn" data-status-toggle data-status-open="more" aria-label="状态与快捷操作" aria-expanded="false">
         ${icon("dots")}
         <span class="nav-text">更多</span>
       </button>
     </div>
-    <div class="content status-content" data-temp data-temp-anchor=".status-capsule, [data-status-toggle]" hidden>
-      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
-      <button type="button" class="resize-knob" data-resize aria-label="缩放"></button>
+    <div class="content status-content" data-status-panel="battery" hidden>
+      <div class="content-scroll">
+        <header class="set-head"><h1>电量</h1><p>所有设备</p></header>
+        <div class="set-group">
+          <div class="set-row"><div><div class="row-t">这台设备</div><div class="row-s">预计 5 小时</div></div><div class="st-big">72%</div></div>
+          <div class="set-row"><div><div class="row-t">耳机</div><div class="row-s">已连接</div></div><div class="st-big">84%</div></div>
+          <div class="set-row"><div><div class="row-t">手表</div><div class="row-s">2 小时前同步</div></div><div class="st-big">40%</div></div>
+        </div>
+        <div class="set-group">
+          <div class="set-group-title">设备使用时间</div>
+          <div class="set-row"><div><div class="row-t">今天</div><div class="row-s">截至现在</div></div><div class="st-big">5 小时</div></div>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="panel-jump" data-jump="settings:battery">设置 · 电池</button>
+        <button type="button" class="panel-jump" data-jump="settings:usage">设置 · 使用时间</button>
+      </div>
+    </div>
+    <div class="content status-content" data-status-panel="time" hidden>
+      <div class="content-scroll">
+        <header class="set-head"><h1>时间</h1></header>
+        <div class="dial-display" data-panel-clock>00:00</div>
+        ${calendarHTML()}
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="panel-jump" data-jump="clock:alarm">时钟 · 时间</button>
+        <button type="button" class="panel-jump" data-jump="clock:calendar">时钟 · 日历</button>
+      </div>
+    </div>
+    <div class="content status-content" data-status-panel="network" hidden>
+      <div class="content-scroll">
+        <header class="set-head"><h1>网络</h1></header>
+        <div class="set-group">
+          <div class="set-row"><div class="row-t">网络类型</div>
+            <div class="seg small">
+              <button type="button" data-quick="wifi" aria-pressed="true">Wi-Fi</button>
+              <button type="button" data-quick="cell">5G</button>
+            </div>
+          </div>
+          <div class="set-row"><div><div class="row-t">Studio-5G</div><div class="row-s">已连接</div></div></div>
+          <div class="set-row"><div><div class="row-t">Guest</div><div class="row-s">需要密码</div></div></div>
+        </div>
+      </div>
+      <div class="panel-foot">
+        <button type="button" class="panel-jump" data-jump="settings:network">设置 · 网络</button>
+      </div>
+    </div>
+    <div class="content status-content" data-status-panel="notify" hidden>
+      <div class="content-scroll">
+        <header class="set-head"><h1>通知</h1><p>栈 · 最上新</p></header>
+        <div class="set-group" data-notice-list></div>
+      </div>
+    </div>
+    <div class="content status-content" data-status-panel="more" hidden>
       <div class="content-scroll">
         <header class="set-head"><h1>设备状态</h1><p>状态与快捷操作</p></header>
         <div class="set-group">
@@ -219,12 +292,17 @@ export function statusBarHTML(): string {
         </div>
       </div>
     </div>
+    <div class="notice-banner" data-notice-banner hidden>
+      <span class="nb-progress"><i class="nb-bar"></i></span>
+      <div class="nb-title"></div>
+      <div class="nb-body"></div>
+    </div>
   </div>`;
 }
 
+/** App 栏（左下）：DOM 顺序 = 视觉自上而下，启动台永远最后（最下） */
 export type AppBarItem = { appId: string; icon: IconName; label: string };
 
-/** App 栏（左下）：DOM 顺序 = 视觉自上而下，启动台永远最后（最下） */
 export function appBarHTML(items: AppBarItem[]): string {
   return `<div class="sys-appbar">
     <div class="capsule nav-capsule app-capsule">
