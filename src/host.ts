@@ -8,7 +8,9 @@ import type { WinApi } from "./windows";
 
 /** 滚动指示：同宽双胶囊（长浅灰/短深灰），滚动时才出现 */
 export function bindScrollIndicator(root: HTMLElement): void {
-  const scroller = $<HTMLElement>(".content-scroll", root);
+  const scroller = root.classList.contains("content-scroll")
+    ? root
+    : $<HTMLElement>(".content-scroll", root);
   const ind = $<HTMLElement>(".scroll-indicator", root);
   const thumb = $<HTMLElement>(".scroll-thumb", root);
   if (!scroller || !ind || !thumb) return;

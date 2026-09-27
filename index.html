@@ -759,13 +759,22 @@ svg {
 .panel-jump:hover { background: var(--hover); color: var(--ink); }
 
 /* 通知横幅：从屏幕上侧外滑入，右上角进度条，满即退场入栈 */
-/* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动） */
+/* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动）
+   超出屏幕可滚动（自带滚动指示器）；滑入/收起在栈顶边缘被裁剪 = 从屏幕上侧外进出 */
+.notice-stack-wrap { position: relative; }
 .notice-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+  max-height: calc(100vh - var(--inset) - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px;
+  scrollbar-width: none;
+  position: relative;
 }
+.notice-stack::-webkit-scrollbar { display: none; }
 .notice-banner {
   position: relative;
   width: min(300px, 40vw);
@@ -1957,11 +1966,14 @@ svg {
         </div>
       </div>
     </div>
-    <div class="notice-stack" data-notice-stack>
-      <div class="notice-actions" data-notice-actions hidden>
-        <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
-        <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
+    <div class="notice-stack-wrap" data-notice-wrap>
+      <div class="notice-stack content-scroll" data-notice-stack>
+        <div class="notice-actions" data-notice-actions hidden>
+          <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
+          <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
+        </div>
       </div>
+      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
     </div>
   </div>`;
   }
@@ -7196,7 +7208,7 @@ svg {
 
   // src/host.ts
   function bindScrollIndicator(root) {
-    const scroller = $(".content-scroll", root);
+    const scroller = root.classList.contains("content-scroll") ? root : $(".content-scroll", root);
     const ind = $(".scroll-indicator", root);
     const thumb = $(".scroll-thumb", root);
     if (!scroller || !ind || !thumb) return;
@@ -8129,6 +8141,7 @@ svg {
     const fresh = /* @__PURE__ */ new Set();
     const hidden = /* @__PURE__ */ new Set();
     const els = /* @__PURE__ */ new Map();
+    let zSeq = 0;
     const visibleIds = () => store.get().notices.filter((n) => centerOpen ? !hidden.has(n.id) : fresh.has(n.id) && !hidden.has(n.id));
     const makeBanner = (n, withProgress) => {
       const el = document.createElement("div");
@@ -8148,8 +8161,11 @@ svg {
       const el = els.get(id);
       if (!el) return;
       els.delete(id);
+      const h = el.getBoundingClientRect().height;
       gsapWithCSS.to(el, {
-        yPercent: -140,
+        y: -(h + 12),
+        scale: 0.92,
+        transformOrigin: "50% 0%",
         duration: 0.24,
         ease: "power2.in",
         onComplete: () => {
@@ -8170,6 +8186,7 @@ svg {
       if (!el) return;
       els.delete(id);
       const r = el.getBoundingClientRect();
+      gsapWithCSS.set(el, { position: "fixed", top: r.top, left: r.left, width: r.width, zIndex: 300 });
       gsapWithCSS.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
       window.setTimeout(() => el.remove(), 400);
     };
@@ -8182,7 +8199,7 @@ svg {
         if (t >= bannerDur) {
           window.clearInterval(timer);
           el.querySelector(".nb-progress")?.remove();
-          collapseUp(id);
+          if (!centerOpen) collapseUp(id);
         }
       }, 100);
     };
@@ -8214,6 +8231,7 @@ svg {
         const withProgress = fresh.has(n.id) && !centerOpen;
         const el = makeBanner(n, withProgress);
         el.dataset.noticeId = String(n.id);
+        el.style.zIndex = String(++zSeq + 10);
         els.set(n.id, el);
         stack.prepend(el);
         gsapWithCSS.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
@@ -8271,6 +8289,8 @@ svg {
       if (!s.notices.length) centerOpen = false;
       renderStack();
     };
+    const wrap3 = $("[data-notice-wrap]", root);
+    if (wrap3) bindScrollIndicator(wrap3);
     store.subscribe(syncNotices);
     syncNotices();
   }

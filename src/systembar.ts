@@ -18,6 +18,7 @@ import {
   metricVar,
 } from "./state";
 import { statusBarHTML, appBarHTML, align, icon, type AppBarItem } from "./render";
+import { bindScrollIndicator } from "./host";
 import { APPS, winIdOf } from "./apps";
 import type { WinApi } from "./windows";
 
@@ -106,6 +107,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
   const fresh = new Set<number>();  // 新通知（带进度条展示）
   const hidden = new Set<number>(); // 已收起/已处理（不出现在横幅栈）
   const els = new Map<number, HTMLElement>();
+  let zSeq = 0;
 
   const visibleIds = () =>
     store
@@ -124,7 +126,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
     return el;
   };
 
-  /** 收起：上滑出屏，进入列表（不再展示，除非通知栏重展） */
+  /** 收起：上滑出屏（px 位移——yPercent 随高度塌缩归零会把横幅闪回原位），轻微缩小 */
   const collapseUp = (id: number) => {
     if (hidden.has(id)) return;
     hidden.add(id);
@@ -132,8 +134,11 @@ export function initStatusBar(store: Store, api: WinApi): void {
     const el = els.get(id);
     if (!el) return;
     els.delete(id);
+    const h = el.getBoundingClientRect().height;
     gsap.to(el, {
-      yPercent: -140,
+      y: -(h + 12),
+      scale: 0.92,
+      transformOrigin: "50% 0%",
       duration: 0.24,
       ease: "power2.in",
       onComplete: () => {
@@ -154,6 +159,8 @@ export function initStatusBar(store: Store, api: WinApi): void {
     if (!el) return;
     els.delete(id);
     const r = el.getBoundingClientRect();
+    // fixed 逃逸：横幅处于可滚动栈内，左滑若被容器裁剪会瞬间消失
+    gsap.set(el, { position: "fixed", top: r.top, left: r.left, width: r.width, zIndex: 300 });
     gsap.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
     window.setTimeout(() => el.remove(), 400); // 渲染冻结兜底
   };
@@ -167,7 +174,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
       if (t >= bannerDur) {
         window.clearInterval(timer);
         el.querySelector(".nb-progress")?.remove();
-        collapseUp(id); // 通知栏开着也已处理过，不重复展示
+        if (!centerOpen) collapseUp(id); // 通知栏开着则转为常驻（无限时长）
       }
     }, 100);
   };
@@ -204,6 +211,7 @@ export function initStatusBar(store: Store, api: WinApi): void {
       const withProgress = fresh.has(n.id) && !centerOpen;
       const el = makeBanner(n, withProgress);
       el.dataset.noticeId = String(n.id);
+      el.style.zIndex = String(++zSeq + 10); // 后出现者图层更高
       els.set(n.id, el);
       stack.prepend(el);
       gsap.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
@@ -266,6 +274,8 @@ export function initStatusBar(store: Store, api: WinApi): void {
     if (!s.notices.length) centerOpen = false;
     renderStack();
   };
+  const wrap = $<HTMLElement>("[data-notice-wrap]", root);
+  if (wrap) bindScrollIndicator(wrap);
   store.subscribe(syncNotices);
   syncNotices();
 }

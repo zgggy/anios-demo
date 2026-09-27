@@ -719,13 +719,22 @@ svg {
 .panel-jump:hover { background: var(--hover); color: var(--ink); }
 
 /* 通知横幅：从屏幕上侧外滑入，右上角进度条，满即退场入栈 */
-/* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动） */
+/* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动）
+   超出屏幕可滚动（自带滚动指示器）；滑入/收起在栈顶边缘被裁剪 = 从屏幕上侧外进出 */
+.notice-stack-wrap { position: relative; }
 .notice-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
+  max-height: calc(100vh - var(--inset) - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px;
+  scrollbar-width: none;
+  position: relative;
 }
+.notice-stack::-webkit-scrollbar { display: none; }
 .notice-banner {
   position: relative;
   width: min(300px, 40vw);
