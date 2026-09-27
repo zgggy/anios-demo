@@ -22,7 +22,6 @@ const content = `
 export const filesApp: AppDef = {
   id: "files",
   title: "文件",
-  blurb: "最近与下载",
   icon: "file",
   geom: { left: 40, top: 16, width: 36, height: 52 },
   minSize: { w: 280, h: 220 },

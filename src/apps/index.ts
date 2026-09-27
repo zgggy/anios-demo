@@ -9,6 +9,7 @@ import { settingsApp } from "./settings";
 import { phoneApp } from "./phone";
 import { clockApp } from "./clock";
 import { filesApp } from "./files";
+import { philosophyApp } from "./philosophy";
 import { samplePerm, sampleNote, sampleHud, sampleCast } from "./samples";
 import { makeLauncherApp } from "./launcher";
 
@@ -22,8 +23,6 @@ export type AppActions = {
 export type AppDef = {
   id: string; // data-app / App 栏 data-app-id
   title: string;
-  /** 启动台里的应用简介 */
-  blurb?: string;
   icon: IconName;
   geom: Geom; // 初始浮动几何（% of viewport）
   /** 最小窗口尺寸（px）：切档/缩放视口时窗口不得小于此 */
@@ -51,7 +50,7 @@ export function winIdOf(appId: string): string {
   return `win-${appId}`;
 }
 
-const baseApps: AppDef[] = [settingsApp, phoneApp, clockApp, filesApp];
+const baseApps: AppDef[] = [settingsApp, phoneApp, clockApp, filesApp, philosophyApp];
 export const samples: AppDef[] = [samplePerm, sampleNote, sampleHud, sampleCast];
 
 export const APPS: AppDef[] = [...baseApps, ...samples, makeLauncherApp(baseApps)];
@@ -61,4 +60,4 @@ export function appPolicy(app: AppDef) {
   return policyOf(app.winType);
 }
 
-export { settingsApp, phoneApp, clockApp, filesApp, samplePerm, sampleNote, sampleHud, sampleCast };
+export { settingsApp, phoneApp, clockApp, filesApp, philosophyApp, samplePerm, sampleNote, sampleHud, sampleCast };

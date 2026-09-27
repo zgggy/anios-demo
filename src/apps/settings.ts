@@ -191,10 +191,9 @@ async function saveDefault(key: string, value: number, btn: HTMLElement): Promis
 export const settingsApp: AppDef = {
   id: "settings",
   title: "设置",
-  blurb: "系统与个性化",
   icon: "gear",
   pinned: true,
-  geom: { left: 14, top: 10, width: 58, height: 72 },
+  geom: { left: 6.50391, top: 4.45312, width: 60.5127, height: 66.8338 },
   minSize: { w: 360, h: 260 },
   z: 22,
   open: true,

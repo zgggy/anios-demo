@@ -861,6 +861,52 @@ svg {
 }
 .app-row .a-ic svg { width: 18px; height: 18px; }
 
+/* 启动台应用网格：图标 + 名称，无说明（Launchpad 式） */
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 4px;
+}
+.app-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 4px 10px;
+  border-radius: 12px;
+}
+.app-tile:hover { background: var(--hover); }
+.app-tile .a-ic { width: 30px; height: 30px; display: grid; place-items: center; }
+.app-tile .a-ic svg { width: 26px; height: 26px; }
+.app-tile .a-name {
+  font-size: var(--font-desc);
+  color: var(--ink-2);
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 设计理念排版 */
+.creed { display: flex; flex-direction: column; }
+.creed-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 4px;
+  border-top: 1px solid var(--line);
+}
+.creed-item:first-child { border-top: 0; }
+.creed-n {
+  font-size: var(--font-stat);
+  font-weight: 700;
+  color: var(--ink-3);
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+.creed-t { font-size: var(--font-row); font-weight: 600; }
+.creed-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 4px; }
+
 /* ══════════ 窗口类型学 ══════════ */
 .modal-scrim {
   position: absolute;

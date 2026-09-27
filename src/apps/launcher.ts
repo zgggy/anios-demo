@@ -7,13 +7,13 @@ export function makeLauncherApp(apps: AppDef[]): AppDef {
   const content = `
 <section class="set-pane" data-pane="apps">
   <header class="set-head"><h1>启动台</h1><p>应用 · 文件 · 链接 · 操作</p></header>
-  <div class="set-group">
+  <div class="app-grid">
     ${apps
       .filter((a) => a.listed !== false)
       .map(
-        (a) => `<button type="button" class="set-row app-row" data-launch="${a.id}">
+        (a) => `<button type="button" class="app-tile" data-launch="${a.id}">
           <span class="a-ic">${icon(a.icon)}</span>
-          <div><div class="row-t">${a.title}</div><div class="row-s">${a.blurb ?? ""}</div></div>
+          <span class="a-name">${a.title}</span>
         </button>`,
       )
       .join("")}
@@ -58,9 +58,8 @@ export function makeLauncherApp(apps: AppDef[]): AppDef {
   return {
     id: "launcher",
     title: "启动台",
-    blurb: "应用 · 文件 · 链接 · 操作",
     icon: "grid",
-    geom: { left: 22, top: 16, width: 56, height: 58 },
+    geom: { left: 41.0455, top: 38.1727, width: 45.3741, height: 55.5566 },
   minSize: { w: 380, h: 280 },
     z: 20,
     open: false,

@@ -24,9 +24,8 @@ const content = `
 export const clockApp: AppDef = {
   id: "clock",
   title: "时钟",
-  blurb: "闹钟与世界时钟",
   icon: "clock",
-  geom: { left: 30, top: 22, width: 34, height: 46 },
+  geom: { left: 15.7037, top: 37.0833, width: 26.1737, height: 58.393 },
   minSize: { w: 260, h: 200 },
   z: 20,
   open: false,
