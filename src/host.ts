@@ -86,16 +86,47 @@ export function initHost(store: Store, api: WinApi): void {
   if (!vp) return;
 
   // 视口尺寸预设 / 屏幕类型（接口预留）：宿主工具，DOM 本地
+  // 「全屏」= Fullscreen API 真全屏：视口占据整块显示器（宿主脚手架不渲染）；Esc 退出
+  let sizeBeforeFull = vp.dataset.size || "large";
+  const syncSizeButtons = (size: string) => {
+    $$("button[data-size]").forEach((x) =>
+      x.setAttribute("aria-pressed", x.getAttribute("data-size") === size ? "true" : "false"),
+    );
+  };
   $$("button[data-size]").forEach((b) => {
     on(b, "click", () => {
-      vp.dataset.size = b.getAttribute("data-size")!;
+      const size = b.getAttribute("data-size")!;
+      if (size === "fullscreen") {
+        if (vp.dataset.size !== "fullscreen") sizeBeforeFull = vp.dataset.size || "large";
+        if (!vp.requestFullscreen) return;
+        vp.requestFullscreen()
+          .then(() => {
+            vp.dataset.size = "fullscreen";
+            vp.style.width = "";
+            vp.style.height = "";
+            syncSizeButtons("fullscreen");
+            api.alignAll();
+          })
+          .catch(() => {
+            /* 环境不支持真全屏：维持原状 */
+          });
+        return;
+      }
+      vp.dataset.size = size;
       vp.style.width = "";
       vp.style.height = "";
-      $$("button[data-size]").forEach((x) =>
-        x.setAttribute("aria-pressed", x.getAttribute("data-size") === b.getAttribute("data-size") ? "true" : "false"),
-      );
+      syncSizeButtons(size);
       api.alignAll();
     });
+  });
+  // Esc 等退出全屏 → 回到进入前的尺寸档
+  document.addEventListener("fullscreenchange", () => {
+    if (document.fullscreenElement === vp || vp.dataset.size !== "fullscreen") return;
+    vp.dataset.size = sizeBeforeFull;
+    vp.style.width = "";
+    vp.style.height = "";
+    syncSizeButtons(sizeBeforeFull);
+    api.alignAll();
   });
 
   $$("button[data-screen]").forEach((b) => {

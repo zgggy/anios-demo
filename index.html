@@ -179,6 +179,17 @@ svg {
   width: min(92vw, 517px);
   height: min(88vh, 920px);
 }
+/* 真全屏（Fullscreen API）：视口即整块显示器，宿主脚手架不渲染 */
+.viewport:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 0;
+  clip-path: none;
+  box-shadow: none;
+}
+.viewport:fullscreen .vp-resize { display: none; }
 .wallpaper {
   position: absolute;
   inset: 0;
@@ -1251,6 +1262,7 @@ svg {
     <div class="seg" role="group" aria-label="视口">
       <button type="button" data-size="compact">紧凑</button>
       <button type="button" data-size="large" aria-pressed="true">大型</button>
+      <button type="button" data-size="fullscreen" title="真全屏：视口占满显示器（Esc 退出）">全屏</button>
     </div>
     <div class="seg" role="group" aria-label="屏幕">
       <button type="button" data-screen="touch">触控</button>
@@ -6810,16 +6822,42 @@ svg {
     const vp = $("#viewport");
     const handle = $("#vpResize");
     if (!vp) return;
+    let sizeBeforeFull = vp.dataset.size || "large";
+    const syncSizeButtons = (size) => {
+      $$("button[data-size]").forEach(
+        (x) => x.setAttribute("aria-pressed", x.getAttribute("data-size") === size ? "true" : "false")
+      );
+    };
     $$("button[data-size]").forEach((b) => {
       on(b, "click", () => {
-        vp.dataset.size = b.getAttribute("data-size");
+        const size = b.getAttribute("data-size");
+        if (size === "fullscreen") {
+          if (vp.dataset.size !== "fullscreen") sizeBeforeFull = vp.dataset.size || "large";
+          if (!vp.requestFullscreen) return;
+          vp.requestFullscreen().then(() => {
+            vp.dataset.size = "fullscreen";
+            vp.style.width = "";
+            vp.style.height = "";
+            syncSizeButtons("fullscreen");
+            api.alignAll();
+          }).catch(() => {
+          });
+          return;
+        }
+        vp.dataset.size = size;
         vp.style.width = "";
         vp.style.height = "";
-        $$("button[data-size]").forEach(
-          (x) => x.setAttribute("aria-pressed", x.getAttribute("data-size") === b.getAttribute("data-size") ? "true" : "false")
-        );
+        syncSizeButtons(size);
         api.alignAll();
       });
+    });
+    document.addEventListener("fullscreenchange", () => {
+      if (document.fullscreenElement === vp || vp.dataset.size !== "fullscreen") return;
+      vp.dataset.size = sizeBeforeFull;
+      vp.style.width = "";
+      vp.style.height = "";
+      syncSizeButtons(sizeBeforeFull);
+      api.alignAll();
     });
     $$("button[data-screen]").forEach((b) => {
       on(b, "click", () => {
