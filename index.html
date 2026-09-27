@@ -345,6 +345,7 @@ svg {
   flex-shrink: 0;
   transition: height var(--anim-pane) var(--ease), background 120ms ease, color 120ms ease;
 }
+.nav-btn[hidden] { display: none !important; } /* display:flex 顶掉 UA [hidden] */
 .nav-btn:hover { background: var(--hover); }
 .nav-btn.active { color: var(--accent); }
 .nav-btn svg { width: 13px; height: 13px; }
@@ -766,18 +767,27 @@ svg {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  margin-top: calc(var(--inset) * -1); /* 通知栏顶部 = 视口顶部 */
 }
 .notice-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  max-height: calc(100vh - var(--inset) - 92px); /* 留出底部操作行 */
-  overflow-y: auto;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* 超出视口底部即在栈内滚动 */
   overflow-x: hidden;
   padding: 2px;
   scrollbar-width: none;
   position: relative;
+}
+.notice-stack::-webkit-scrollbar { display: none; }
+/* 滚动指示器：所有通知的右侧（栈外，不被横幅遮挡） */
+.notice-stack-wrap .scroll-indicator {
+  right: -14px;
+  top: 12px;
+  transform: none;
 }
 .notice-stack::-webkit-scrollbar { display: none; }
 .notice-banner {
@@ -1104,6 +1114,85 @@ svg {
 }
 .creed-t { font-size: var(--font-row); font-weight: 600; }
 .creed-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 4px; }
+
+/* 浏览器应用：工具栏 + 地址栏 + 页面视图 */
+.window[data-app="browser"] .content-scroll {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.browser { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--page); }
+.br-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.br-nav {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+.br-nav:hover { background: var(--hover); color: var(--ink); }
+.br-nav svg { width: 12px; height: 12px; }
+.br-address {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--soft);
+  padding: 0 10px;
+  min-width: 0;
+}
+.br-address svg { width: 10px; height: 10px; flex-shrink: 0; color: var(--ink-3); }
+.br-address input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-size: var(--font-desc);
+  color: var(--ink);
+}
+.br-view { flex: 1; min-height: 0; overflow: auto; background: var(--page); }
+.br-page { padding: 8px 18px 18px; }
+.br-hero { text-align: center; padding: 26px 0 16px; }
+.br-logo { font-size: var(--font-title); font-weight: 700; letter-spacing: 0.02em; }
+.br-tagline { font-size: var(--font-desc); color: var(--ink-3); margin-top: 4px; }
+.br-fav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.br-fav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+  border-radius: 12px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+}
+.br-fav:hover { background: var(--hover); }
+.br-fav .a-ic { width: 26px; height: 26px; display: grid; place-items: center; color: var(--ink-2); }
+.br-fav .a-ic svg { width: 22px; height: 22px; }
+.br-fav-name { font-size: var(--font-desc); color: var(--ink-2); }
+.br-doc p { font-size: var(--font-desc); color: var(--ink-2); line-height: 1.7; margin: 0 0 10px; }
+.br-doc h2 { font-size: var(--font-row); font-weight: 600; margin: 16px 0 6px; }
+.br-err { text-align: center; padding: 40px 16px; }
+.br-err-t { font-size: var(--font-row); font-weight: 600; }
+.br-err-d { font-size: var(--font-desc); color: var(--ink-3); margin-top: 6px; margin-bottom: 14px; }
 
 /* ══════════ 窗口类型学 ══════════ */
 .modal-scrim {
@@ -1854,6 +1943,10 @@ svg {
   function statusBarHTML() {
     return `<div class="sys-status" data-net="wifi">
     <div class="capsule nav-capsule status-capsule">
+      <button type="button" class="nav-btn" data-time-btn data-status-open="time" aria-label="\u65F6\u95F4" aria-expanded="false">
+        <span class="st-time" data-time>12:00</span>
+        <span class="nav-text">\u65F6\u95F4</span>
+      </button>
       <button type="button" class="nav-btn" data-battery data-status-open="battery" aria-label="\u7535\u91CF" aria-expanded="false">
         <span class="bat">
           <svg viewBox="0 0 36 36" aria-hidden="true">
@@ -1863,10 +1956,6 @@ svg {
           <span class="bat-pct">72</span>
         </span>
         <span class="nav-text">\u7535\u91CF</span>
-      </button>
-      <button type="button" class="nav-btn" data-time-btn data-status-open="time" aria-label="\u65F6\u95F4" aria-expanded="false">
-        <span class="st-time" data-time>12:00</span>
-        <span class="nav-text">\u65F6\u95F4</span>
       </button>
       <button type="button" class="nav-btn" data-network data-status-open="network" aria-label="\u7F51\u7EDC" aria-expanded="false">
         ${icon("wifi")}
@@ -1979,11 +2068,11 @@ svg {
     </div>
     <div class="notice-stack-wrap" data-notice-wrap>
       <div class="notice-stack content-scroll" data-notice-stack></div>
-      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
       <div class="notice-actions" data-notice-actions hidden>
         <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
         <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
       </div>
+      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
     </div>
   </div>`;
   }
@@ -2005,9 +2094,9 @@ svg {
     };
   }
   function align(win) {
-    const content6 = $(".content", win);
-    if (!content6) return;
-    const { cx, cy } = layoutCenter(content6);
+    const content7 = $(".content", win);
+    if (!content7) return;
+    const { cx, cy } = layoutCenter(content7);
     win.style.setProperty("--content-cx", `${cx}px`);
     win.style.setProperty("--content-cy", `${cy}px`);
   }
@@ -6320,30 +6409,30 @@ svg {
     };
   }
   function captureShell(win) {
-    const content6 = $(".content", win);
-    const scroller = $(".content-scroll", content6);
+    const content7 = $(".content", win);
+    const scroller = $(".content-scroll", content7);
     return {
-      content: content6.getBoundingClientRect(),
+      content: content7.getBoundingClientRect(),
       nav: $("[data-nav]", win)?.getBoundingClientRect(),
       topbar: $("[data-topbar]", win)?.getBoundingClientRect(),
-      radius: getComputedStyle(content6).borderRadius,
+      radius: getComputedStyle(content7).borderRadius,
       pad: scroller ? padOf(scroller) : {}
     };
   }
   function playShell(win, first) {
-    const content6 = $(".content", win);
-    if (!content6) return;
+    const content7 = $(".content", win);
+    if (!content7) return;
     const navbar = $("[data-nav]", win);
     const topbar = $("[data-topbar]", win);
-    const scroller = $(".content-scroll", content6);
+    const scroller = $(".content-scroll", content7);
     const d = durSec("--anim-window");
     align(win);
-    const lC = content6.getBoundingClientRect();
+    const lC = content7.getBoundingClientRect();
     const lN = navbar?.getBoundingClientRect();
     const lT = topbar?.getBoundingClientRect();
     const wr = win.getBoundingClientRect();
     gsapWithCSS.fromTo(
-      content6,
+      content7,
       {
         left: first.content.left - wr.left,
         top: first.content.top - wr.top,
@@ -6360,12 +6449,12 @@ svg {
         height: lC.height,
         right: "auto",
         bottom: "auto",
-        borderRadius: getComputedStyle(content6).borderRadius,
+        borderRadius: getComputedStyle(content7).borderRadius,
         duration: d,
         ease: EASE,
         overwrite: true,
         onComplete: () => {
-          gsapWithCSS.set(content6, {
+          gsapWithCSS.set(content7, {
             clearProps: "left,top,width,height,right,bottom,borderRadius"
           });
           win.dataset.flipping = "0";
@@ -6961,8 +7050,124 @@ svg {
     editItems: ["\u5168\u9009", "\u6E05\u9664\u6700\u8FD1"]
   };
 
-  // src/apps/philosophy.ts
+  // src/apps/browser.ts
   var content5 = `
+<div class="browser">
+  <div class="br-toolbar">
+    <button type="button" class="br-nav" data-br-back aria-label="\u540E\u9000">${icon("back")}</button>
+    <div class="br-address">
+      <span class="br-lock">${icon("file")}</span>
+      <input type="text" data-br-url value="anios://start" spellcheck="false" />
+    </div>
+    <button type="button" class="br-nav" data-br-reload aria-label="\u91CD\u65B0\u52A0\u8F7D">${icon("clock")}</button>
+  </div>
+  <div class="br-view" data-br-view>
+    <section class="br-page" data-br-page="start">
+      <div class="br-hero">
+        <div class="br-logo">anios</div>
+        <div class="br-tagline">\u8BBE\u8BA1\u7CFB\u7EDF\u7684\u6D4F\u89C8\u5668 \xB7 \u4ECE\u6536\u85CF\u5F00\u59CB</div>
+      </div>
+      <div class="br-fav-grid">
+        <button type="button" class="br-fav" data-go="anios://docs">
+          <span class="a-ic">${icon("file")}</span><span class="br-fav-name">\u8BBE\u8BA1\u89C4\u8303</span>
+        </button>
+        <button type="button" class="br-fav" data-go="anios://news">
+          <span class="a-ic">${icon("bolt")}</span><span class="br-fav-name">\u6BCF\u65E5\u8BBE\u8BA1</span>
+        </button>
+        <button type="button" class="br-fav" data-go="anios://about">
+          <span class="a-ic">${icon("star")}</span><span class="br-fav-name">\u5173\u4E8E anios</span>
+        </button>
+        <button type="button" class="br-fav" data-go="anios://clock">
+          <span class="a-ic">${icon("clock")}</span><span class="br-fav-name">\u65F6\u949F</span>
+        </button>
+      </div>
+    </section>
+    <section class="set-pane br-doc" data-br-page="docs" hidden>
+      <header class="set-head"><h1>anios \u8BBE\u8BA1\u89C4\u8303</h1><p>\u51E0\u4F55 \xB7 \u5C42\u7EA7 \xB7 \u72B6\u6001 \xB7 \u53C2\u6570\u5316</p></header>
+      <div class="br-doc">
+        <h2>\u51E0\u4F55\u5148\u4E8E\u50CF\u7D20</h2>
+        <p>\u5C4F\u5E55\u662F\u4E00\u5757\u53EF\u88C1\u5207\u7684\u89C6\u53E3\uFF0C\u7A97\u53E3\u7528\u767E\u5206\u6BD4\u5B89\u5BB6\u3002\u95F4\u8DDD\u3001\u5C3A\u5BF8\u3001\u5B57\u53F7\u5168\u90E8\u662F\u8FD0\u884C\u65F6\u53C2\u6570\uFF1B\u6D3E\u751F\u53EA\u4FDD\u7559\u51E0\u4F55\u5FC5\u7136\uFF0C\u6570\u503C\u5DE7\u5408\u4E00\u5F8B\u62C6\u5F00\u3002</p>
+        <h2>\u72B6\u6001\u5373\u771F\u76F8</h2>
+        <p>\u6536\u8D77\u3001\u540E\u53F0\u3001\u524D\u53F0\u3001\u5173\u95ED\u662F\u56DB\u79CD\u88AB\u7CFB\u7EDF\u627F\u8BA4\u7684\u72B6\u6001\uFF0C\u5404\u81EA\u6709\u770B\u5F97\u89C1\u7684\u6837\u5B50\u3002\u52A8\u753B\u53EA\u662F\u72B6\u6001\u4E4B\u95F4\u7684\u63D2\u503C\uFF0C\u4E0D\u662F\u88C5\u9970\u3002</p>
+        <h2>\u6253\u6270\u5FC5\u987B\u58F0\u660E\u59FF\u6001</h2>
+        <p>\u6A21\u6001\u7528\u906E\u7F69\u5708\u4F4F\u6CE8\u610F\u529B\uFF0C\u901A\u77E5\u4E0D\u593A\u7126\u70B9\u5916\u5373\u8D70\uFF0C\u547D\u4EE4\u5C5E\u4E8E\u5B83\u7684\u5BF9\u8C61\u3002</p>
+      </div>
+    </section>
+    <section class="set-pane br-doc" data-br-page="news" hidden>
+      <header class="set-head"><h1>\u6BCF\u65E5\u8BBE\u8BA1 \xB7 \u7B2C 12 \u671F</h1><p>\u7A97\u53E3\u7C7B\u578B\u5B66\uFF1A\u4E00\u79CD\u8868\u9762\uFF0C\u4E00\u7EC4\u5173\u7CFB</p></header>
+      <div class="br-doc">
+        <p>\u7A97\u53E3\u4E0D\u662F\u4E00\u79CD\u4E1C\u897F\u3002\u666E\u901A\u7A97\u3001\u5BF9\u8BDD\u6846\u3001\u4E34\u65F6\u7A97\u3001\u65E0\u80CC\u666F\u7A97\u3001\u6C89\u6D78\u7A97\u2014\u2014\u6BCF\u4E00\u7C7B\u90FD\u662F\u7CFB\u7EDF\u7ED9\u5B9A\u7684\u4E00\u7EC4\u884C\u4E3A\u5951\u7EA6\uFF1A\u8C01\u62E5\u6709\u7126\u70B9\u3001\u80FD\u5426\u62D6\u52A8\u3001\u5982\u4F55\u9000\u51FA\u3001\u4E0E\u7CFB\u7EDF\u680F\u662F\u4EC0\u4E48\u5173\u7CFB\u3002</p>
+        <p>\u7C7B\u578B\u7531\u7CFB\u7EDF\u5B9A\u4E49\uFF0C\u5185\u5BB9\u7531\u5E94\u7528\u586B\u5199\u2014\u2014\u8FD9\u5C31\u662F\u300C\u5E94\u7528\u53EA\u586B\u5185\u5BB9\u300D\u5728\u7A97\u53E3\u7EF4\u5EA6\u7684\u5F62\u6001\u3002</p>
+      </div>
+    </section>
+    <section class="set-pane br-doc" data-br-page="about" hidden>
+      <header class="set-head"><h1>\u5173\u4E8E anios</h1><p>\u7248\u672C 1.0</p></header>
+      <div class="br-doc">
+        <p>anios \u662F\u4E00\u4E2A\u8868\u8FBE\u64CD\u4F5C\u7CFB\u7EDF UI/UX \u8BBE\u8BA1\u7406\u5FF5\u7684\u6F14\u793A\uFF1A\u7CFB\u7EDF\u63D0\u4F9B\u63A7\u4EF6\u4E0E\u6A21\u5F0F\uFF0C\u5E94\u7528\u53EA\u586B\u5185\u5BB9\u3002</p>
+      </div>
+    </section>
+    <section class="set-pane" data-br-page="error" hidden>
+      <div class="br-err">
+        <div class="br-err-t">\u65E0\u6CD5\u8BBF\u95EE\u6B64\u7F51\u7AD9</div>
+        <div class="br-err-d" data-br-err-url></div>
+        <button type="button" class="btn-call" data-br-home>\u8FD4\u56DE\u8D77\u59CB\u9875</button>
+      </div>
+    </section>
+  </div>
+</div>`;
+  var browserApp = {
+    id: "browser",
+    title: "\u6D4F\u89C8\u5668",
+    icon: "net",
+    geom: { left: 18, top: 12, width: 54, height: 64 },
+    minSize: { w: 420, h: 300 },
+    z: 20,
+    open: false,
+    pinned: false,
+    nav: [],
+    content: content5,
+    searchPlaceholder: "\u641C\u7D22\u6216\u8F93\u5165\u7F51\u5740",
+    bind(root) {
+      const addr = root.querySelector("[data-br-url]");
+      const view = root.querySelector("[data-br-view]");
+      const known = ["start", "docs", "news", "about"];
+      const hist = ["anios://start"];
+      let hi = 0;
+      const show = (url) => {
+        const page = url.replace("anios://", "") || "start";
+        const knownPage = known.includes(page);
+        $$("[data-br-page]", root).forEach((p) => {
+          p.hidden = p.dataset.brPage !== (knownPage ? page : "error");
+        });
+        const errUrl = root.querySelector("[data-br-err-url]");
+        if (errUrl && !knownPage) errUrl.textContent = url;
+        if (addr) addr.value = url;
+        if (view) view.scrollTop = 0;
+      };
+      const navigate = (url) => {
+        hist.splice(hi + 1);
+        hist.push(url);
+        hi = hist.length - 1;
+        show(url);
+      };
+      $$("[data-go]", root).forEach((el) => {
+        on(el, "click", () => navigate(el.getAttribute("data-go")));
+      });
+      on(addr, "keydown", (e) => {
+        if (e.key === "Enter") navigate(addr.value.trim() || "anios://start");
+      });
+      on(root.querySelector("[data-br-back]"), "click", () => {
+        if (hi > 0) {
+          hi -= 1;
+          show(hist[hi]);
+        }
+      });
+      on(root.querySelector("[data-br-reload]"), "click", () => show(hist[hi]));
+    }
+  };
+
+  // src/apps/philosophy.ts
+  var content6 = `
 <section class="set-pane" data-pane="creed">
   <header class="set-head"><h1>\u8BBE\u8BA1\u7406\u5FF5</h1><p>\u516D\u6761\u4E3B\u5F20</p></header>
   <div class="creed">
@@ -7033,7 +7238,7 @@ svg {
       { section: "creed", icon: "star", label: "\u4E3B\u5F20" },
       { section: "demo", icon: "apps", label: "\u5728\u672C Demo" }
     ],
-    content: content5,
+    content: content6,
     searchPlaceholder: "\u641C\u7D22\u8BBE\u8BA1\u7406\u5FF5\u2026"
   };
 
@@ -7132,7 +7337,7 @@ svg {
 
   // src/apps/launcher.ts
   function makeLauncherApp(apps) {
-    const content6 = `
+    const content7 = `
 <section class="set-pane" data-pane="apps">
   <header class="set-head"><h1>\u542F\u52A8\u53F0</h1><p>\u5E94\u7528 \xB7 \u6587\u4EF6 \xB7 \u94FE\u63A5 \xB7 \u64CD\u4F5C</p></header>
   <div class="app-grid">
@@ -7193,7 +7398,7 @@ svg {
         { section: "links", icon: "link", label: "\u94FE\u63A5" },
         { section: "acts", icon: "bolt", label: "\u64CD\u4F5C" }
       ],
-      content: content6,
+      content: content7,
       searchPlaceholder: "\u641C\u7D22\u5E94\u7528\u3001\u6587\u4EF6\u3001\u94FE\u63A5\u3001\u64CD\u4F5C\u2026",
       searchOpen: true,
       bind(root, _store, actions) {
@@ -7212,7 +7417,7 @@ svg {
   function winIdOf(appId) {
     return `win-${appId}`;
   }
-  var baseApps = [settingsApp, phoneApp, clockApp, filesApp, philosophyApp];
+  var baseApps = [settingsApp, phoneApp, clockApp, filesApp, browserApp, philosophyApp];
   var samples = [samplePerm, sampleNote, sampleHud, sampleCast];
   var APPS = [...baseApps, ...samples, makeLauncherApp(baseApps)];
 
@@ -7626,18 +7831,18 @@ svg {
         })
       );
       const cre = $("[data-resize]", win);
-      const content6 = $(".content", win);
-      if (cre && content6) {
+      const content7 = $(".content", win);
+      if (cre && content7) {
         let creOn = false;
-        on(content6, "pointermove", (e) => {
+        on(content7, "pointermove", (e) => {
           const ev = e;
-          const r = content6.getBoundingClientRect();
+          const r = content7.getBoundingClientRect();
           const ok = win.classList.contains("is-focused") && ev.clientX > r.right - 120 && ev.clientY > r.bottom - 120;
           if (ok === creOn) return;
           creOn = ok;
           cre.classList.toggle("is-on", ok);
         });
-        on(content6, "pointerleave", () => {
+        on(content7, "pointerleave", () => {
           creOn = false;
           cre.classList.remove("is-on");
         });
@@ -7965,10 +8170,10 @@ svg {
         hideAll();
         return;
       }
-      const content6 = $(".content", win);
+      const content7 = $(".content", win);
       const zone = $(".top-bar [data-drag-zone]", win);
       const rec = $("[data-recover]", win);
-      if (!content6 || !rec) return;
+      if (!content7 || !rec) return;
       const vr = viewport.getBoundingClientRect();
       const zr = zone?.getBoundingClientRect();
       const chromeVisible = !!zr && zr.left >= vr.left - 1 && zr.top >= vr.top - 1 && zr.right <= vr.right + 1 && zr.bottom <= vr.bottom + 1;
@@ -7976,7 +8181,7 @@ svg {
         hideAll();
         return;
       }
-      const wr = content6.getBoundingClientRect();
+      const wr = content7.getBoundingClientRect();
       const mx = e.clientX;
       const my = e.clientY;
       const gap = pxVar("--gap", 5);
@@ -8223,7 +8428,7 @@ svg {
     const renderStack = () => {
       if (!stack) return;
       const vpH = viewport.getBoundingClientRect().height;
-      stack.style.maxHeight = `${Math.max(160, vpH - 58)}px`;
+      if (wrap3) wrap3.style.height = `${vpH}px`;
       const want = visibleIds();
       for (const [id, el] of [...els]) {
         if (!want.some((n) => n.id === id)) {

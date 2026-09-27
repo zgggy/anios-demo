@@ -164,6 +164,10 @@ export function calendarHTML(d = new Date()): string {
 export function statusBarHTML(): string {
   return `<div class="sys-status" data-net="wifi">
     <div class="capsule nav-capsule status-capsule">
+      <button type="button" class="nav-btn" data-time-btn data-status-open="time" aria-label="时间" aria-expanded="false">
+        <span class="st-time" data-time>12:00</span>
+        <span class="nav-text">时间</span>
+      </button>
       <button type="button" class="nav-btn" data-battery data-status-open="battery" aria-label="电量" aria-expanded="false">
         <span class="bat">
           <svg viewBox="0 0 36 36" aria-hidden="true">
@@ -173,10 +177,6 @@ export function statusBarHTML(): string {
           <span class="bat-pct">72</span>
         </span>
         <span class="nav-text">电量</span>
-      </button>
-      <button type="button" class="nav-btn" data-time-btn data-status-open="time" aria-label="时间" aria-expanded="false">
-        <span class="st-time" data-time>12:00</span>
-        <span class="nav-text">时间</span>
       </button>
       <button type="button" class="nav-btn" data-network data-status-open="network" aria-label="网络" aria-expanded="false">
         ${icon("wifi")}
@@ -289,11 +289,11 @@ export function statusBarHTML(): string {
     </div>
     <div class="notice-stack-wrap" data-notice-wrap>
       <div class="notice-stack content-scroll" data-notice-stack></div>
-      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
       <div class="notice-actions" data-notice-actions hidden>
         <button type="button" class="notice-act" data-notice-clear-all>一键清除</button>
         <button type="button" class="notice-act" data-notice-collapse-all>全部收起</button>
       </div>
+      <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
     </div>
   </div>`;
 }

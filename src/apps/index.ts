@@ -9,6 +9,7 @@ import { settingsApp } from "./settings";
 import { phoneApp } from "./phone";
 import { clockApp } from "./clock";
 import { filesApp } from "./files";
+import { browserApp } from "./browser";
 import { philosophyApp } from "./philosophy";
 import { samplePerm, sampleNote, sampleHud, sampleCast } from "./samples";
 import { makeLauncherApp } from "./launcher";
@@ -52,7 +53,7 @@ export function winIdOf(appId: string): string {
   return `win-${appId}`;
 }
 
-const baseApps: AppDef[] = [settingsApp, phoneApp, clockApp, filesApp, philosophyApp];
+const baseApps: AppDef[] = [settingsApp, phoneApp, clockApp, filesApp, browserApp, philosophyApp];
 export const samples: AppDef[] = [samplePerm, sampleNote, sampleHud, sampleCast];
 
 export const APPS: AppDef[] = [...baseApps, ...samples, makeLauncherApp(baseApps)];
@@ -62,4 +63,4 @@ export function appPolicy(app: AppDef) {
   return policyOf(app.winType);
 }
 
-export { settingsApp, phoneApp, clockApp, filesApp, philosophyApp, samplePerm, sampleNote, sampleHud, sampleCast };
+export { settingsApp, phoneApp, clockApp, filesApp, browserApp, philosophyApp, samplePerm, sampleNote, sampleHud, sampleCast };
