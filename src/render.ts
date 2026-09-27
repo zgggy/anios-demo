@@ -25,7 +25,7 @@ export const ICON = {
   phone: '<path d="M7 4h4l1 5-2.5 1.5a12 12 0 0 0 5 5L16 13l5 1v4a2 2 0 0 1-2 2A15 15 0 0 1 5 6a2 2 0 0 1 2-2z"/>',
   grid: '<circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/>',
   wifi: '<path d="M4 10c4-4 12-4 16 0"/><path d="M7 13c2.5-2.5 7.5-2.5 10 0"/><circle cx="12" cy="17" r="1.2" fill="currentColor" stroke="none"/>',
-  dots: '<circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
+  dots: '<circle cx="6" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.7" fill="currentColor" stroke="none"/>',
   file: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/>',
   link: '<path d="M8 8a3 3 0 1 0 0 6c2 0 2.5-1.5 4-3s2-3 4-3a3 3 0 1 1 0 6c-2 0-2.5-1.5-4-3s-2-3-4-3z"/>',
   bolt: '<path d="M13 3L6 14h5l-1 7 8-12h-5l0-6z"/>',
@@ -179,7 +179,7 @@ export function statusBarHTML(): string {
       </button>
       <button type="button" class="nav-btn" data-network data-status-open="network" aria-label="网络" aria-expanded="false">
         ${icon("wifi")}
-        <span class="net-5g">5G<i></i><i></i><i></i><i></i></span>
+        <span class="net-5g">5G<span class="net-bars"><i></i><i></i><i></i><i></i></span></span>
         <span class="nav-text">网络</span>
       </button>
       <button type="button" class="nav-btn" data-status-notify data-status-open="notify" aria-label="通知" aria-expanded="false" hidden>
