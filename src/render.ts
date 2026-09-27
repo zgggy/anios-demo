@@ -288,13 +288,12 @@ export function statusBarHTML(): string {
       </div>
     </div>
     <div class="notice-stack-wrap" data-notice-wrap>
-      <div class="notice-stack content-scroll" data-notice-stack>
-        <div class="notice-actions" data-notice-actions hidden>
-          <button type="button" class="notice-act" data-notice-clear-all>一键清除</button>
-          <button type="button" class="notice-act" data-notice-collapse-all>全部收起</button>
-        </div>
-      </div>
+      <div class="notice-stack content-scroll" data-notice-stack></div>
       <div class="scroll-indicator" data-scroll-indicator data-mode="percent"><div class="scroll-thumb"></div></div>
+      <div class="notice-actions" data-notice-actions hidden>
+        <button type="button" class="notice-act" data-notice-clear-all>一键清除</button>
+        <button type="button" class="notice-act" data-notice-collapse-all>全部收起</button>
+      </div>
     </div>
   </div>`;
 }

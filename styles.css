@@ -721,13 +721,18 @@ svg {
 /* 通知横幅：从屏幕上侧外滑入，右上角进度条，满即退场入栈 */
 /* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动）
    超出屏幕可滚动（自带滚动指示器）；滑入/收起在栈顶边缘被裁剪 = 从屏幕上侧外进出 */
-.notice-stack-wrap { position: relative; }
+.notice-stack-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
 .notice-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  max-height: calc(100vh - var(--inset) - 48px);
+  max-height: calc(100vh - var(--inset) - 92px); /* 留出底部操作行 */
   overflow-y: auto;
   overflow-x: hidden;
   padding: 2px;
@@ -787,13 +792,17 @@ svg {
 .notice-banner:hover .nb-clear { opacity: 1; }
 .notice-actions {
   display: flex;
+  justify-content: center;
   gap: 8px;
-  margin-top: 2px;
+  width: min(300px, 40vw);
+  margin-top: 8px;
+  flex-shrink: 0;
+  pointer-events: auto;
 }
 .notice-actions[hidden] { display: none !important; }
 .notice-act {
   min-height: 26px;
-  padding: 0 12px;
+  padding: 0 14px;
   border-radius: 999px;
   background: var(--frost-bg);
   border: 1px solid var(--line);
