@@ -337,6 +337,8 @@ export type NoticeItem = {
   title: string;
   body: string;
   ts: number;
+  /** 点击横幅进入的应用 */
+  app?: string;
 };
 
 export type State = {

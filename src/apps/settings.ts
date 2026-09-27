@@ -293,7 +293,7 @@ export const settingsApp: AppDef = {
     $$("[data-push-notice]", root).forEach((b) => {
       on(b, "click", () => {
         const [t, body] = notices[ni++ % notices.length];
-        actions.notify(t, body);
+        actions.notify(t, body, "settings");
       });
     });
     // 滚动指示

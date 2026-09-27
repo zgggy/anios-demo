@@ -145,9 +145,9 @@ export function initWindows(store: Store): WinApi {
     openApp: (appId) => open(winIdOf(appId)),
     minimizeApp: (appId) => minimize(winIdOf(appId)),
     closeApp: (appId) => close(winIdOf(appId)),
-    notify: (title, body) =>
+    notify: (title, body, app) =>
       store.update((s) => {
-        s.notices = [{ id: Date.now(), title, body, ts: Date.now() }, ...s.notices];
+        s.notices = [{ id: Date.now(), title, body, app, ts: Date.now() }, ...s.notices];
       }),
   };
 

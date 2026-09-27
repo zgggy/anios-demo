@@ -759,10 +759,16 @@ svg {
 .panel-jump:hover { background: var(--hover); color: var(--ink); }
 
 /* 通知横幅：从屏幕上侧外滑入，右上角进度条，满即退场入栈 */
+/* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动） */
+.notice-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
 .notice-banner {
   position: relative;
   width: min(300px, 40vw);
-  flex-shrink: 0;
   padding: 10px 12px 12px;
   border-radius: 14px;
   background: var(--frost-bg);
@@ -771,12 +777,9 @@ svg {
   backdrop-filter: var(--frost-blur);
   -webkit-backdrop-filter: var(--frost-blur);
   pointer-events: auto;
-  transform: translateY(-140%);
-  transition: transform 240ms var(--ease);
+  cursor: pointer;
 }
-.notice-banner.on { transform: translateY(0); }
-.notice-banner[hidden] { display: none !important; }
-.nb-progress {
+.notice-banner .nb-progress {
   position: absolute;
   top: 5px;
   right: 8px;
@@ -786,7 +789,7 @@ svg {
   background: var(--soft);
   overflow: hidden;
 }
-.nb-bar {
+.notice-banner .nb-bar {
   display: block;
   height: 100%;
   width: 0;
@@ -795,6 +798,35 @@ svg {
 }
 .nb-title { font-size: var(--font-row); font-weight: 600; padding-right: 50px; }
 .nb-body { font-size: var(--font-desc); color: var(--ink-3); margin-top: 2px; }
+.nb-clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.nb-clear svg { width: 10px; height: 10px; }
+.notice-banner:hover .nb-clear { opacity: 1; }
+.notice-actions { display: flex; gap: 8px; }
+.notice-act {
+  min-height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--frost-bg);
+  border: 1px solid var(--line);
+  font-size: var(--font-desc);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.notice-act:hover { background: var(--hover); color: var(--ink); }
 
 /* 日历（时间面板 / 时钟应用共用） */
 .cal { margin-top: 10px; }
@@ -1710,7 +1742,8 @@ svg {
     backspace: '<path d="M9 6h10v12H9l-6-6z"/><path d="M13 10l4 4M17 10l-4 4"/>',
     save: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v4h6V5"/><path d="M9 19v-5h6v5"/>',
     bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.8 2.5H4.2z"/><path d="M10 21.5a2.4 2.4 0 0 0 4 0"/>',
-    calendar: '<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 10h16M9 4v4M15 4v4"/>'
+    calendar: '<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 10h16M9 4v4M15 4v4"/>',
+    x: '<path d="M7 7l10 10M17 7L7 17"/>'
   };
   function icon(name) {
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
@@ -1815,7 +1848,7 @@ svg {
         <span class="net-5g">5G<span class="net-bars"><i></i><i></i><i></i><i></i></span></span>
         <span class="nav-text">\u7F51\u7EDC</span>
       </button>
-      <button type="button" class="nav-btn" data-status-notify data-status-open="notify" aria-label="\u901A\u77E5" aria-expanded="false" hidden>
+      <button type="button" class="nav-btn" data-status-notify aria-label="\u901A\u77E5" hidden>
         ${icon("bell")}
         <span class="nav-text">\u901A\u77E5</span>
       </button>
@@ -1871,12 +1904,6 @@ svg {
         <button type="button" class="panel-jump" data-jump="settings:network">\u8BBE\u7F6E \xB7 \u7F51\u7EDC</button>
       </div>
     </div>
-    <div class="content status-content" data-status-panel="notify" hidden>
-      <div class="content-scroll">
-        <header class="set-head"><h1>\u901A\u77E5</h1><p>\u6808 \xB7 \u6700\u4E0A\u65B0</p></header>
-        <div class="set-group" data-notice-list></div>
-      </div>
-    </div>
     <div class="content status-content" data-status-panel="more" hidden>
       <div class="content-scroll">
         <header class="set-head"><h1>\u8BBE\u5907\u72B6\u6001</h1><p>\u72B6\u6001\u4E0E\u5FEB\u6377\u64CD\u4F5C</p></header>
@@ -1925,10 +1952,10 @@ svg {
         </div>
       </div>
     </div>
-    <div class="notice-banner" data-notice-banner hidden>
-      <span class="nb-progress"><i class="nb-bar"></i></span>
-      <div class="nb-title"></div>
-      <div class="nb-body"></div>
+    <div class="notice-stack" data-notice-stack></div>
+    <div class="notice-actions" data-notice-actions hidden>
+      <button type="button" class="notice-act" data-notice-clear-all>\u4E00\u952E\u6E05\u9664</button>
+      <button type="button" class="notice-act" data-notice-collapse-all>\u5168\u90E8\u6536\u8D77</button>
     </div>
   </div>`;
   }
@@ -6685,7 +6712,7 @@ svg {
       $$("[data-push-notice]", root).forEach((b) => {
         on(b, "click", () => {
           const [t, body] = notices[ni++ % notices.length];
-          actions.notify(t, body);
+          actions.notify(t, body, "settings");
         });
       });
       $$("[data-scroll-mode]", root).forEach((b) => {
@@ -7448,8 +7475,8 @@ svg {
       openApp: (appId) => open(winIdOf(appId)),
       minimizeApp: (appId) => minimize(winIdOf(appId)),
       closeApp: (appId) => close(winIdOf(appId)),
-      notify: (title, body) => store.update((s) => {
-        s.notices = [{ id: Date.now(), title, body, ts: Date.now() }, ...s.notices];
+      notify: (title, body, app) => store.update((s) => {
+        s.notices = [{ id: Date.now(), title, body, app, ts: Date.now() }, ...s.notices];
       })
     };
     function focus(id) {
@@ -8089,53 +8116,148 @@ svg {
         document.querySelector(`#${winIdOf(appId)} .nav-btn[data-section='${section}']`)?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       });
     });
+    const stack = $("[data-notice-stack]", root);
+    const actionsRow = $("[data-notice-actions]", root);
     const bannerDur = 6e3;
-    const queue = [];
-    const shown = /* @__PURE__ */ new Set();
-    let bannerBusy = false;
-    let bannerTimer = 0;
-    const pumpBanner = () => {
-      if (bannerBusy || !banner) return;
-      const n = queue.shift();
-      if (!n) return;
-      bannerBusy = true;
-      if (nbTitle) nbTitle.textContent = n.title;
-      if (nbBody) nbBody.textContent = n.body;
-      if (nbBar) nbBar.style.width = "0%";
-      banner.hidden = false;
-      window.setTimeout(() => banner.classList.add("on"), 20);
+    let centerOpen = false;
+    const fresh = /* @__PURE__ */ new Set();
+    const hidden = /* @__PURE__ */ new Set();
+    const els = /* @__PURE__ */ new Map();
+    const visibleIds = () => store.get().notices.filter((n) => centerOpen ? !hidden.has(n.id) : fresh.has(n.id) && !hidden.has(n.id));
+    const makeBanner = (n, withProgress) => {
+      const el = document.createElement("div");
+      el.className = "notice-banner";
+      el.dataset.noticeId = String(n.id);
+      el.innerHTML = `
+      ${withProgress ? '<span class="nb-progress"><span class="nb-bar"></span></span>' : ""}
+      <div class="nb-title">${n.title}</div>
+      <div class="nb-body">${n.body}</div>
+      <button type="button" class="nb-clear" aria-label="\u6E05\u9664\u901A\u77E5">${icon("x")}</button>`;
+      return el;
+    };
+    const collapseUp = (id) => {
+      if (hidden.has(id)) return;
+      hidden.add(id);
+      const el = els.get(id);
+      if (!el) return;
+      els.delete(id);
+      gsapWithCSS.to(el, {
+        yPercent: -140,
+        duration: 0.24,
+        ease: "power2.in",
+        onComplete: () => {
+          gsapWithCSS.to(el, {
+            height: 0,
+            paddingTop: 0,
+            paddingBottom: 0,
+            duration: 0.16,
+            onComplete: () => el.remove()
+          });
+        }
+      });
+    };
+    const clearLeft = (id) => {
+      hidden.delete(id);
+      const el = els.get(id);
+      if (!el) return;
+      els.delete(id);
+      const r = el.getBoundingClientRect();
+      gsapWithCSS.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
+    };
+    const startProgress = (id, el) => {
+      const bar = el.querySelector(".nb-bar");
       let t = 0;
-      bannerTimer = window.setInterval(() => {
+      const timer = window.setInterval(() => {
         t += 100;
-        if (nbBar) nbBar.style.width = `${Math.min(100, t / bannerDur * 100)}%`;
+        if (bar) bar.style.width = `${Math.min(100, t / bannerDur * 100)}%`;
         if (t >= bannerDur) {
-          window.clearInterval(bannerTimer);
-          banner.classList.remove("on");
-          window.setTimeout(() => {
-            banner.hidden = true;
-            bannerBusy = false;
-            pumpBanner();
-          }, 260);
+          window.clearInterval(timer);
+          el.querySelector(".nb-progress")?.remove();
+          collapseUp(id);
         }
       }, 100);
     };
+    const clearNotice = (id) => {
+      clearLeft(id);
+      store.update((s) => {
+        s.notices = s.notices.filter((n) => n.id !== id);
+      });
+    };
+    const renderStack = () => {
+      if (!stack) return;
+      const want = visibleIds();
+      for (const [id, el] of [...els]) {
+        if (!want.some((n) => n.id === id)) {
+          els.delete(id);
+          gsapWithCSS.to(el, { yPercent: -140, duration: 0.22, onComplete: () => el.remove() });
+        }
+      }
+      const before = new Map(
+        [...stack.children].map((el) => [
+          el.dataset.noticeId,
+          el.getBoundingClientRect().top
+        ])
+      );
+      for (let i = want.length - 1; i >= 0; i--) {
+        const n = want[i];
+        if (els.has(n.id)) continue;
+        const withProgress = fresh.has(n.id) && !centerOpen;
+        const el = makeBanner(n, withProgress);
+        el.dataset.noticeId = String(n.id);
+        els.set(n.id, el);
+        stack.prepend(el);
+        gsapWithCSS.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
+        el.addEventListener("click", (e) => {
+          if (e.target.closest(".nb-clear")) return;
+          if (n.app) api.open(winIdOf(n.app));
+          collapseUp(n.id);
+        });
+        on(el.querySelector(".nb-clear"), "click", () => clearNotice(n.id));
+        if (withProgress) startProgress(n.id, el);
+      }
+      for (const el of [...stack.children]) {
+        const prevTop = before.get(el.dataset.noticeId);
+        if (prevTop === void 0) continue;
+        const d = prevTop - el.getBoundingClientRect().top;
+        if (Math.abs(d) > 2) gsapWithCSS.from(el, { y: d, duration: 0.22, ease: "power2.out" });
+      }
+      if (centerOpen) {
+        for (const el of els.values()) el.querySelector(".nb-progress")?.remove();
+      }
+      if (actionsRow) actionsRow.hidden = !centerOpen || want.length === 0;
+    };
+    on(bell, "click", (e) => {
+      e.stopPropagation();
+      setPanel(null);
+      centerOpen = !centerOpen;
+      if (centerOpen) hidden.clear();
+      renderStack();
+    });
+    on(actionsRow?.querySelector("[data-notice-clear-all]"), "click", () => {
+      for (const id of [...els.keys()]) clearNotice(id);
+      store.update((s) => {
+        s.notices = [];
+      });
+      hidden.clear();
+      centerOpen = false;
+      renderStack();
+    });
+    on(actionsRow?.querySelector("[data-notice-collapse-all]"), "click", () => {
+      centerOpen = false;
+      renderStack();
+    });
+    const known = /* @__PURE__ */ new Set();
     const syncNotices = () => {
       const s = store.get();
       if (bell) bell.hidden = s.notices.length === 0;
-      if (noticeList) {
-        noticeList.innerHTML = s.notices.length ? s.notices.map((n) => {
-          const d = new Date(n.ts);
-          const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-          return `<div class="set-row"><div><div class="row-t">${n.title}</div><div class="row-s">${n.body} \xB7 ${hm}</div></div></div>`;
-        }).join("") : '<div class="set-empty">\u6682\u65E0\u901A\u77E5</div>';
-      }
       for (const n of s.notices) {
-        if (!shown.has(n.id)) {
-          shown.add(n.id);
-          queue.push(n);
+        if (!known.has(n.id)) {
+          known.add(n.id);
+          fresh.add(n.id);
         }
       }
-      pumpBanner();
+      if (!s.notices.length) centerOpen = false;
+      renderStack();
     };
     store.subscribe(syncNotices);
     syncNotices();

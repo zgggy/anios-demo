@@ -3,6 +3,7 @@
  * App 栏状态订阅 store（开/焦点/最大化），不用 MutationObserver。
  */
 import { $, $$, on } from "./dom";
+import gsap from "gsap";
 import {
   Store,
   anyMaximized,
@@ -16,7 +17,7 @@ import {
   defaultDerivTerms,
   metricVar,
 } from "./state";
-import { statusBarHTML, appBarHTML, align, type AppBarItem } from "./render";
+import { statusBarHTML, appBarHTML, align, icon, type AppBarItem } from "./render";
 import { APPS, winIdOf } from "./apps";
 import type { WinApi } from "./windows";
 
@@ -95,60 +96,166 @@ export function initStatusBar(store: Store, api: WinApi): void {
     });
   });
 
-  // ── 通知：横幅队列（滑入 → 进度满 → 滑出）+ 通知栏（栈）+ 铃铛显隐 ──
+  // ── 通知：横幅栈（新上旧下）· 点击进 App · 悬停清除=左滑出屏 · 收起=上滑回列表 ──
+  // 可见性：通知栏开 = 列表全部（除已处理）；通知栏关 = 仅未收起的新通知。
+  // 收起/清除的退场动画先于状态更新，renderStack 只做差量。
+  const stack = $<HTMLElement>("[data-notice-stack]", root);
+  const actionsRow = $<HTMLElement>("[data-notice-actions]", root);
   const bannerDur = 6000;
-  const queue: NoticeItem[] = [];
-  const shown = new Set<number>();
-  let bannerBusy = false;
-  let bannerTimer = 0;
+  let centerOpen = false;
+  const fresh = new Set<number>();  // 新通知（带进度条展示）
+  const hidden = new Set<number>(); // 已收起/已处理（不出现在横幅栈）
+  const els = new Map<number, HTMLElement>();
 
-  const pumpBanner = () => {
-    if (bannerBusy || !banner) return;
-    const n = queue.shift();
-    if (!n) return;
-    bannerBusy = true;
-    if (nbTitle) nbTitle.textContent = n.title;
-    if (nbBody) nbBody.textContent = n.body;
-    if (nbBar) nbBar.style.width = "0%";
-    banner.hidden = false;
-    window.setTimeout(() => banner.classList.add("on"), 20);
+  const visibleIds = () =>
+    store
+      .get()
+      .notices.filter((n) => (centerOpen ? !hidden.has(n.id) : fresh.has(n.id) && !hidden.has(n.id)));
+
+  const makeBanner = (n: NoticeItem, withProgress: boolean): HTMLElement => {
+    const el = document.createElement("div");
+    el.className = "notice-banner";
+    el.dataset.noticeId = String(n.id);
+    el.innerHTML = `
+      ${withProgress ? '<span class="nb-progress"><span class="nb-bar"></span></span>' : ""}
+      <div class="nb-title">${n.title}</div>
+      <div class="nb-body">${n.body}</div>
+      <button type="button" class="nb-clear" aria-label="清除通知">${icon("x")}</button>`;
+    return el;
+  };
+
+  /** 收起：上滑出屏，进入列表（不再展示，除非通知栏重展） */
+  const collapseUp = (id: number) => {
+    if (hidden.has(id)) return;
+    hidden.add(id);
+    const el = els.get(id);
+    if (!el) return;
+    els.delete(id);
+    gsap.to(el, {
+      yPercent: -140,
+      duration: 0.24,
+      ease: "power2.in",
+      onComplete: () => {
+        gsap.to(el, {
+          height: 0, paddingTop: 0, paddingBottom: 0, duration: 0.16,
+          onComplete: () => el.remove(),
+        });
+      },
+    });
+  };
+
+  /** 清除：左滑出屏，通知从列表删除 */
+  const clearLeft = (id: number) => {
+    hidden.delete(id);
+    const el = els.get(id);
+    if (!el) return;
+    els.delete(id);
+    const r = el.getBoundingClientRect();
+    gsap.to(el, { x: -(r.right + 24), duration: 0.26, ease: "power2.in", onComplete: () => el.remove() });
+  };
+
+  const startProgress = (id: number, el: HTMLElement) => {
+    const bar = el.querySelector<HTMLElement>(".nb-bar");
     let t = 0;
-    bannerTimer = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       t += 100;
-      if (nbBar) nbBar.style.width = `${Math.min(100, (t / bannerDur) * 100)}%`;
+      if (bar) bar.style.width = `${Math.min(100, (t / bannerDur) * 100)}%`;
       if (t >= bannerDur) {
-        window.clearInterval(bannerTimer);
-        banner.classList.remove("on");
-        window.setTimeout(() => {
-          banner.hidden = true;
-          bannerBusy = false;
-          pumpBanner();
-        }, 260);
+        window.clearInterval(timer);
+        el.querySelector(".nb-progress")?.remove();
+        collapseUp(id); // 通知栏开着也已处理过，不重复展示
       }
     }, 100);
   };
 
+  const clearNotice = (id: number) => {
+    clearLeft(id); // 左滑动画（内部会摘除 els 并在出屏后移除元素）
+    store.update((s) => {
+      s.notices = s.notices.filter((n) => n.id !== id);
+    });
+  };
+
+  const renderStack = () => {
+    if (!stack) return;
+    const want = visibleIds();
+    // 移除不再展示的
+    for (const [id, el] of [...els]) {
+      if (!want.some((n) => n.id === id)) {
+        els.delete(id);
+        gsap.to(el, { yPercent: -140, duration: 0.22, onComplete: () => el.remove() });
+      }
+    }
+    // 新通知插入顶部，旧的下移（FLIP）
+    const before = new Map(
+      [...stack.children].map((el) => [
+        (el as HTMLElement).dataset.noticeId,
+        (el as HTMLElement).getBoundingClientRect().top,
+      ]),
+    );
+    for (let i = want.length - 1; i >= 0; i--) {
+      const n = want[i];
+      if (els.has(n.id)) continue;
+      const withProgress = fresh.has(n.id) && !centerOpen;
+      const el = makeBanner(n, withProgress);
+      el.dataset.noticeId = String(n.id);
+      els.set(n.id, el);
+      stack.prepend(el);
+      gsap.from(el, { yPercent: -140, duration: 0.26, ease: "power3.out" });
+      el.addEventListener("click", (e) => {
+        if ((e.target as Element).closest(".nb-clear")) return;
+        if (n.app) api.open(winIdOf(n.app));
+        collapseUp(n.id);
+      });
+      on(el.querySelector(".nb-clear"), "click", () => clearNotice(n.id));
+      if (withProgress) startProgress(n.id, el);
+    }
+    for (const el of [...stack.children] as HTMLElement[]) {
+      const prevTop = before.get(el.dataset.noticeId!);
+      if (prevTop === undefined) continue;
+      const d = prevTop - el.getBoundingClientRect().top;
+      if (Math.abs(d) > 2) gsap.from(el, { y: d, duration: 0.22, ease: "power2.out" });
+    }
+    // 通知栏视图：无限时长——摘除全部进度条
+    if (centerOpen) {
+      for (const el of els.values()) el.querySelector(".nb-progress")?.remove();
+    }
+    if (actionsRow) actionsRow.hidden = !centerOpen || want.length === 0;
+  };
+
+  // 铃铛：通知栏开合 = 列表全部重新展示 / 全部收起
+  on(bell, "click", (e) => {
+    e.stopPropagation();
+    setPanel(null);
+    centerOpen = !centerOpen;
+    if (centerOpen) hidden.clear();
+    renderStack();
+  });
+  on(actionsRow?.querySelector("[data-notice-clear-all]"), "click", () => {
+    for (const id of [...els.keys()]) clearNotice(id);
+    store.update((s) => {
+      s.notices = [];
+    });
+    hidden.clear();
+    centerOpen = false;
+    renderStack();
+  });
+  on(actionsRow?.querySelector("[data-notice-collapse-all]"), "click", () => {
+    centerOpen = false;
+    renderStack(); // 全部收起：上滑回列表
+  });
+
+  const known = new Set<number>(); // 见过的通知 id：首次见到入 fresh（带进度展示）
   const syncNotices = () => {
     const s = store.get();
     if (bell) bell.hidden = s.notices.length === 0;
-    if (noticeList) {
-      noticeList.innerHTML = s.notices.length
-        ? s.notices
-            .map((n) => {
-              const d = new Date(n.ts);
-              const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-              return `<div class="set-row"><div><div class="row-t">${n.title}</div><div class="row-s">${n.body} · ${hm}</div></div></div>`;
-            })
-            .join("")
-        : '<div class="set-empty">暂无通知</div>';
-    }
     for (const n of s.notices) {
-      if (!shown.has(n.id)) {
-        shown.add(n.id);
-        queue.push(n);
+      if (!known.has(n.id)) {
+        known.add(n.id);
+        fresh.add(n.id);
       }
     }
-    pumpBanner();
+    if (!s.notices.length) centerOpen = false;
+    renderStack();
   };
   store.subscribe(syncNotices);
   syncNotices();

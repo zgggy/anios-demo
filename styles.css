@@ -719,10 +719,16 @@ svg {
 .panel-jump:hover { background: var(--hover); color: var(--ink); }
 
 /* 通知横幅：从屏幕上侧外滑入，右上角进度条，满即退场入栈 */
+/* 通知横幅栈：新上旧下 · 点击进 App · 悬停清除（左滑）· 收起上滑（动画由 gsap 驱动） */
+.notice-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
 .notice-banner {
   position: relative;
   width: min(300px, 40vw);
-  flex-shrink: 0;
   padding: 10px 12px 12px;
   border-radius: 14px;
   background: var(--frost-bg);
@@ -731,12 +737,9 @@ svg {
   backdrop-filter: var(--frost-blur);
   -webkit-backdrop-filter: var(--frost-blur);
   pointer-events: auto;
-  transform: translateY(-140%);
-  transition: transform 240ms var(--ease);
+  cursor: pointer;
 }
-.notice-banner.on { transform: translateY(0); }
-.notice-banner[hidden] { display: none !important; }
-.nb-progress {
+.notice-banner .nb-progress {
   position: absolute;
   top: 5px;
   right: 8px;
@@ -746,7 +749,7 @@ svg {
   background: var(--soft);
   overflow: hidden;
 }
-.nb-bar {
+.notice-banner .nb-bar {
   display: block;
   height: 100%;
   width: 0;
@@ -755,6 +758,35 @@ svg {
 }
 .nb-title { font-size: var(--font-row); font-weight: 600; padding-right: 50px; }
 .nb-body { font-size: var(--font-desc); color: var(--ink-3); margin-top: 2px; }
+.nb-clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.nb-clear svg { width: 10px; height: 10px; }
+.notice-banner:hover .nb-clear { opacity: 1; }
+.notice-actions { display: flex; gap: 8px; }
+.notice-act {
+  min-height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--frost-bg);
+  border: 1px solid var(--line);
+  font-size: var(--font-desc);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.notice-act:hover { background: var(--hover); color: var(--ink); }
 
 /* 日历（时间面板 / 时钟应用共用） */
 .cal { margin-top: 10px; }

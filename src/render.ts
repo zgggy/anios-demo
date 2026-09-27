@@ -34,6 +34,7 @@ export const ICON = {
   save: '<rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 5v4h6V5"/><path d="M9 19v-5h6v5"/>',
   bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.8 2.5H4.2z"/><path d="M10 21.5a2.4 2.4 0 0 0 4 0"/>',
   calendar: '<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M4 10h16M9 4v4M15 4v4"/>',
+  x: '<path d="M7 7l10 10M17 7L7 17"/>',
 } as const;
 
 export type IconName = keyof typeof ICON;
@@ -182,7 +183,7 @@ export function statusBarHTML(): string {
         <span class="net-5g">5G<span class="net-bars"><i></i><i></i><i></i><i></i></span></span>
         <span class="nav-text">网络</span>
       </button>
-      <button type="button" class="nav-btn" data-status-notify data-status-open="notify" aria-label="通知" aria-expanded="false" hidden>
+      <button type="button" class="nav-btn" data-status-notify aria-label="通知" hidden>
         ${icon("bell")}
         <span class="nav-text">通知</span>
       </button>
@@ -238,12 +239,6 @@ export function statusBarHTML(): string {
         <button type="button" class="panel-jump" data-jump="settings:network">设置 · 网络</button>
       </div>
     </div>
-    <div class="content status-content" data-status-panel="notify" hidden>
-      <div class="content-scroll">
-        <header class="set-head"><h1>通知</h1><p>栈 · 最上新</p></header>
-        <div class="set-group" data-notice-list></div>
-      </div>
-    </div>
     <div class="content status-content" data-status-panel="more" hidden>
       <div class="content-scroll">
         <header class="set-head"><h1>设备状态</h1><p>状态与快捷操作</p></header>
@@ -292,10 +287,10 @@ export function statusBarHTML(): string {
         </div>
       </div>
     </div>
-    <div class="notice-banner" data-notice-banner hidden>
-      <span class="nb-progress"><i class="nb-bar"></i></span>
-      <div class="nb-title"></div>
-      <div class="nb-body"></div>
+    <div class="notice-stack" data-notice-stack></div>
+    <div class="notice-actions" data-notice-actions hidden>
+      <button type="button" class="notice-act" data-notice-clear-all>一键清除</button>
+      <button type="button" class="notice-act" data-notice-collapse-all>全部收起</button>
     </div>
   </div>`;
 }
