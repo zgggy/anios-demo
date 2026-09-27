@@ -56,6 +56,7 @@ export const phoneApp: AppDef = {
   icon: "phone",
   pinned: true,
   geom: { left: 48, top: 18, width: 40, height: 58 },
+  minSize: { w: 280, h: 340 },
   z: 21,
   open: true,
   nav: [

@@ -153,10 +153,10 @@ svg {
 .wallpaper {
   position: absolute;
   inset: 0;
-  background: center/cover no-repeat url("assets/wallpaper-light.jpg");
+  background: center/cover no-repeat url("assets/wallpaper-light.svg");
 }
 [data-theme="dark"] .wallpaper {
-  background-image: url("assets/wallpaper-dark.jpg");
+  background-image: url("assets/wallpaper-dark.svg");
 }
 .vp-resize {
   position: absolute;

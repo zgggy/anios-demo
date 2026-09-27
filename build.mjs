@@ -34,11 +34,11 @@ await build({
 const html = readFileSync("index.template.html", "utf8");
 let css = readFileSync("styles.css", "utf8").replace("/* METRIC_DEFAULTS */", defaultsBlock);
 const js = readFileSync("dist/bundle.iife.js", "utf8");
-const light = readFileSync("assets/wallpaper-light.jpg").toString("base64");
-const dark = readFileSync("assets/wallpaper-dark.jpg").toString("base64");
+const light = readFileSync("assets/wallpaper-light.svg").toString("base64");
+const dark = readFileSync("assets/wallpaper-dark.svg").toString("base64");
 css = css
-  .replace('url("assets/wallpaper-light.jpg")', () => `url("data:image/jpeg;base64,${light}")`)
-  .replace('url("assets/wallpaper-dark.jpg")', () => `url("data:image/jpeg;base64,${dark}")`);
+  .replace('url("assets/wallpaper-light.svg")', () => `url("data:image/svg+xml;base64,${light}")`)
+  .replace('url("assets/wallpaper-dark.svg")', () => `url("data:image/svg+xml;base64,${dark}")`);
 const single = html
   .replace("<!-- INJECT_CSS -->", () => `<style>\n${css}\n</style>`)
   .replace("<!-- INJECT_JS -->", () => `<script>\n${js}\n</script>`);

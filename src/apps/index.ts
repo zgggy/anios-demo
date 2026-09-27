@@ -26,6 +26,8 @@ export type AppDef = {
   blurb?: string;
   icon: IconName;
   geom: Geom; // 初始浮动几何（% of viewport）
+  /** 最小窗口尺寸（px）：切档/缩放视口时窗口不得小于此 */
+  minSize: { w: number; h: number };
   z: number;
   open: boolean; // 初始是否打开
   focused?: boolean;

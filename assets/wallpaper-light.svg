@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+  <!-- anios wallpaper · light: solid lilac paper, centered line-art emblem
+       Emblem = system anatomy: orbit arcs / rings / window rect / control & nav capsules -->
+  <rect width="1536" height="1024" fill="#F1EBF1"/>
+  <g transform="translate(768 512)" fill="none" stroke="#772953" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- orbit arcs + nodes -->
+    <path d="M -94.5 -233.6 A 252 252 0 0 1 94.5 -233.6"/>
+    <path d="M 249.6 35.1 A 252 252 0 0 1 155.2 198.6"/>
+    <path d="M -155.2 198.6 A 252 252 0 0 1 -249.6 35.1"/>
+    <circle cx="0" cy="-252" r="7" fill="#F1EBF1"/>
+    <circle cx="218.2" cy="126" r="7" fill="#F1EBF1"/>
+    <circle cx="-218.2" cy="126" r="7" fill="#F1EBF1"/>
+    <!-- rings -->
+    <circle r="196"/>
+    <circle r="232" opacity="0.38" stroke-width="1.5"/>
+    <!-- window anatomy: content rect + concentric inner rect -->
+    <rect x="-118" y="-118" width="236" height="236" rx="52"/>
+    <rect x="-94" y="-94" width="188" height="188" rx="28" opacity="0.38" stroke-width="1.5"/>
+    <!-- control capsule (top) + nav capsule (left) -->
+    <rect x="-48" y="-164" width="96" height="30" rx="15"/>
+    <rect x="-164" y="-72" width="30" height="144" rx="15"/>
+    <!-- center focus -->
+    <circle r="36" opacity="0.38" stroke-width="1.5"/>
+    <circle r="11" fill="#E95420" stroke="none"/>
+    <circle cx="179.1" cy="-79.7" r="3.5" fill="#E95420" stroke="none" opacity="0.9"/>
+    <!-- capsule dots -->
+    <g fill="#772953" stroke="none" opacity="0.7">
+      <circle cx="-30" cy="-149" r="3.2"/><circle cx="-10" cy="-149" r="3.2"/>
+      <circle cx="10" cy="-149" r="3.2"/><circle cx="30" cy="-149" r="3.2"/>
+    </g>
+    <g fill="#772953" stroke="none">
+      <circle cx="-149" cy="-42" r="3.2" fill="#E95420"/>
+      <circle cx="-149" cy="0" r="3.2" opacity="0.6"/>
+      <circle cx="-149" cy="42" r="3.2" opacity="0.6"/>
+    </g>
+  </g>
+</svg>

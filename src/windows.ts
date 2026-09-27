@@ -8,6 +8,7 @@ import {
   State,
   policyOf,
   patchWin,
+  fitGeom,
   focusedWin,
   defaultMetrics,
   defaultDerivTerms,
@@ -133,6 +134,10 @@ export function initWindows(store: Store): WinApi {
 
   const policyFor = (id: string) =>
     policyOf(APPS.find((a) => winIdOf(a.id) === id)?.winType);
+
+  /** 每应用最小窗口尺寸（px） */
+  const minSizeOf = (id: string) =>
+    APPS.find((a) => winIdOf(a.id) === id)?.minSize ?? { w: 240, h: 180 };
 
   const actions: AppActions = {
     openApp: (appId) => open(winIdOf(appId)),
@@ -367,8 +372,10 @@ export function initWindows(store: Store): WinApi {
     const ev = e as PointerEvent;
     if (Math.abs(ev.clientX - sx) > 3 || Math.abs(ev.clientY - sy) > 3) moved = true;
     if (dragMode === "resize") {
-      dragWin.style.width = `${Math.max(240, ow + (ev.clientX - sx))}px`;
-      dragWin.style.height = `${Math.max(180, oh + (ev.clientY - sy))}px`;
+      const min = minSizeOf(dragWin.id);
+      const vr = viewport.getBoundingClientRect();
+      dragWin.style.width = `${Math.min(vr.width, Math.max(min.w, ow + (ev.clientX - sx)))}px`;
+      dragWin.style.height = `${Math.min(vr.height, Math.max(min.h, oh + (ev.clientY - sy)))}px`;
     } else {
       dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
       dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
@@ -466,8 +473,32 @@ export function initWindows(store: Store): WinApi {
   });
 
   /** 尺寸变化必须重对齐：--content-cx/cy 是像素值，而窗口几何是百分比 */
+  /** 视口尺寸变化：全部窗口钳制到各自最小尺寸与视口包含（百分比几何的像素地板） */
+  const fitToViewport = () => {
+    const vr = viewport.getBoundingClientRect();
+    if (vr.width < 2 || vr.height < 2) return;
+    const updates: Array<[string, Geom]> = [];
+    for (const ws of Object.values(store.get().wins)) {
+      const g = fitGeom(ws.geom, minSizeOf(ws.id), vr.width, vr.height);
+      if (
+        g.left !== ws.geom.left ||
+        g.top !== ws.geom.top ||
+        g.width !== ws.geom.width ||
+        g.height !== ws.geom.height
+      ) {
+        updates.push([ws.id, g]);
+      }
+    }
+    if (updates.length) {
+      store.update((st) => {
+        for (const [id, g] of updates) patchWin(st, id, { geom: g });
+      });
+    }
+  };
+
   const reAlign = () => {
     if (dragWin || $$(".window[data-flipping='1']").length) return;
+    fitToViewport();
     for (const w of $$(".window")) align(w);
   };
   new ResizeObserver(reAlign).observe(viewport);

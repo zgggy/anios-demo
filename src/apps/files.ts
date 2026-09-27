@@ -25,6 +25,7 @@ export const filesApp: AppDef = {
   blurb: "最近与下载",
   icon: "file",
   geom: { left: 40, top: 16, width: 36, height: 52 },
+  minSize: { w: 280, h: 220 },
   z: 20,
   open: false,
   pinned: false,

@@ -6,6 +6,27 @@
 
 export type Geom = { left: number; top: number; width: number; height: number }; // % of viewport (0–100)
 export type WinMode = "floating" | "maximized";
+
+/** 窗口尺寸下限（像素）：任何屏幕变化都不得缩穿 */
+export type MinSize = { w: number; h: number };
+
+/**
+ * 把百分比几何钳制到视口：像素尺寸抬到 minW/minH（且不超过视口）、
+ * 位置收回视口内，再回写成百分比。纯函数——切换屏幕/档位时逐窗调用。
+ */
+export function fitGeom(geom: Geom, min: MinSize, vw: number, vh: number): Geom {
+  if (vw <= 0 || vh <= 0) return geom;
+  const w = Math.min(vw, Math.max(min.w, (geom.width / 100) * vw));
+  const h = Math.min(vh, Math.max(min.h, (geom.height / 100) * vh));
+  const left = Math.min(Math.max(0, (geom.left / 100) * vw), Math.max(0, vw - w));
+  const top = Math.min(Math.max(0, (geom.top / 100) * vh), Math.max(0, vh - h));
+  return {
+    left: (left / vw) * 100,
+    top: (top / vh) * 100,
+    width: (w / vw) * 100,
+    height: (h / vh) * 100,
+  };
+}
 export type WinStatus = "closed" | "minimized" | "open";
 
 export type WinState = {

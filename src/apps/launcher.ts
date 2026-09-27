@@ -61,6 +61,7 @@ export function makeLauncherApp(apps: AppDef[]): AppDef {
     blurb: "应用 · 文件 · 链接 · 操作",
     icon: "grid",
     geom: { left: 22, top: 16, width: 56, height: 58 },
+  minSize: { w: 380, h: 280 },
     z: 20,
     open: false,
     nav: [

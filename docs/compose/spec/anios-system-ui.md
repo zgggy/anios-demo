@@ -52,6 +52,7 @@ src/
 **Contracts (enforced):**
 
 - Content rect is the window; control bar center = content centerX; navbar centerY = content centerY.
+- Per-window `minSize` (px floor, registry field) + default size (= `geom` w/h, loaded on first open): any viewport switch clamps every window's pixel size to its floor and re-contains it (`fitGeom` pure function, runs in the resize/preset/fullscreen path); knob resize honors the same floor + viewport cap.
 - Viewport presets: compact / large / true-fullscreen (Fullscreen API — the viewport becomes the whole monitor, host scaffolding unrendered, rounded corners dropped; Esc exits back to the previous preset).
 - Gaps 5px chrome↔content; insets 5px system bars (= same gap, maximized nav too); concentric `margin=(edge−btn)/2−1px`.
 - Recover: show if drag chrome off-screen and edge distance &lt; 38px; place on nearest content edge remainder, gap 5px; v = rotate(90deg).

@@ -195,6 +195,7 @@ export const settingsApp: AppDef = {
   icon: "gear",
   pinned: true,
   geom: { left: 14, top: 10, width: 58, height: 72 },
+  minSize: { w: 360, h: 260 },
   z: 22,
   open: true,
   focused: true,
