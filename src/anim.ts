@@ -249,3 +249,52 @@ export function closeIn(win: HTMLElement, onDone: () => void): void {
     },
   });
 }
+
+/**
+ * 形变补间：真实矩形（px）+ --dock-p 同步到位。停靠收尾/还原、点击还原共用。
+ * 自带 flipping 守卫（补间中跳过几何补丁）与 rAF 冻结看门狗（幂等收尾）。
+ */
+/** 每窗形变序号：旧 morph 的看门狗晚到时不得收尾新 morph */
+const morphSeq = new WeakMap<HTMLElement, number>();
+
+export function morphTo(
+  win: HTMLElement,
+  box: { left: number; top: number; width: number; height: number },
+  dockP: number,
+  onDone: () => void,
+): void {
+  const seq = (morphSeq.get(win) ?? 0) + 1;
+  morphSeq.set(win, seq);
+  const t = win.style.transition;
+  win.style.transition = "none";
+  win.dataset.flipping = "1";
+  let done = false;
+  const finish = () => {
+    if (done || morphSeq.get(win) !== seq) return;
+    done = true;
+    gsap.killTweensOf(win); // 残余 tick 会把已落位几何拽回中途值
+    // 收尾钳到终点：补间被 rAF 饿死时也精确落位
+    win.style.left = `${box.left}px`;
+    win.style.top = `${box.top}px`;
+    win.style.width = `${box.width}px`;
+    win.style.height = `${box.height}px`;
+    win.style.setProperty("--dock-p", String(dockP));
+    align(win);
+    win.dataset.flipping = "0";
+    win.style.transition = t;
+    onDone();
+  };
+  gsap.to(win, {
+    left: box.left,
+    top: box.top,
+    width: box.width,
+    height: box.height,
+    "--dock-p": dockP,
+    duration: durSec("--anim-window"),
+    ease: EASE,
+    overwrite: true,
+    onUpdate: () => align(win),
+    onComplete: finish,
+  });
+  window.setTimeout(finish, durMs("--anim-window") + 250);
+}

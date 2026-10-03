@@ -14,7 +14,11 @@
   --frost-bg: rgba(255, 255, 255, 0.55);
   --frost-blur: blur(28px) saturate(180%);
   --line: rgba(15, 23, 42, 0.08);
-  --shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  /* 投影拆件（几何必然）：停靠形变要把投影随 --dock-p 收零，整条 var 无法缩放 */
+  --sh-y: 8px;
+  --sh-blur: 24px;
+  --sh-color: rgba(15, 23, 42, 0.1);
+  --shadow: 0 var(--sh-y) var(--sh-blur) var(--sh-color);
   --ink: #0f172a;
   --ink-2: #334155;
   --ink-3: #7c8797;
@@ -38,7 +42,10 @@
 [data-theme="dark"] {
   --frost-bg: rgba(18, 26, 38, 0.55);
   --line: rgba(255, 255, 255, 0.1);
-  --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --sh-y: 10px;
+  --sh-blur: 28px;
+  --sh-color: rgba(0, 0, 0, 0.35);
+  --shadow: 0 var(--sh-y) var(--sh-blur) var(--sh-color);
   --ink: #e8eef7;
   --ink-2: #b6c2d2;
   --ink-3: #8b98a8;
@@ -428,6 +435,84 @@ svg {
 }
 .top-capsule { pointer-events: auto; }
 
+/* ── 右缘停靠：--dock-p（0=浮窗 1=停靠栏）为唯一驱动量 ──
+   磨砂壳（.capsule/.content）禁 opacity 补间（磨砂变玻璃）；
+   折叠/退场只走宽度、裁剪、位移；淡出只作用于无磨砂内层。 */
+.window {
+  --dock-p: 0;
+  /* 分段进度：把 --dock-p 重映射到各阶段窗口 */
+  --dock-a: clamp(0, calc((var(--dock-p) - 0.05) / 0.3), 1); /* 后退/前进 */
+  --dock-b: clamp(0, calc((var(--dock-p) - 0.2) / 0.3), 1);  /* 搜索/+ */
+  --dock-n: clamp(0, calc((var(--dock-p) - 0.1) / 0.4), 1);  /* 导航栏 */
+  --dock-c: clamp(0, calc((var(--dock-p) - 0.55) / 0.3), 1); /* dock-id */
+  --dock-d: clamp(0, calc((var(--dock-p) - 0.75) / 0.2), 1); /* 内容淡出 */
+  /* dock-id 名字预算：超长截断。停靠栏宽 = 握把+图标+名字+边距 的自然宽（JS 实测） */
+  --dock-name-w: 112px;
+}
+/* 后退/前进、搜索/+：宽度收零（命中面随可视面消失）+ 图标淡出 */
+.top-capsule [data-fold] {
+  min-width: 0;
+  overflow: hidden;
+}
+.top-capsule [data-fold="a"] {
+  width: calc(var(--btn) * (1 - var(--dock-a)));
+  opacity: calc(1 - var(--dock-a));
+}
+.top-capsule [data-fold="b"] {
+  width: calc(var(--btn) * (1 - var(--dock-b)));
+  opacity: calc(1 - var(--dock-b));
+}
+/* 残隙随 p 收拢：折叠零宽钮不留 2px 缝，停靠态握把贴最左 */
+.top-capsule {
+  gap: calc(var(--capsule-gap) * (1 - var(--dock-p)));
+}
+/* dock-id：流内末位（撑开胶囊自然宽=停靠栏宽）；c 驱动展开+淡入+右滑入 */
+.dock-id {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  opacity: var(--dock-c);
+  max-width: calc(var(--dock-c) * (var(--dock-name-w) + 18px));
+  transform: translateX(calc((1 - var(--dock-c)) * 20px));
+  cursor: pointer;
+}
+.dock-id b {
+  min-width: 0;
+  max-width: var(--dock-name-w);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ctl);
+}
+.dock-id svg { flex-shrink: 0; }
+/* 导航栏：左滑 + 四边收拢退场（水平裁剪 + 上下对夹，竖条不得探出窗口；clip 同时收掉命中面）；
+   投影随 n 收零——被 clip 硬边切断的投影就是那条竖向阴影分割线 */
+.window .nav-bar {
+  transform: translateY(-50%) translateX(calc(var(--dock-n) * -24px));
+  clip-path: inset(
+    calc(var(--dock-n) * (50% + 40px) - 40px)
+    -40px
+    calc(var(--dock-n) * (50% + 40px) - 40px)
+    calc(var(--dock-n) * 100% - (1 - var(--dock-n)) * 40px)
+  );
+}
+.window .nav-bar .nav-capsule {
+  box-shadow: 0 calc(var(--sh-y) * (1 - var(--dock-n))) calc(var(--sh-blur) * (1 - var(--dock-n))) var(--sh-color);
+}
+/* 内容：内层淡出+上移（卷入顶栏感）；裁剪线自下而上吞掉面板；
+   边框+投影随 p 收零——收缩中扫过屏幕的竖向边线与投影即那条分割线 */
+.window .content-scroll {
+  opacity: calc(1 - var(--dock-d));
+  transform: translateY(calc(var(--dock-d) * -12px));
+}
+.window .content {
+  clip-path: inset(-40px -40px calc(-40px + var(--dock-d) * (100% + 40px)) -40px);
+  border-width: calc(1px * (1 - var(--dock-p)));
+  box-shadow: 0 calc(var(--sh-y) * (1 - var(--dock-p))) calc(var(--sh-blur) * (1 - var(--dock-p))) var(--sh-color);
+}
+
 .nav-bar {
   position: absolute;
   left: var(--win-pad);
@@ -481,8 +566,9 @@ svg {
   padding-right: var(--gutter);
 }
 
-/* unfocused chrome fully hidden (same as recover) */
-.window:not(.is-focused) .top-bar,
+/* unfocused chrome fully hidden (same as recover)；
+   停靠栏例外——「栏即窗口」，失焦只退焦点态，栏体常显 */
+.window:not(.is-focused):not([data-dock]) .top-bar,
 .window:not(.is-focused) .nav-bar {
   display: none;
 }

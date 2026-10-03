@@ -2,7 +2,7 @@
  * 窗口交互层：只 dispatch 状态，不直接改 DOM 样式。
  * 手势快速路径例外：拖动/缩放中直写 DOM，结束 commit 成状态（百分比几何）。
  */
-import { $, $$, on, durMs } from "./dom";
+import { $, $$, on, durMs, clamp, pxVar } from "./dom";
 import {
   Store,
   State,
@@ -12,13 +12,82 @@ import {
   focusedWin,
   defaultMetrics,
   defaultDerivTerms,
+  resolveDockStack,
   ANIMS,
   type Geom,
 } from "./state";
 import { patchWinEl, windowShellHTML, align } from "./render";
-import { captureShell, playShell, minimizeTo, openFrom, closeIn } from "./anim";
+import { captureShell, playShell, morphTo, minimizeTo, openFrom, closeIn } from "./anim";
 import { APPS, winIdOf, type AppDef, type AppActions } from "./apps";
 import { bindScrollIndicator } from "./host";
+
+/* ── 右缘停靠：几何助手 ──
+   判定线 lineW = 状态栏胶囊宽 + 其左右边界宽：右缘距屏小于它即「消失在顶栏内」——
+   吸收 p=1 同在此处完成，松手过线只补完滑向右缘的最后一段，不过线回到打开态。
+   停靠栏盒宽 = 胶囊 p=1 自然宽（握把+图标+名字≤--dock-name-w，超长截断）+ 2×inset，
+   胶囊经 --content-cx 漂到盒中心后左右各留 inset——状态栏左右边界的镜像。
+   条高 barH = 顶栏高 + 2×winPad（胶囊带边距居中）。 */
+function dockDims(): { inset: number; lineW: number; barH: number } {
+  const inset = pxVar("--inset", 8);
+  return {
+    inset,
+    lineW: statusCapW + 2 * inset,
+    barH: pxVar("--topbar-h", 28) + 2 * pxVar("--win-pad", 5),
+  };
+}
+
+/** 停靠栏探针（px）：瞬时置 p=1 量胶囊自然宽与握把距栏右缘再置回——同一任务内不绘制中间态 */
+function probeBar(win: HTMLElement): { barW: number; gripRight: number } {
+  const { inset, lineW } = dockDims();
+  const cap = $(".top-capsule", win);
+  if (!cap) return { barW: lineW, gripRight: lineW - 12 };
+  const prev = win.style.getPropertyValue("--dock-p");
+  win.style.setProperty("--dock-p", "1");
+  const capW = cap.offsetWidth;
+  const capLeft = cap.getBoundingClientRect().left;
+  const zr = $<HTMLElement>("[data-drag-zone]", win)?.getBoundingClientRect();
+  win.style.setProperty("--dock-p", prev);
+  const zoneOffCenter = zr && zr.width ? zr.x + zr.width / 2 - capLeft : capW / 2;
+  // 栏宽 = 胶囊自然宽 + 2×inset；握把距栏右缘 = 胶囊右界(inset+capW) − 握把中心
+  return { barW: capW + 2 * inset, gripRight: capW + inset - zoneOffCenter };
+}
+
+function pctGeom(b: { left: number; top: number; width: number; height: number }, vr: DOMRect): Geom {
+  return {
+    left: (b.left / vr.width) * 100,
+    top: (b.top / vr.height) * 100,
+    width: (b.width / vr.width) * 100,
+    height: (b.height / vr.height) * 100,
+  };
+}
+
+/** 状态栏胶囊实测宽（判定线 = 它 + 2×inset 的几何来源）；手势起点/度量变化时刷新 */
+let statusCapW = 132;
+export function remeasureDock(): void {
+  const cap = $(".status-capsule");
+  if (!cap) return;
+  statusCapW = cap.offsetWidth;
+}
+
+/** scrub 期冻结内容内层盒（高/溢出），防逐帧 reflow 抖字；手势收尾解除 */
+function freezeInner(win: HTMLElement): void {
+  const sc = $(".content-scroll", win);
+  if (!sc || sc.style.height) return;
+  sc.style.height = `${sc.clientHeight}px`;
+  sc.style.overflow = "hidden";
+}
+function unfreezeInner(win: HTMLElement): void {
+  const sc = $(".content-scroll", win);
+  if (!sc) return;
+  sc.style.height = "";
+  sc.style.overflow = "";
+}
+
+/** 停靠栏盒（px，视口内）：右缘贴 R，顶边 = y，宽 = 该栏实测 */
+function dockBox(vr: DOMRect, y: number, w: number): { left: number; top: number; width: number; height: number } {
+  const { barH } = dockDims();
+  return { left: vr.width - w, top: y, width: w, height: barH };
+}
 
 export type WinApi = {
   el: (id: string) => HTMLElement | null;
@@ -30,6 +99,8 @@ export type WinApi = {
   minimize: (id: string) => void;
   close: (id: string) => void;
   open: (id: string) => void;
+  /** 停靠栏 → 还原为浮窗（点击/键盘/点 App 栏图标） */
+  undock: (id: string) => void;
   alignAll: () => void;
 };
 
@@ -78,6 +149,20 @@ export function initWindows(store: Store): WinApi {
   let oy = 0;
   let ow = 0;
   let oh = 0;
+  /* 右缘停靠手势：拖动即 scrub（--dock-p），判定线两侧二选一收尾 */
+  let dragFrom: Geom | null = null; // 手势起点几何（点击还原目标）
+  let dragOpenW = 0; // 打开态尺寸（scrub p=0 端点）
+  let dragOpenH = 0;
+  let dragBarW = 0; // 停靠栏盒宽（scrub p=1 端点，手势起点实测）
+  let dragPRef = 0; // 吸收进度参照距右缘：起手即 p=0、判定线即 p=1（近缘重抓不跳变）
+  let dragPSpan = 160; // 吸收行程（下限 24px：默认位贴线的窗不至于一动就收完）
+  let gripRight1 = 0; // 握把距「栏右缘」（判定口径端点）
+  let dragFromDocked = false;
+  let dockLatched = false; // 送达标记：过判定线即锁定停靠，松手时机不论
+  let openLatched = false; // 拖出标记：离判定线即锁定还原
+  let dragZone: HTMLElement | null = null;
+  let dockEngaged = false; // 本手势是否进过吸收区
+  let dragFreeze = true; // 打开态起手才冻结内容内层（停靠栏拖出时内层本来是空的）
 
   const el = (id: string) => $<HTMLElement>(`#${id}`);
   const focusedId = () => focusedWin(store.get())?.id ?? null;
@@ -90,6 +175,7 @@ export function initWindows(store: Store): WinApi {
         id: winIdOf(a.id),
         app: a.id,
         title: a.title,
+        icon: a.icon,
         geom: a.geom,
         z: a.z,
         open: a.open,
@@ -336,6 +422,21 @@ export function initWindows(store: Store): WinApi {
       }),
     );
 
+    // 停靠栏：点一下还原（收起/关闭钮除外；拖动不算点击）
+    const cap = $<HTMLElement>(".top-capsule", win);
+    if (cap && pol.dock) {
+      let down: { x: number; y: number } | null = null;
+      on(cap, "pointerdown", (e) => {
+        down = { x: (e as PointerEvent).clientX, y: (e as PointerEvent).clientY };
+      });
+      on(cap, "click", (e) => {
+        const t = e.target as Element;
+        if (t.closest("[data-win-min], [data-win-cls]")) return;
+        if (!down || Math.abs(e.clientX - down.x) > 5 || Math.abs(e.clientY - down.y) > 5) return;
+        if (store.get().wins[win.id]?.mode === "docked") undock(win.id);
+      });
+    }
+
     // 内容右下 hover → 缩放钮；拖动缩放窗口
     const cre = $<HTMLElement>("[data-resize]", win);
     const content = $<HTMLElement>(".content", win);
@@ -402,6 +503,36 @@ export function initWindows(store: Store): WinApi {
     oh = wr.height;
     sx = e.clientX;
     sy = e.clientY;
+    // 停靠 scrub 端点：打开态尺寸（拖出还原用几何；浮窗即当前尺寸）
+    const ws = store.get().wins[win.id];
+    dragZone = $<HTMLElement>("[data-drag-zone]", win);
+    dragFromDocked = ws.mode === "docked";
+    dockLatched = false;
+    openLatched = false;
+    if (policyFor(win.id).dock) {
+      remeasureDock(); // 状态栏胶囊宽随铃铛/度量变化，手势起点刷新
+      const probe = probeBar(win);
+      dragBarW = probe.barW;
+      gripRight1 = probe.gripRight;
+      // 浮窗起手以起手距为参照（p 从 0 连续增长）；停靠栏拖出用绝对映射（起手即 p=1）
+      const { lineW } = dockDims();
+      const arm = pxVar("--dock-arm", 160);
+      const d0 = vr.width - (e.clientX - vr.left + gripRight1);
+      const ref = dragFromDocked ? lineW + arm : Math.min(d0, lineW + arm);
+      dragPRef = ref;
+      dragPSpan = Math.min(Math.max(ref - lineW, 24), arm);
+    }
+    dragFrom = ws.geom;
+    if (ws.mode === "docked" && ws.restoreGeom) {
+      dragOpenW = (ws.restoreGeom.width / 100) * vr.width;
+      dragOpenH = (ws.restoreGeom.height / 100) * vr.height;
+      dragFreeze = false;
+    } else {
+      dragOpenW = ow;
+      dragOpenH = oh;
+      dragFreeze = true;
+    }
+    dockEngaged = false;
     win.style.transition = "none";
     win.style.left = `${ox}px`;
     win.style.top = `${oy}px`;
@@ -419,23 +550,95 @@ export function initWindows(store: Store): WinApi {
       const vr = viewport.getBoundingClientRect();
       dragWin.style.width = `${Math.min(vr.width, Math.max(min.w, ow + (ev.clientX - sx)))}px`;
       dragWin.style.height = `${Math.min(vr.height, Math.max(min.h, oh + (ev.clientY - sy)))}px`;
+    } else if (policyFor(dragWin.id).dock) {
+      // 右缘停靠 scrub：p 驱动形变（全程可逆、逐帧跟随）；握把由收尾校正钉住指针
+      const vr = viewport.getBoundingClientRect();
+      const { lineW, barH } = dockDims();
+      const d = vr.width - (ev.clientX - vr.left + gripRight1); // 判定口径 = 停靠后栏右缘距屏
+      const p = clamp((dragPRef - d) / dragPSpan, 0, 1);
+      // 送达标记一经过线即锁定，此后松手时机/位置不再改变结果
+      if (!dragFromDocked && d <= lineW) dockLatched = true;
+      if (dragFromDocked && d > lineW) openLatched = true;
+      if (p > 0) {
+        dockEngaged = true;
+        if (dragFreeze) freezeInner(dragWin);
+      }
+      const eW = p * p; // 宽度后段才明显收窄
+      const hT = clamp((p - 0.1) / 0.7, 0, 1);
+      const eH = hT * hT * (3 - 2 * hT);
+      const w = dragOpenW + (dragBarW - dragOpenW) * eW;
+      const h = dragOpenH + (barH - dragOpenH) * eH;
+      dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
+      dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
+      dragWin.style.width = `${w}px`;
+      dragWin.style.height = `${h}px`;
+      dragWin.style.setProperty("--dock-p", String(p));
     } else {
       dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
       dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
     }
     align(dragWin);
+    // 握把钉住指针：整盒平移校正（--content-cx 是盒内相对量，随盒走，不可再加）
+    if (dragMode === "move" && dragZone && policyFor(dragWin.id).dock) {
+      const zr = dragZone.getBoundingClientRect();
+      if (zr.width) {
+        const dx = ev.clientX - (zr.x + zr.width / 2);
+        if (Math.abs(dx) > 0.05) {
+          dragWin.style.left = `${(parseFloat(dragWin.style.left) || 0) + dx}px`;
+        }
+      }
+    }
   });
 
   // 手势结束 → commit 成状态（百分比几何）
+  // 右缘停靠收尾：判定线两侧二选一——线内（只剩栏）动画停靠到位；线外回到打开态。
   on(window, "pointerup", () => {
     if (!dragWin) return;
     const win = dragWin;
     dragWin = null;
     win.style.transition = "";
+    unfreezeInner(win);
     const ws = store.get().wins[win.id];
+    const pol = policyFor(win.id);
+    const vr = viewport.getBoundingClientRect();
+    const wr = win.getBoundingClientRect();
+
+    if (dragMode === "move" && moved && pol.dock && (dockEngaged || ws?.mode === "docked")) {
+      const { inset, barH } = dockDims();
+      // 送达标记决定落点，与松手时机/位置无关：拖出→还原；送达标记→停靠；未触发→回起手归属侧
+      const dockNow = dragFromDocked ? !openLatched : dockLatched;
+      if (dockNow) {
+        // 过线后任何松手都停靠到位（y 停在松手处，钳在屏内）
+        const yEnd = clamp(wr.top - vr.top, inset, vr.height - inset - barH);
+        const box = dockBox(vr, yEnd, dragBarW);
+        const wasDocked = ws!.mode === "docked";
+        morphTo(win, box, 1, () => {
+          store.update((s) => {
+            patchWin(s, win.id, {
+              mode: "docked",
+              geom: pctGeom(box, vr),
+              restoreGeom: wasDocked ? s.wins[win.id].restoreGeom : (dragFrom ?? ws!.geom),
+            });
+          });
+          settleDockStack(win.id, yEnd, vr);
+        });
+        return;
+      }
+      // 回到原始打开的位置：拖出还原 = 停靠前几何；未送达标记 = 本次拖动起点
+      const g = dragFromDocked ? (ws!.restoreGeom ?? ws!.geom) : (dragFrom ?? ws!.geom);
+      const box = {
+        left: (g.left / 100) * vr.width,
+        top: (g.top / 100) * vr.height,
+        width: (g.width / 100) * vr.width,
+        height: (g.height / 100) * vr.height,
+      };
+      morphTo(win, box, 0, () => {
+        store.update((s) => patchWin(s, win.id, { mode: "floating", geom: g }));
+      });
+      return;
+    }
+
     if (ws && ws.mode === "floating") {
-      const vr = viewport.getBoundingClientRect();
-      const wr = win.getBoundingClientRect();
       const geom: Geom = {
         left: ((wr.left - vr.left) / vr.width) * 100,
         top: ((wr.top - vr.top) / vr.height) * 100,
@@ -445,6 +648,45 @@ export function initWindows(store: Store): WinApi {
       store.update((s) => patchWin(s, win.id, { geom }));
     }
   });
+
+  /** 停靠栈让位：新栏占住 y，其余栏保持间距 ≥ gap（gap 值 = 间距基准令牌） */
+  function settleDockStack(skipId: string, yNew: number, vr: DOMRect): void {
+    const { barH } = dockDims();
+    const gap = pxVar("--gap", 8);
+    const bars = Object.values(store.get().wins)
+      .filter((w) => w.id !== skipId && w.mode === "docked" && w.status === "open")
+      .map((w) => ({ id: w.id, top: (w.geom.top / 100) * vr.height }));
+    for (const b of resolveDockStack(bars, yNew, barH, gap)) {
+      const before = bars.find((x) => x.id === b.id)!;
+      if (Math.abs(before.top - b.top) < 0.5) continue;
+      const box = dockBox(vr, b.top, probeBar(el(b.id)!).barW);
+      morphTo(el(b.id)!, box, 1, () => {
+        store.update((s) => patchWin(s, b.id, { geom: pctGeom(box, vr) }));
+      });
+    }
+  }
+
+  /**
+   * 停靠栏 → 还原浮窗（点击栏身 / Esc / 点 App 栏图标）。
+   * 目标 = restoreGeom（停靠前的打开几何）；无记录则原地展开为默认浮窗尺寸。
+   */
+  function undock(id: string): void {
+    const win = el(id);
+    const ws = store.get().wins[id];
+    if (!win || !ws || ws.mode !== "docked" || win.dataset.flipping === "1") return;
+    const vr = viewport.getBoundingClientRect();
+    const g = ws.restoreGeom ?? ws.geom;
+    const box = {
+      left: (g.left / 100) * vr.width,
+      top: (g.top / 100) * vr.height,
+      width: (g.width / 100) * vr.width,
+      height: (g.height / 100) * vr.height,
+    };
+    focus(id);
+    morphTo(win, box, 0, () => {
+      store.update((s) => patchWin(s, id, { mode: "floating", geom: g }));
+    });
+  }
 
   // 点视口空白 → 全部失焦（系统栏/视口钮不夺焦）
   on(viewport, "pointerdown", (e) => {
@@ -499,6 +741,10 @@ export function initWindows(store: Store): WinApi {
     if ($("[data-more-panel]:not([hidden]), [data-search-panel]:not([hidden])")) return;
     const id = focusedId();
     const ws = id ? store.get().wins[id] : null;
+    if (ws?.mode === "docked") {
+      undock(id!);
+      return;
+    }
     if (ws?.mode === "maximized") toggleMaximize(id!);
   });
 
@@ -520,8 +766,17 @@ export function initWindows(store: Store): WinApi {
   const fitToViewport = () => {
     const vr = viewport.getBoundingClientRect();
     if (vr.width < 2 || vr.height < 2) return;
+    const { inset, barH } = dockDims();
     const updates: Array<[string, Geom]> = [];
     for (const ws of Object.values(store.get().wins)) {
+      if (ws.mode === "docked") {
+        // 停靠栏重钉：右缘贴 R、宽取该栏实测，y 保持并钳在屏内（不走最小尺寸钳制）
+        const y = clamp((ws.geom.top / 100) * vr.height, inset, vr.height - inset - barH);
+        const w = probeBar(el(ws.id)!).barW;
+        const box = { left: vr.width - w, top: y, width: w, height: barH };
+        updates.push([ws.id, pctGeom(box, vr)]);
+        continue;
+      }
       const g = fitGeom(ws.geom, minSizeOf(ws.id), vr.width, vr.height);
       if (
         g.left !== ws.geom.left ||
@@ -561,6 +816,7 @@ export function initWindows(store: Store): WinApi {
     minimize,
     close,
     open,
+    undock,
     alignAll: reAlign,
   };
 }

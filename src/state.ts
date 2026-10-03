@@ -5,7 +5,7 @@
  */
 
 export type Geom = { left: number; top: number; width: number; height: number }; // % of viewport (0–100)
-export type WinMode = "floating" | "maximized";
+export type WinMode = "floating" | "maximized" | "docked";
 
 /** 窗口尺寸下限（像素）：任何屏幕变化都不得缩穿 */
 export type MinSize = { w: number; h: number };
@@ -37,7 +37,9 @@ export type WinState = {
   status: WinStatus;
   focused: boolean;
   mode: WinMode;
-  geom: Geom; // floating geometry; restore target after maximize
+  geom: Geom; // floating geometry; restore target after maximize（docked 时 = 停靠栏矩形）
+  /** 停靠前的浮动态几何（点击停靠栏还原的落点） */
+  restoreGeom?: Geom;
   z: number;
 };
 
@@ -66,6 +68,8 @@ export type WinPolicy = {
   drag: "handle" | "anywhere" | "none";
   resize: boolean;
   maximize: boolean;
+  /** 拖向右缘可被顶栏吞入成停靠栏（须有顶栏可吞） */
+  dock: boolean;
   /** 点击窗口外即关闭（轻取消） */
   lightDismiss: boolean;
   /** 打开时夺取焦点（对话框要，通知横幅不要） */
@@ -86,6 +90,7 @@ export const WIN_TYPES: Record<WinType, WinPolicy> = {
     drag: "handle",
     resize: true,
     maximize: true,
+    dock: true,
     lightDismiss: false,
     stealFocus: true,
     appIcon: true,
@@ -98,6 +103,7 @@ export const WIN_TYPES: Record<WinType, WinPolicy> = {
     drag: "none",
     resize: false,
     maximize: false,
+    dock: false,
     lightDismiss: false,
     stealFocus: true,
     appIcon: false,
@@ -110,6 +116,7 @@ export const WIN_TYPES: Record<WinType, WinPolicy> = {
     drag: "none",
     resize: false,
     maximize: false,
+    dock: false,
     lightDismiss: true,
     stealFocus: false,
     appIcon: false,
@@ -122,6 +129,7 @@ export const WIN_TYPES: Record<WinType, WinPolicy> = {
     drag: "anywhere",
     resize: false,
     maximize: false,
+    dock: false,
     lightDismiss: false,
     stealFocus: false,
     appIcon: false,
@@ -134,6 +142,7 @@ export const WIN_TYPES: Record<WinType, WinPolicy> = {
     drag: "none",
     resize: false,
     maximize: false,
+    dock: false,
     lightDismiss: false,
     stealFocus: true,
     appIcon: false,
@@ -159,6 +168,7 @@ export type Metrics = {
   menuDrop: number;
   inset: number;
   recoverNear: number;
+  dockArm: number;
   capsuleGap: number;
   capsulePad: number;
   btnGap: number;
@@ -224,6 +234,7 @@ export const METRICS: MetricDef[] = [
   { key: "navW", label: "导航宽", desc: "导航胶囊宽度（独立参数；42 = 顶栏高×1.5 是数值巧合而非约束）", group: "控件", min: 30, max: 64, step: 1, def: 42 },
   { key: "inset", label: "屏幕贴边", desc: "状态栏/App 栏贴屏幕边缘的距离；最大化导航贴边同此", group: "间距", min: 0, max: 16, step: 1, def: 8 },
   { key: "recoverNear", label: "recover 触发距离", desc: "鼠标距窗边该距离内才显示临时拖动（38 = 原 28+2×5 公式巧合，现独立）", group: "间距", min: 16, max: 72, step: 1, def: 38 },
+  { key: "dockArm", label: "停靠吸收行程", desc: "窗口右缘越过右屏此距离内开始被顶栏吞入；状态栏宽线即停靠判定线", group: "间距", min: 80, max: 320, step: 10, def: 160 },
   { key: "capsuleGap", label: "胶囊按钮间距", desc: "胶囊壳内按钮之间的水平间距", group: "间距", min: 0, max: 8, step: 1, def: 2 },
   { key: "capsulePad", label: "胶囊内边距", desc: "胶囊壳左右内边距", group: "间距", min: 0, max: 10, step: 1, def: 3 },
   { key: "btnGap", label: "按钮纵向间距", desc: "导航/App 栏按钮之间的纵向间距", group: "间距", min: 0, max: 12, step: 1, def: 4 },
@@ -395,4 +406,35 @@ export function anyMaximized(s: State): boolean {
 /** 未关闭 = 打开或收起（App 栏上应有其图标） */
 export function isRunning(w: WinState): boolean {
   return w.status !== "closed";
+}
+
+/**
+ * 停靠栈消解（纯函数）：新栏落在 y(顶边)，受影响的其它停靠栏让位，
+ * 保证任意两栏竖向间距 ≥ gap（栏高同为 barH）。让位最小化：
+ * 相对新栏偏上者向上让、偏下者向下让，同侧按距离近者先让并逐个级联。
+ */
+export function resolveDockStack(
+  bars: Array<{ id: string; top: number }>,
+  y: number,
+  barH: number,
+  gap: number,
+): Array<{ id: string; top: number }> {
+  const minPitch = barH + gap;
+  const up = bars.filter((b) => b.top + barH / 2 < y + barH / 2).sort((a, b) => b.top - a.top);
+  const down = bars.filter((b) => b.top + barH / 2 >= y + barH / 2).sort((a, b) => a.top - b.top);
+  const out: Array<{ id: string; top: number }> = [];
+  // 向上侧：每个都不进入「新栏/上一个让位者」上方 minPitch 之内
+  let floor = y - minPitch;
+  for (const b of up) {
+    const top = Math.min(b.top, floor);
+    out.push({ id: b.id, top });
+    floor = top - minPitch;
+  }
+  let ceil = y + minPitch;
+  for (const b of down) {
+    const top = Math.max(b.top, ceil);
+    out.push({ id: b.id, top });
+    ceil = top + minPitch;
+  }
+  return out;
 }

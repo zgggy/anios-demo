@@ -35,6 +35,7 @@
   --nav-w: 42px;
   --inset: 8px;
   --recover-near: 38px;
+  --dock-arm: 160px;
   --capsule-gap: 2px;
   --capsule-pad: 3px;
   --btn-gap: 4px;
@@ -54,7 +55,11 @@
   --frost-bg: rgba(255, 255, 255, 0.55);
   --frost-blur: blur(28px) saturate(180%);
   --line: rgba(15, 23, 42, 0.08);
-  --shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  /* 投影拆件（几何必然）：停靠形变要把投影随 --dock-p 收零，整条 var 无法缩放 */
+  --sh-y: 8px;
+  --sh-blur: 24px;
+  --sh-color: rgba(15, 23, 42, 0.1);
+  --shadow: 0 var(--sh-y) var(--sh-blur) var(--sh-color);
   --ink: #0f172a;
   --ink-2: #334155;
   --ink-3: #7c8797;
@@ -78,7 +83,10 @@
 [data-theme="dark"] {
   --frost-bg: rgba(18, 26, 38, 0.55);
   --line: rgba(255, 255, 255, 0.1);
-  --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  --sh-y: 10px;
+  --sh-blur: 28px;
+  --sh-color: rgba(0, 0, 0, 0.35);
+  --shadow: 0 var(--sh-y) var(--sh-blur) var(--sh-color);
   --ink: #e8eef7;
   --ink-2: #b6c2d2;
   --ink-3: #8b98a8;
@@ -468,6 +476,84 @@ svg {
 }
 .top-capsule { pointer-events: auto; }
 
+/* ── 右缘停靠：--dock-p（0=浮窗 1=停靠栏）为唯一驱动量 ──
+   磨砂壳（.capsule/.content）禁 opacity 补间（磨砂变玻璃）；
+   折叠/退场只走宽度、裁剪、位移；淡出只作用于无磨砂内层。 */
+.window {
+  --dock-p: 0;
+  /* 分段进度：把 --dock-p 重映射到各阶段窗口 */
+  --dock-a: clamp(0, calc((var(--dock-p) - 0.05) / 0.3), 1); /* 后退/前进 */
+  --dock-b: clamp(0, calc((var(--dock-p) - 0.2) / 0.3), 1);  /* 搜索/+ */
+  --dock-n: clamp(0, calc((var(--dock-p) - 0.1) / 0.4), 1);  /* 导航栏 */
+  --dock-c: clamp(0, calc((var(--dock-p) - 0.55) / 0.3), 1); /* dock-id */
+  --dock-d: clamp(0, calc((var(--dock-p) - 0.75) / 0.2), 1); /* 内容淡出 */
+  /* dock-id 名字预算：超长截断。停靠栏宽 = 握把+图标+名字+边距 的自然宽（JS 实测） */
+  --dock-name-w: 112px;
+}
+/* 后退/前进、搜索/+：宽度收零（命中面随可视面消失）+ 图标淡出 */
+.top-capsule [data-fold] {
+  min-width: 0;
+  overflow: hidden;
+}
+.top-capsule [data-fold="a"] {
+  width: calc(var(--btn) * (1 - var(--dock-a)));
+  opacity: calc(1 - var(--dock-a));
+}
+.top-capsule [data-fold="b"] {
+  width: calc(var(--btn) * (1 - var(--dock-b)));
+  opacity: calc(1 - var(--dock-b));
+}
+/* 残隙随 p 收拢：折叠零宽钮不留 2px 缝，停靠态握把贴最左 */
+.top-capsule {
+  gap: calc(var(--capsule-gap) * (1 - var(--dock-p)));
+}
+/* dock-id：流内末位（撑开胶囊自然宽=停靠栏宽）；c 驱动展开+淡入+右滑入 */
+.dock-id {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  opacity: var(--dock-c);
+  max-width: calc(var(--dock-c) * (var(--dock-name-w) + 18px));
+  transform: translateX(calc((1 - var(--dock-c)) * 20px));
+  cursor: pointer;
+}
+.dock-id b {
+  min-width: 0;
+  max-width: var(--dock-name-w);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ctl);
+}
+.dock-id svg { flex-shrink: 0; }
+/* 导航栏：左滑 + 四边收拢退场（水平裁剪 + 上下对夹，竖条不得探出窗口；clip 同时收掉命中面）；
+   投影随 n 收零——被 clip 硬边切断的投影就是那条竖向阴影分割线 */
+.window .nav-bar {
+  transform: translateY(-50%) translateX(calc(var(--dock-n) * -24px));
+  clip-path: inset(
+    calc(var(--dock-n) * (50% + 40px) - 40px)
+    -40px
+    calc(var(--dock-n) * (50% + 40px) - 40px)
+    calc(var(--dock-n) * 100% - (1 - var(--dock-n)) * 40px)
+  );
+}
+.window .nav-bar .nav-capsule {
+  box-shadow: 0 calc(var(--sh-y) * (1 - var(--dock-n))) calc(var(--sh-blur) * (1 - var(--dock-n))) var(--sh-color);
+}
+/* 内容：内层淡出+上移（卷入顶栏感）；裁剪线自下而上吞掉面板；
+   边框+投影随 p 收零——收缩中扫过屏幕的竖向边线与投影即那条分割线 */
+.window .content-scroll {
+  opacity: calc(1 - var(--dock-d));
+  transform: translateY(calc(var(--dock-d) * -12px));
+}
+.window .content {
+  clip-path: inset(-40px -40px calc(-40px + var(--dock-d) * (100% + 40px)) -40px);
+  border-width: calc(1px * (1 - var(--dock-p)));
+  box-shadow: 0 calc(var(--sh-y) * (1 - var(--dock-p))) calc(var(--sh-blur) * (1 - var(--dock-p))) var(--sh-color);
+}
+
 .nav-bar {
   position: absolute;
   left: var(--win-pad);
@@ -521,8 +607,9 @@ svg {
   padding-right: var(--gutter);
 }
 
-/* unfocused chrome fully hidden (same as recover) */
-.window:not(.is-focused) .top-bar,
+/* unfocused chrome fully hidden (same as recover)；
+   停靠栏例外——「栏即窗口」，失焦只退焦点态，栏体常显 */
+.window:not(.is-focused):not([data-dock]) .top-bar,
 .window:not(.is-focused) .nav-bar {
   display: none;
 }
@@ -1703,6 +1790,7 @@ svg {
       drag: "handle",
       resize: true,
       maximize: true,
+      dock: true,
       lightDismiss: false,
       stealFocus: true,
       appIcon: true,
@@ -1715,6 +1803,7 @@ svg {
       drag: "none",
       resize: false,
       maximize: false,
+      dock: false,
       lightDismiss: false,
       stealFocus: true,
       appIcon: false,
@@ -1727,6 +1816,7 @@ svg {
       drag: "none",
       resize: false,
       maximize: false,
+      dock: false,
       lightDismiss: true,
       stealFocus: false,
       appIcon: false,
@@ -1739,6 +1829,7 @@ svg {
       drag: "anywhere",
       resize: false,
       maximize: false,
+      dock: false,
       lightDismiss: false,
       stealFocus: false,
       appIcon: false,
@@ -1751,6 +1842,7 @@ svg {
       drag: "none",
       resize: false,
       maximize: false,
+      dock: false,
       lightDismiss: false,
       stealFocus: true,
       appIcon: false,
@@ -1785,6 +1877,7 @@ svg {
     { key: "navW", label: "\u5BFC\u822A\u5BBD", desc: "\u5BFC\u822A\u80F6\u56CA\u5BBD\u5EA6\uFF08\u72EC\u7ACB\u53C2\u6570\uFF1B42 = \u9876\u680F\u9AD8\xD71.5 \u662F\u6570\u503C\u5DE7\u5408\u800C\u975E\u7EA6\u675F\uFF09", group: "\u63A7\u4EF6", min: 30, max: 64, step: 1, def: 42 },
     { key: "inset", label: "\u5C4F\u5E55\u8D34\u8FB9", desc: "\u72B6\u6001\u680F/App \u680F\u8D34\u5C4F\u5E55\u8FB9\u7F18\u7684\u8DDD\u79BB\uFF1B\u6700\u5927\u5316\u5BFC\u822A\u8D34\u8FB9\u540C\u6B64", group: "\u95F4\u8DDD", min: 0, max: 16, step: 1, def: 8 },
     { key: "recoverNear", label: "recover \u89E6\u53D1\u8DDD\u79BB", desc: "\u9F20\u6807\u8DDD\u7A97\u8FB9\u8BE5\u8DDD\u79BB\u5185\u624D\u663E\u793A\u4E34\u65F6\u62D6\u52A8\uFF0838 = \u539F 28+2\xD75 \u516C\u5F0F\u5DE7\u5408\uFF0C\u73B0\u72EC\u7ACB\uFF09", group: "\u95F4\u8DDD", min: 16, max: 72, step: 1, def: 38 },
+    { key: "dockArm", label: "\u505C\u9760\u5438\u6536\u884C\u7A0B", desc: "\u7A97\u53E3\u53F3\u7F18\u8D8A\u8FC7\u53F3\u5C4F\u6B64\u8DDD\u79BB\u5185\u5F00\u59CB\u88AB\u9876\u680F\u541E\u5165\uFF1B\u72B6\u6001\u680F\u5BBD\u7EBF\u5373\u505C\u9760\u5224\u5B9A\u7EBF", group: "\u95F4\u8DDD", min: 80, max: 320, step: 10, def: 160 },
     { key: "capsuleGap", label: "\u80F6\u56CA\u6309\u94AE\u95F4\u8DDD", desc: "\u80F6\u56CA\u58F3\u5185\u6309\u94AE\u4E4B\u95F4\u7684\u6C34\u5E73\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 8, step: 1, def: 2 },
     { key: "capsulePad", label: "\u80F6\u56CA\u5185\u8FB9\u8DDD", desc: "\u80F6\u56CA\u58F3\u5DE6\u53F3\u5185\u8FB9\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 10, step: 1, def: 3 },
     { key: "btnGap", label: "\u6309\u94AE\u7EB5\u5411\u95F4\u8DDD", desc: "\u5BFC\u822A/App \u680F\u6309\u94AE\u4E4B\u95F4\u7684\u7EB5\u5411\u95F4\u8DDD", group: "\u95F4\u8DDD", min: 0, max: 12, step: 1, def: 4 },
@@ -1881,6 +1974,25 @@ svg {
   function isRunning(w) {
     return w.status !== "closed";
   }
+  function resolveDockStack(bars, y, barH, gap) {
+    const minPitch = barH + gap;
+    const up = bars.filter((b) => b.top + barH / 2 < y + barH / 2).sort((a, b) => b.top - a.top);
+    const down = bars.filter((b) => b.top + barH / 2 >= y + barH / 2).sort((a, b) => a.top - b.top);
+    const out = [];
+    let floor = y - minPitch;
+    for (const b of up) {
+      const top = Math.min(b.top, floor);
+      out.push({ id: b.id, top });
+      floor = top - minPitch;
+    }
+    let ceil = y + minPitch;
+    for (const b of down) {
+      const top = Math.max(b.top, ceil);
+      out.push({ id: b.id, top });
+      ceil = top + minPitch;
+    }
+    return out;
+  }
 
   // src/render.ts
   var ICON = {
@@ -1926,15 +2038,16 @@ svg {
       (it, i) => `<button type="button" class="nav-btn${i === 0 ? " active" : ""}" data-section="${it.section}">${icon(it.icon)}<span class="nav-text">${it.label}</span></button>`
     ).join("");
   }
-  function topCapsuleHTML() {
+  function topCapsuleHTML(ico, title) {
     return `<div class="capsule top-capsule">
-    <button type="button" class="icon-btn" aria-label="\u540E\u9000">${icon("back")}</button>
-    <button type="button" class="icon-btn" aria-label="\u524D\u8FDB">${icon("fwd")}</button>
+    <button type="button" class="icon-btn" data-fold="a" aria-label="\u540E\u9000">${icon("back")}</button>
+    <button type="button" class="icon-btn" data-fold="a" aria-label="\u524D\u8FDB">${icon("fwd")}</button>
     <span class="drag-pad" aria-hidden="true"></span>
     ${dragZoneHTML()}
     <span class="drag-pad" aria-hidden="true"></span>
-    <button type="button" class="icon-btn" data-search aria-label="\u641C\u7D22" aria-expanded="false">${icon("search")}</button>
-    <button type="button" class="icon-btn" data-more aria-label="\u66F4\u591A" aria-expanded="false">${icon("plus")}</button>
+    <button type="button" class="icon-btn" data-fold="b" data-search aria-label="\u641C\u7D22" aria-expanded="false">${icon("search")}</button>
+    <button type="button" class="icon-btn" data-fold="b" data-more aria-label="\u66F4\u591A" aria-expanded="false">${icon("plus")}</button>
+    <span class="dock-id" data-dock-id aria-hidden="true">${icon(ico)}<b>${title}</b></span>
   </div>`;
   }
   function menuPanelHTML(opts) {
@@ -1959,7 +2072,7 @@ svg {
     const p = policyOf(o.winType);
     return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-wintype="${o.winType ?? "normal"}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
     ${p.chrome.topbar ? `<div class="top-bar" data-topbar>
-      ${topCapsuleHTML()}
+      ${topCapsuleHTML(o.icon, o.title)}
     </div>` : ""}
     ${p.chrome.nav && o.nav.length ? `<div class="nav-bar" data-nav>
       <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
@@ -2150,12 +2263,15 @@ svg {
     const content7 = $(".content", win);
     if (!content7) return;
     const { cx, cy } = layoutCenter(content7);
-    win.style.setProperty("--content-cx", `${cx}px`);
+    const p = parseFloat(win.style.getPropertyValue("--dock-p")) || 0;
+    win.style.setProperty("--content-cx", `${cx + (win.offsetWidth / 2 - cx) * p}px`);
     win.style.setProperty("--content-cy", `${cy}px`);
   }
   function patchWinEl(el, ws) {
     el.classList.toggle("is-focused", ws.focused);
     el.setAttribute("data-mode", ws.mode);
+    el.style.setProperty("--dock-p", ws.mode === "docked" ? "1" : "0");
+    el.toggleAttribute("data-dock", ws.mode === "docked");
     el.style.zIndex = String(ws.z);
     const t = el.style.transition;
     el.style.transition = "none";
@@ -6631,6 +6747,42 @@ svg {
       }
     });
   }
+  var morphSeq = /* @__PURE__ */ new WeakMap();
+  function morphTo(win, box, dockP, onDone) {
+    const seq = (morphSeq.get(win) ?? 0) + 1;
+    morphSeq.set(win, seq);
+    const t = win.style.transition;
+    win.style.transition = "none";
+    win.dataset.flipping = "1";
+    let done = false;
+    const finish = () => {
+      if (done || morphSeq.get(win) !== seq) return;
+      done = true;
+      gsapWithCSS.killTweensOf(win);
+      win.style.left = `${box.left}px`;
+      win.style.top = `${box.top}px`;
+      win.style.width = `${box.width}px`;
+      win.style.height = `${box.height}px`;
+      win.style.setProperty("--dock-p", String(dockP));
+      align(win);
+      win.dataset.flipping = "0";
+      win.style.transition = t;
+      onDone();
+    };
+    gsapWithCSS.to(win, {
+      left: box.left,
+      top: box.top,
+      width: box.width,
+      height: box.height,
+      "--dock-p": dockP,
+      duration: durSec("--anim-window"),
+      ease: EASE,
+      overwrite: true,
+      onUpdate: () => align(win),
+      onComplete: finish
+    });
+    window.setTimeout(finish, durMs("--anim-window") + 250);
+  }
 
   // src/apps/settings.ts
   function paramRow(d, kind, unit, opts = {}) {
@@ -7733,6 +7885,57 @@ svg {
   }
 
   // src/windows.ts
+  function dockDims() {
+    const inset = pxVar("--inset", 8);
+    return {
+      inset,
+      lineW: statusCapW + 2 * inset,
+      barH: pxVar("--topbar-h", 28) + 2 * pxVar("--win-pad", 5)
+    };
+  }
+  function probeBar(win) {
+    const { inset, lineW } = dockDims();
+    const cap = $(".top-capsule", win);
+    if (!cap) return { barW: lineW, gripRight: lineW - 12 };
+    const prev = win.style.getPropertyValue("--dock-p");
+    win.style.setProperty("--dock-p", "1");
+    const capW = cap.offsetWidth;
+    const capLeft = cap.getBoundingClientRect().left;
+    const zr = $("[data-drag-zone]", win)?.getBoundingClientRect();
+    win.style.setProperty("--dock-p", prev);
+    const zoneOffCenter = zr && zr.width ? zr.x + zr.width / 2 - capLeft : capW / 2;
+    return { barW: capW + 2 * inset, gripRight: capW + inset - zoneOffCenter };
+  }
+  function pctGeom(b, vr) {
+    return {
+      left: b.left / vr.width * 100,
+      top: b.top / vr.height * 100,
+      width: b.width / vr.width * 100,
+      height: b.height / vr.height * 100
+    };
+  }
+  var statusCapW = 132;
+  function remeasureDock() {
+    const cap = $(".status-capsule");
+    if (!cap) return;
+    statusCapW = cap.offsetWidth;
+  }
+  function freezeInner(win) {
+    const sc = $(".content-scroll", win);
+    if (!sc || sc.style.height) return;
+    sc.style.height = `${sc.clientHeight}px`;
+    sc.style.overflow = "hidden";
+  }
+  function unfreezeInner(win) {
+    const sc = $(".content-scroll", win);
+    if (!sc) return;
+    sc.style.height = "";
+    sc.style.overflow = "";
+  }
+  function dockBox(vr, y, w) {
+    const { barH } = dockDims();
+    return { left: vr.width - w, top: y, width: w, height: barH };
+  }
   function initialState(apps) {
     const wins = {};
     for (const a of apps) {
@@ -7777,6 +7980,19 @@ svg {
     let oy = 0;
     let ow = 0;
     let oh = 0;
+    let dragFrom = null;
+    let dragOpenW = 0;
+    let dragOpenH = 0;
+    let dragBarW = 0;
+    let dragPRef = 0;
+    let dragPSpan = 160;
+    let gripRight1 = 0;
+    let dragFromDocked = false;
+    let dockLatched = false;
+    let openLatched = false;
+    let dragZone = null;
+    let dockEngaged = false;
+    let dragFreeze = true;
     const el = (id) => $(`#${id}`);
     const focusedId = () => focusedWin(store.get())?.id ?? null;
     viewport.insertAdjacentHTML(
@@ -7786,6 +8002,7 @@ svg {
           id: winIdOf(a.id),
           app: a.id,
           title: a.title,
+          icon: a.icon,
           geom: a.geom,
           z: a.z,
           open: a.open,
@@ -7985,6 +8202,19 @@ svg {
           if (!moved) close(win.id);
         })
       );
+      const cap = $(".top-capsule", win);
+      if (cap && pol.dock) {
+        let down = null;
+        on(cap, "pointerdown", (e) => {
+          down = { x: e.clientX, y: e.clientY };
+        });
+        on(cap, "click", (e) => {
+          const t = e.target;
+          if (t.closest("[data-win-min], [data-win-cls]")) return;
+          if (!down || Math.abs(e.clientX - down.x) > 5 || Math.abs(e.clientY - down.y) > 5) return;
+          if (store.get().wins[win.id]?.mode === "docked") undock(win.id);
+        });
+      }
       const cre = $("[data-resize]", win);
       const content7 = $(".content", win);
       if (cre && content7) {
@@ -8042,6 +8272,34 @@ svg {
       oh = wr.height;
       sx = e.clientX;
       sy = e.clientY;
+      const ws = store.get().wins[win.id];
+      dragZone = $("[data-drag-zone]", win);
+      dragFromDocked = ws.mode === "docked";
+      dockLatched = false;
+      openLatched = false;
+      if (policyFor(win.id).dock) {
+        remeasureDock();
+        const probe = probeBar(win);
+        dragBarW = probe.barW;
+        gripRight1 = probe.gripRight;
+        const { lineW } = dockDims();
+        const arm = pxVar("--dock-arm", 160);
+        const d0 = vr.width - (e.clientX - vr.left + gripRight1);
+        const ref = dragFromDocked ? lineW + arm : Math.min(d0, lineW + arm);
+        dragPRef = ref;
+        dragPSpan = Math.min(Math.max(ref - lineW, 24), arm);
+      }
+      dragFrom = ws.geom;
+      if (ws.mode === "docked" && ws.restoreGeom) {
+        dragOpenW = ws.restoreGeom.width / 100 * vr.width;
+        dragOpenH = ws.restoreGeom.height / 100 * vr.height;
+        dragFreeze = false;
+      } else {
+        dragOpenW = ow;
+        dragOpenH = oh;
+        dragFreeze = true;
+      }
+      dockEngaged = false;
       win.style.transition = "none";
       win.style.left = `${ox}px`;
       win.style.top = `${oy}px`;
@@ -8058,21 +8316,84 @@ svg {
         const vr = viewport.getBoundingClientRect();
         dragWin.style.width = `${Math.min(vr.width, Math.max(min.w, ow + (ev.clientX - sx)))}px`;
         dragWin.style.height = `${Math.min(vr.height, Math.max(min.h, oh + (ev.clientY - sy)))}px`;
+      } else if (policyFor(dragWin.id).dock) {
+        const vr = viewport.getBoundingClientRect();
+        const { lineW, barH } = dockDims();
+        const d = vr.width - (ev.clientX - vr.left + gripRight1);
+        const p = clamp((dragPRef - d) / dragPSpan, 0, 1);
+        if (!dragFromDocked && d <= lineW) dockLatched = true;
+        if (dragFromDocked && d > lineW) openLatched = true;
+        if (p > 0) {
+          dockEngaged = true;
+          if (dragFreeze) freezeInner(dragWin);
+        }
+        const eW = p * p;
+        const hT = clamp((p - 0.1) / 0.7, 0, 1);
+        const eH = hT * hT * (3 - 2 * hT);
+        const w = dragOpenW + (dragBarW - dragOpenW) * eW;
+        const h = dragOpenH + (barH - dragOpenH) * eH;
+        dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
+        dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
+        dragWin.style.width = `${w}px`;
+        dragWin.style.height = `${h}px`;
+        dragWin.style.setProperty("--dock-p", String(p));
       } else {
         dragWin.style.left = `${ox + (ev.clientX - sx)}px`;
         dragWin.style.top = `${oy + (ev.clientY - sy)}px`;
       }
       align(dragWin);
+      if (dragMode === "move" && dragZone && policyFor(dragWin.id).dock) {
+        const zr = dragZone.getBoundingClientRect();
+        if (zr.width) {
+          const dx = ev.clientX - (zr.x + zr.width / 2);
+          if (Math.abs(dx) > 0.05) {
+            dragWin.style.left = `${(parseFloat(dragWin.style.left) || 0) + dx}px`;
+          }
+        }
+      }
     });
     on(window, "pointerup", () => {
       if (!dragWin) return;
       const win = dragWin;
       dragWin = null;
       win.style.transition = "";
+      unfreezeInner(win);
       const ws = store.get().wins[win.id];
+      const pol = policyFor(win.id);
+      const vr = viewport.getBoundingClientRect();
+      const wr = win.getBoundingClientRect();
+      if (dragMode === "move" && moved && pol.dock && (dockEngaged || ws?.mode === "docked")) {
+        const { inset, barH } = dockDims();
+        const dockNow = dragFromDocked ? !openLatched : dockLatched;
+        if (dockNow) {
+          const yEnd = clamp(wr.top - vr.top, inset, vr.height - inset - barH);
+          const box2 = dockBox(vr, yEnd, dragBarW);
+          const wasDocked = ws.mode === "docked";
+          morphTo(win, box2, 1, () => {
+            store.update((s) => {
+              patchWin(s, win.id, {
+                mode: "docked",
+                geom: pctGeom(box2, vr),
+                restoreGeom: wasDocked ? s.wins[win.id].restoreGeom : dragFrom ?? ws.geom
+              });
+            });
+            settleDockStack(win.id, yEnd, vr);
+          });
+          return;
+        }
+        const g = dragFromDocked ? ws.restoreGeom ?? ws.geom : dragFrom ?? ws.geom;
+        const box = {
+          left: g.left / 100 * vr.width,
+          top: g.top / 100 * vr.height,
+          width: g.width / 100 * vr.width,
+          height: g.height / 100 * vr.height
+        };
+        morphTo(win, box, 0, () => {
+          store.update((s) => patchWin(s, win.id, { mode: "floating", geom: g }));
+        });
+        return;
+      }
       if (ws && ws.mode === "floating") {
-        const vr = viewport.getBoundingClientRect();
-        const wr = win.getBoundingClientRect();
         const geom = {
           left: (wr.left - vr.left) / vr.width * 100,
           top: (wr.top - vr.top) / vr.height * 100,
@@ -8082,6 +8403,36 @@ svg {
         store.update((s) => patchWin(s, win.id, { geom }));
       }
     });
+    function settleDockStack(skipId, yNew, vr) {
+      const { barH } = dockDims();
+      const gap = pxVar("--gap", 8);
+      const bars = Object.values(store.get().wins).filter((w) => w.id !== skipId && w.mode === "docked" && w.status === "open").map((w) => ({ id: w.id, top: w.geom.top / 100 * vr.height }));
+      for (const b of resolveDockStack(bars, yNew, barH, gap)) {
+        const before = bars.find((x) => x.id === b.id);
+        if (Math.abs(before.top - b.top) < 0.5) continue;
+        const box = dockBox(vr, b.top, probeBar(el(b.id)).barW);
+        morphTo(el(b.id), box, 1, () => {
+          store.update((s) => patchWin(s, b.id, { geom: pctGeom(box, vr) }));
+        });
+      }
+    }
+    function undock(id) {
+      const win = el(id);
+      const ws = store.get().wins[id];
+      if (!win || !ws || ws.mode !== "docked" || win.dataset.flipping === "1") return;
+      const vr = viewport.getBoundingClientRect();
+      const g = ws.restoreGeom ?? ws.geom;
+      const box = {
+        left: g.left / 100 * vr.width,
+        top: g.top / 100 * vr.height,
+        width: g.width / 100 * vr.width,
+        height: g.height / 100 * vr.height
+      };
+      focus(id);
+      morphTo(win, box, 0, () => {
+        store.update((s) => patchWin(s, id, { mode: "floating", geom: g }));
+      });
+    }
     on(viewport, "pointerdown", (e) => {
       const t = e.target;
       if (t.closest(".window") || t.closest(".sys-status") || t.closest(".sys-appbar") || t.closest(".vp-resize")) {
@@ -8127,6 +8478,10 @@ svg {
       if ($("[data-more-panel]:not([hidden]), [data-search-panel]:not([hidden])")) return;
       const id = focusedId();
       const ws = id ? store.get().wins[id] : null;
+      if (ws?.mode === "docked") {
+        undock(id);
+        return;
+      }
       if (ws?.mode === "maximized") toggleMaximize(id);
     });
     on(document, "pointerdown", (e) => {
@@ -8143,8 +8498,16 @@ svg {
     const fitToViewport = () => {
       const vr = viewport.getBoundingClientRect();
       if (vr.width < 2 || vr.height < 2) return;
+      const { inset, barH } = dockDims();
       const updates = [];
       for (const ws of Object.values(store.get().wins)) {
+        if (ws.mode === "docked") {
+          const y = clamp(ws.geom.top / 100 * vr.height, inset, vr.height - inset - barH);
+          const w = probeBar(el(ws.id)).barW;
+          const box = { left: vr.width - w, top: y, width: w, height: barH };
+          updates.push([ws.id, pctGeom(box, vr)]);
+          continue;
+        }
         const g = fitGeom(ws.geom, minSizeOf(ws.id), vr.width, vr.height);
         if (g.left !== ws.geom.left || g.top !== ws.geom.top || g.width !== ws.geom.width || g.height !== ws.geom.height) {
           updates.push([ws.id, g]);
@@ -8176,6 +8539,7 @@ svg {
       minimize,
       close,
       open,
+      undock,
       alignAll: reAlign
     };
   }
@@ -8674,6 +9038,7 @@ svg {
     if (wrap3) bindScrollIndicator(wrap3);
     store.subscribe(syncNotices);
     syncNotices();
+    remeasureDock();
   }
   function initAppBar(store, api) {
     const viewport = $("#viewport");
@@ -8704,6 +9069,10 @@ svg {
         const id = winIdOf(appId);
         const ws = store.get().wins[id];
         if (!ws) return;
+        if (ws.mode === "docked") {
+          api.undock(id);
+          return;
+        }
         if (ws.status === "open") {
           if (ws.focused) api.minimize(id);
           else api.focus(id);
@@ -8715,6 +9084,7 @@ svg {
     sync();
   }
   function bindSettingsPatch(store) {
+    let metricsSig = "";
     const apply = () => {
       const st = store.get().settings;
       const root = document.documentElement;
@@ -8746,6 +9116,11 @@ svg {
         const v = st.metrics[m.key];
         root.style.setProperty(metricVar(m.key), `${v}px`);
         echo("metric", m.key, v, "px");
+      }
+      const sig = JSON.stringify(st.metrics);
+      if (sig !== metricsSig) {
+        metricsSig = sig;
+        remeasureDock();
       }
       const terms = { ...defaultDerivTerms(), ...st.derivTerms };
       for (const t of DERIV_TERMS) echo("term", t.key, terms[t.key], "");

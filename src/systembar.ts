@@ -21,6 +21,7 @@ import { statusBarHTML, appBarHTML, align, icon, type AppBarItem } from "./rende
 import { bindScrollIndicator } from "./host";
 import { APPS, winIdOf } from "./apps";
 import type { WinApi } from "./windows";
+import { remeasureDock } from "./windows";
 
 export function initStatusBar(store: Store, api: WinApi): void {
   const viewport = $<HTMLElement>("#viewport")!;
@@ -294,6 +295,8 @@ export function initStatusBar(store: Store, api: WinApi): void {
   if (wrap) bindScrollIndicator(wrap);
   store.subscribe(syncNotices);
   syncNotices();
+  // 状态栏胶囊此刻才挂载（bindSettingsPatch 首跑早于它，那次实测会早退）——补一次
+  remeasureDock();
 }
 
 export function initAppBar(store: Store, api: WinApi): void {
@@ -334,6 +337,10 @@ export function initAppBar(store: Store, api: WinApi): void {
       const id = winIdOf(appId);
       const ws = store.get().wins[id];
       if (!ws) return;
+      if (ws.mode === "docked") {
+        api.undock(id); // 停靠栏点一下 = 还原
+        return;
+      }
       if (ws.status === "open") {
         if (ws.focused) api.minimize(id);
         else api.focus(id);
@@ -347,6 +354,7 @@ export function initAppBar(store: Store, api: WinApi): void {
 
 /** 设置状态 → CSS 变量 / 属性（渲染层的「设置补丁」） */
 export function bindSettingsPatch(store: Store): void {
+  let metricsSig = "";
   const apply = () => {
     const st = store.get().settings;
     const root = document.documentElement;
@@ -380,6 +388,12 @@ export function bindSettingsPatch(store: Store): void {
       const v = st.metrics[m.key];
       root.style.setProperty(metricVar(m.key), `${v}px`);
       echo("metric", m.key, v, "px");
+    }
+    // 停靠几何实测（状态栏胶囊宽随 navBtn 等变化）——仅度量真变时读布局
+    const sig = JSON.stringify(st.metrics);
+    if (sig !== metricsSig) {
+      metricsSig = sig;
+      remeasureDock();
     }
     // 派生参数：公式 → CSS 令牌；公式文本与值实时代入可调项
     const terms = { ...defaultDerivTerms(), ...st.derivTerms };

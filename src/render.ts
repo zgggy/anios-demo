@@ -65,15 +65,16 @@ function navBtnsHTML(items: NavItem[]): string {
     .join("");
 }
 
-function topCapsuleHTML(): string {
+function topCapsuleHTML(ico: IconName, title: string): string {
   return `<div class="capsule top-capsule">
-    <button type="button" class="icon-btn" aria-label="后退">${icon("back")}</button>
-    <button type="button" class="icon-btn" aria-label="前进">${icon("fwd")}</button>
+    <button type="button" class="icon-btn" data-fold="a" aria-label="后退">${icon("back")}</button>
+    <button type="button" class="icon-btn" data-fold="a" aria-label="前进">${icon("fwd")}</button>
     <span class="drag-pad" aria-hidden="true"></span>
     ${dragZoneHTML()}
     <span class="drag-pad" aria-hidden="true"></span>
-    <button type="button" class="icon-btn" data-search aria-label="搜索" aria-expanded="false">${icon("search")}</button>
-    <button type="button" class="icon-btn" data-more aria-label="更多" aria-expanded="false">${icon("plus")}</button>
+    <button type="button" class="icon-btn" data-fold="b" data-search aria-label="搜索" aria-expanded="false">${icon("search")}</button>
+    <button type="button" class="icon-btn" data-fold="b" data-more aria-label="更多" aria-expanded="false">${icon("plus")}</button>
+    <span class="dock-id" data-dock-id aria-hidden="true">${icon(ico)}<b>${title}</b></span>
   </div>`;
 }
 
@@ -104,6 +105,8 @@ export type WindowShellOpts = {
   id: string;
   app: string;
   title: string;
+  /** 应用图标（停靠栏身份显示用） */
+  icon: IconName;
   geom: Geom;
   z: number;
   open: boolean;
@@ -124,7 +127,7 @@ export function windowShellHTML(o: WindowShellOpts): string {
   const p = policyOf(o.winType);
   return `<div class="window${o.focused ? " is-focused" : ""}" id="${o.id}" data-app="${o.app}" data-title="${o.title}" data-wintype="${o.winType ?? "normal"}" data-mode="floating" ${o.open ? "" : "hidden"} style="left:${g.left}%;top:${g.top}%;width:${g.width}%;height:${g.height}%;z-index:${o.z}">
     ${p.chrome.topbar ? `<div class="top-bar" data-topbar>
-      ${topCapsuleHTML()}
+      ${topCapsuleHTML(o.icon, o.title)}
     </div>` : ""}
     ${p.chrome.nav && o.nav.length ? `<div class="nav-bar" data-nav>
       <div class="capsule nav-capsule">${navBtnsHTML(o.nav)}</div>
@@ -337,7 +340,10 @@ export function align(win: HTMLElement): void {
   const content = $<HTMLElement>(".content", win);
   if (!content) return;
   const { cx, cy } = layoutCenter(content);
-  win.style.setProperty("--content-cx", `${cx}px`);
+  // 停靠形变（--dock-p 0→1）：控制栏中心随内容中心漂向栏盒中心——
+  // 停靠栏是「栏即窗口」：胶囊自然宽 + 2×inset 边界即栏宽，不吃内容中心。
+  const p = parseFloat(win.style.getPropertyValue("--dock-p")) || 0;
+  win.style.setProperty("--content-cx", `${cx + (win.offsetWidth / 2 - cx) * p}px`);
   win.style.setProperty("--content-cy", `${cy}px`);
 }
 
@@ -348,6 +354,8 @@ export function align(win: HTMLElement): void {
 export function patchWinEl(el: HTMLElement, ws: WinState): void {
   el.classList.toggle("is-focused", ws.focused);
   el.setAttribute("data-mode", ws.mode);
+  el.style.setProperty("--dock-p", ws.mode === "docked" ? "1" : "0");
+  el.toggleAttribute("data-dock", ws.mode === "docked");
   el.style.zIndex = String(ws.z);
   // 几何写入须抑制 CSS transition：写入 → 强制回流 → 恢复
   const t = el.style.transition;
